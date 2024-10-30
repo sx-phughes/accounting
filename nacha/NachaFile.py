@@ -15,7 +15,8 @@ class TransactionEntry():
         )
         self.addenda_line = AddendaLine(
             payment_info=invoice_number,
-            entry_seq_no=sequence_no
+            entry_seq_no=sequence_no,
+            vendor = vendor
         )
         
     def __str__(self):

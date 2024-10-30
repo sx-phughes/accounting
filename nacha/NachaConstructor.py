@@ -22,8 +22,9 @@ class NachaConstructor():
         'Technologies': '071000013',
         'Trading': '071000013'
     }
-    def __init__(self, trx_table: pd.DataFrame):
+    def __init__(self, trx_table: pd.DataFrame, value_date):
         self.trx_table = trx_table
+        self.value_date = value_date
     
     def construct_transactions(self, trx_table):
         transactions_list = []
@@ -49,7 +50,7 @@ class NachaConstructor():
             company_name=NachaConstructor.company_names[company_name],
             company_id=NachaConstructor.company_ids[company_name],
             co_entry_descr='Payables',
-            effective_date='241023',
+            effective_date=self.value_date,
             orig_dfi_id=NachaConstructor.company_abas[company_name][0:8],
             batch_number=batch_number,
             trx_entries=transactions

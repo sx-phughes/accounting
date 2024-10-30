@@ -111,9 +111,16 @@ class TransactionLine(NachaLine):
                          )
         
 class AddendaLine(NachaLine):
-    def __init__(self, payment_info, entry_seq_no):
+    def __init__(self, payment_info, entry_seq_no, vendor):
         super().__init__(record_type_code = [1, '7'],
                          addenda_type = [2, '05'],
-                         payment_info = [80, payment_info],
+                         payment_info = [80, self.check_company(vendor, payment_info)],
                          addenda_seq_no = [4, '0001'],
                          entry_detail_seq_no = [7, entry_seq_no])
+        
+    def check_company(self, vendor, payment_info):
+        if vendor == 'Citigroup Global Mkts.':
+            payment_info = 'billing id: SPLX -- invoice id: ' + payment_info
+            return payment_info
+        else:
+            return payment_info
