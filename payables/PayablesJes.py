@@ -13,47 +13,51 @@ class JECreator():
         invoices_df = pd.read_excel(ap_path, 'Invoices')
         vendor_mapping = pd.read_excel(ap_path, 'Vendors')
         
-        trading_coa_path = 'C:/gdrive/Shared drives/accounting/Simplex Trading/Simplex Trading_Account List.xlsx'
-        trading_coa = pd.read_excel(trading_coa_path, 'Sheet1', skiprows=3)
+        companies = ['Holdings', 'Technologies', 'Investments', 'Trading']
+        coas = {co: '' for co in companies}
+        for co in companies:
+            coa_path = f'C:/gdrive/Shared drives/accounting/Simplex {co}/Simplex {co}_Account List.xlsx'
+            coa = pd.read_excel(coa_path, 'Sheet1', skiprows=3)
+            coas[co] = coa
         
-        return (invoices_df, vendor_mapping, trading_coa)
+        return (invoices_df, vendor_mapping, coas)
         
         
-    def initiator(self, payables: pd.DataFrame, vendor_mapping: pd.DataFrame, account_mapping: pd.DataFrame):
+    def initiator(self, payables: pd.DataFrame, vendor_mapping: pd.DataFrame, account_mappings: dict):
         # Map vendor mapping & vendor account to payables df
         # Pass rows through je function which returns a JE for each payable item
-        vendor_mapping = vendor_mapping[['Vendor', 'QB Mapping', 'Account Mapping']]
-        payables = payables[payables['Simplex2'] == 'Trading']
-        payables = payables.merge(right=vendor_mapping, how='left', on='Vendor')
-        payables['Account Mapping'] = payables['Account Mapping'].fillna(0)
-        account_mapping['Account #'] = account_mapping['Account #'].fillna(0)
-        account_mapping.to_csv('C:/Users/phughes_simplextradi/Downloads/account_mapping_pd.csv')
-        account_mapping = account_mapping.drop(account_mapping.iloc[-3:].index)
-        account_mapping['Account #'] = account_mapping['Account #'].astype(int)
-        
-        payables.to_csv('C:/Users/phughes_simplextradi/Downloads/payables_after_vendor_merge.csv')
-        
-        payables = payables.merge(right=account_mapping[['Account #', 'Full name', 'JE Account Name']], how='left', left_on = 'Account Mapping', right_on='Account #')
-        payables = payables.rename(columns={'JE Account Name': 'Expense Account JE'})
-        payables.to_csv('C:/Users/phughes_simplextradi/Downloads/payables_after_coa_merge.csv')
-        
-        bill_df = pd.DataFrame(columns=self.je_headers)
-        
-        for i, row in payables.iterrows():
-            if row['Simplex2'] == 'Trading':
-                
+        companies = ['Holdings', 'Investments', 'Technologies', 'Trading']
+        bill_dfs = {co: pd.DataFrame(columns=self.je_headers) for co in companies}
+        for co in companies:
+            vendor_mapping = vendor_mapping[['Vendor', 'QB Mapping', 'Account Mapping']]
+            co_payables = payables[payables['Simplex2'] == co].copy()
+            co_payables = co_payables.merge(right=vendor_mapping, how='left', on='Vendor')
+            # co_payables.to_csv(f'C:/Users/phughes_simplextradi/Downloads/{co}_payables_mapping_pd.csv')
+            co_payables['Account Mapping'] = co_payables['Account Mapping'].fillna(0)
+            account_mappings[co]['Account #'] = account_mappings[co]['Account #'].fillna(0)
+            # account_mapping.to_csv('C:/Users/phughes_simplextradi/Downloads/account_mapping_pd.csv')
+            account_mappings[co] = account_mappings[co].drop(account_mappings[co].iloc[-3:].index)
+            account_mappings[co]['Account #'] = account_mappings[co]['Account #'].astype(int)
+            
+            # payables.to_csv('C:/Users/phughes_simplextradi/Downloads/payables_after_vendor_merge.csv')
+            
+            co_payables = co_payables.merge(right=account_mappings[co][['Account #', 'Full name', 'JE Account Name']], how='left', left_on = 'Account Mapping', right_on='Account #')
+            co_payables = co_payables.rename(columns={'JE Account Name': 'Expense Account JE'})
+            # payables.to_csv('C:/Users/phughes_simplextradi/Downloads/payables_after_coa_merge.csv')
+            
+            for i, row in co_payables.iterrows():
                 bill = self.bill_creator(row)
 
-                bill_df = pd.concat([bill_df, bill])
-                bill_df = bill_df.reset_index(drop=True)
-            else:
-                continue
+                bill_dfs[co] = pd.concat([bill_dfs[co], bill])
+                bill_dfs[co] = bill_dfs[co].reset_index(drop=True)
+        
+        for i in bill_dfs.keys():
             
-        bill_df['Bill No.'] = bill_df['Bill No.'].astype(str)
-        bill_df['Memo'] = bill_df['Memo'].astype(str)
-        bill_df['Description'] = bill_df['Description'].astype(str)
+            bill_dfs[i]['Bill No.'] = bill_dfs[i]['Bill No.'].astype(str)
+            bill_dfs[i]['Memo'] = bill_dfs[i]['Memo'].astype(str)
+            bill_dfs[i]['Description'] = bill_dfs[i]['Description'].astype(str)
     
-        return bill_df
+        return bill_dfs
     
     def bill_creator(self, df_row):
         # ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']

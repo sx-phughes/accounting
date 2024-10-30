@@ -2,10 +2,11 @@ from PayablesJes import *
 import pandas as pd
 from datetime import datetime
 
-payables_930 = JECreator(datetime(2024, 9, 30), 1391)
+payables_1031 = JECreator(datetime(2024, 10, 31), 1392)
 
-invoices, vendors, coa = payables_930.file_getter()
+invoices, vendors, coas = payables_1031.file_getter()
 
-bill_df = payables_930.initiator(payables=invoices, vendor_mapping=vendors, account_mapping=coa)
+bill_dfs = payables_1031.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
 
-bill_df.to_csv('C:/Users/phughes_simplextradi/Downloads/Test Trading JEs.csv', index=False)
+for i in bill_dfs.keys():
+    bill_dfs[i].to_csv(f'C:/Users/phughes_simplextradi/Downloads/{i} Bills.csv', index=False)
