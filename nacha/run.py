@@ -14,10 +14,19 @@ data_types = {
     'Payment Type': str,
     'Amount': float
 }
+vd_year = int(input('VD Year:\n>\t'))
+vd_month = int(input('VD Month:\n>\t'))
+vd_day = int(input('VD Day:\n>\t'))
 
-valuedate = datetime(2024,10,31).strftime('%y%m%d')
+pb_year = int(input('Payables Year:\n>\t'))
+pb_month = int(input('Payables Month:\n>\t'))
+pb_day = int(input('Payables Day:\n>\t'))
 
-payables = pd.read_excel('C:/gdrive/Shared drives/accounting/Payables/2024/202410/2024-10-31/2024-10-31 Payables.xlsm', 'Invoices', dtype=data_types)
+payables_date = datetime(pb_year,pb_month,pb_day)
+valuedate = datetime(vd_year,vd_month,vd_day).strftime('%y%m%d')
+
+payables_path = f'C:/gdrive/Shared drives/accounting/Payables/{payables_date.strftime('%Y')}/{payables_date.strftime('%Y%m')}/{payables_date.strftime('%Y-%m-%d')}/{payables_date.strftime('%Y-%m-%d')} Payables.xlsm'
+payables = pd.read_excel(payables_path, 'Invoices', dtype=data_types)
 payables = payables.loc[payables['Payment Type'] == 'ACH'].copy()
 
 ### value date must be formatted "YYMMDD"
