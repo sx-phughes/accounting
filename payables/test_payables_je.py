@@ -2,7 +2,11 @@ from PayablesJes import *
 import pandas as pd
 from datetime import datetime
 
-payables_1031 = JECreator(datetime(2024, 10, 31), 1392)
+year = int(input('Year:\n>\t'))
+month = int(input('Month:\n>\t'))
+day = int(input('Day:\n>\t'))
+
+payables_1031 = JECreator(datetime(year, month, day))
 
 invoices, vendors, coas = payables_1031.file_getter()
 

@@ -2,9 +2,8 @@ import pandas as pd
 from datetime import datetime
 
 class JECreator():
-    def __init__(self, date: datetime, je_initial_no):
+    def __init__(self, date: datetime):
         self.date = date
-        self.je_initial = je_initial_no
         self.je_headers = ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']
         self.je_data = {col: data for col, data in zip(self.je_headers, [[] for i in range(len(self.je_headers))])}
     
