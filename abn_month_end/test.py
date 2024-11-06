@@ -1,7 +1,11 @@
 import AbnMonthEnd
 
-now = AbnMonthEnd.AbnMonthEnd(2024,9)
-cm_cash, cm_position = now.grab_files(2024, 9)
+month = int(input('Closing month:\n>\t'))
+year = int(input('Closing month year:\n>\t'))
+
+
+now = AbnMonthEnd.AbnMonthEnd(year,month)
+cm_cash, cm_position = now.grab_files(year, month)
 # pm_cash, pm_position = now.grab_files(2024, 7)
 # ledger_mapping, account_mapping = now.get_mapping_files()
 # data_df = now.data_tab(cm_cash, pm_cash, ledger_mapping, account_mapping)
