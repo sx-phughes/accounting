@@ -222,9 +222,9 @@ class AbnMonthEnd(AbnBase):
         return (eqt_data, mics_data)
         
     def get_mapping_files(self, google_drive_root='C:/gdrive'):
-        abn_files_path = google_drive_root + '/My Drive/abn_files'
-        ledger_mapping = pd.read_csv(abn_files_path + '/ledger_mapping.csv')
-        account_mapping = pd.read_csv(abn_files_path + '/account_mapping.csv')
+        abn_files_path = google_drive_root + '/Shared drives/accounting/patrick_data_files/abn_month_end'
+        ledger_mapping = pd.read_csv(abn_files_path + '/ABN_ledger_mapping.csv')
+        account_mapping = pd.read_csv(abn_files_path + '/ABN_account_mapping.csv')
 
         return (ledger_mapping, account_mapping)
     
