@@ -19,7 +19,7 @@ positions, pivot, categories = now.positions_tab(cm_position)
 
 save_stem = f'C:/gdrive/Shared drives/accounting/Simplex Trading/{str(year)}/{str(year)+str(month)}/ABN'
 
-data_df.to_csv(save_stem + '/data_df_test.csv', index=False)
-positions.to_csv(save_stem + '/positions_df_test.csv', index=False)
-pivot.to_csv(save_stem + '/positions-pivot_df_test.csv', index=False)
-categories.to_csv(save_stem + '/positions-by-category_df_test.csv', index=False)
+data_df.to_csv(save_stem + '/data_df.csv', index=False)
+positions.to_csv(save_stem + '/positions_df.csv', index=False)
+pivot.to_csv(save_stem + '/positions-pivot_df.csv', index=False)
+categories.to_csv(save_stem + '/positions-by-category_df.csv', index=False)
