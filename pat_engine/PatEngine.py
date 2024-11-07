@@ -5,8 +5,10 @@ from baycrest.BaycrestSplitter import BaycrestSplitter
 from patrick_functions.AbnCash import AbnCash
 from patrick_functions.OrganizeBAMLfiles import BAMLFileMover
 from patrick_functions import UnzipFiles
-sys.path.append('C:\\gdrive\\My Drive\\code_projecs\\cm_exchange_fees')
+sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
 from cm_exchange_fees.ExchangeFeesDownload import ExchangeFeesDownload
+sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
+from abn_month_end import test
 
 class PatEngine(ABC):
     def __init__(self):
@@ -17,6 +19,7 @@ class PatEngine(ABC):
         
         options = {'Baycrest': self.run_baycrest,
                    'ABN Cash Files': self.run_abn_cash,
+                   'ABN Month End': self.abn_me,
                    'Organize BAML ME Files': self.run_baml_files,
                    'Get CM Exchange Fee Files': self.cm_exchange,
                    'Unzip Files in Folder': self.unzip_files}
@@ -69,6 +72,21 @@ class PatEngine(ABC):
         input('Press enter to continue')
         
         self.main_menu()
+    
+    def abn_me(self):
+        os.system('cls')
+        
+        print('ABN Month End Process')
+        
+        month = int(input('Closing month:\n>\t'))
+        year = int(input('Closing month year:\n>\t'))
+        test.main(year, month)
+        
+        print('ABN Month End files completed')
+        input('Press enter to continue')
+
+        self.main_menu()
+        
         
     def run_baml_files(self):
         os.system('cls')
