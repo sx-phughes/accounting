@@ -38,16 +38,19 @@ class AbnMonthEnd(AbnBase):
         
         
     def data_tab(self, cm_cash: pd.DataFrame, pm_cash: pd.DataFrame, ledger_map: pd.DataFrame, account_map: pd.DataFrame):
+        # Copy required data from CSV_CASH files PM & CM
         data_df_pm = pm_cash[['Account Name', 'Cash Title', 'Opening Balance']].copy()
         data_df_cm = cm_cash[['Account Name', 'Cash Title', 'Opening Balance']].copy()
         
-        data_df_pm = data_df_pm.pivot_table(values='Opening Balance', index=['Account Name', 'Cash Title'], aggfunc='sum')
-        data_df_cm = data_df_cm.pivot_table(values='Opening Balance', index=['Account Name', 'Cash Title'], aggfunc='sum')
-        data_df_pm = data_df_pm.reset_index(drop=False)
-        data_df_cm = data_df_cm.reset_index(drop=False)
-
+        # Add Concat columns to dfs
         data_df_cm['Concat'] = data_df_cm['Account Name'] + data_df_cm['Cash Title']
         data_df_pm['Concat'] = data_df_pm['Account Name'] + data_df_pm['Cash Title']
+            
+        # Pivot both tables to remove duplicates
+        data_df_pm = data_df_pm.pivot_table(values='Opening Balance', index=['Account Name', 'Cash Title', 'Concat'], aggfunc='sum')
+        data_df_cm = data_df_cm.pivot_table(values='Opening Balance', index=['Account Name', 'Cash Title', 'Concat'], aggfunc='sum')
+        data_df_pm = data_df_pm.reset_index(drop=False)
+        data_df_cm = data_df_cm.reset_index(drop=False)        
         
         cm_concat = list(data_df_cm['Concat'].values)
         

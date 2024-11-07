@@ -61,9 +61,10 @@ class PatEngine(ABC):
         print('Year')
         year = int(input('>\t'))
         
-        cash = AbnCash(month=month, year=year).main()
+        cash = AbnCash(month=month, year=year)
+        cash.main()
         
-        print('Saved to Google Drive')
+        print(f'Saved to {cash.save_path}')
         
         input('Press enter to continue')
         
