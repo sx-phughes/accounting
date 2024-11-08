@@ -15,26 +15,29 @@ class BrokerFile:
     
     @broker_file.setter
     def broker_file(self, broker_file:pd.DataFrame):
-        # Get row with column names
-        cols_index = find_col_name_row(broker_file)
-        
-        # Get column names and rename to proper headers
-        main_row = list(broker_file.iloc[cols_index])
-        supp_row = list(broker_file.iloc[cols_index-1])
-        row = [supp + main if type(supp) == str else main for supp, main in zip(supp_row, main_row)]
-        renamer = {old: new for old, new in zip(list(broker_file.columns.values), row)}
-        broker_file = broker_file.rename(columns=renamer)
+        if not self.cols_are_good(broker_file):
+            # Get row with column names
+            cols_index = find_col_name_row(broker_file)
+            
+            # Get column names and rename to proper headers
+            main_row = list(broker_file.iloc[cols_index])
+            supp_row = list(broker_file.iloc[cols_index-1])
+            row = [supp + main if type(supp) == str else main for supp, main in zip(supp_row, main_row)]
+            renamer = {old: new for old, new in zip(list(broker_file.columns.values), row)}
+            broker_file = broker_file.rename(columns=renamer)
 
-        # Drop top junk rows
-        broker_file = broker_file.drop(index=range(cols_index + 1))
-        broker_file = broker_file.reset_index(drop=True)
-        
-        # Drop bottom junk rows
-        stop = drop_bottom_rows(broker_file)
-        broker_file = broker_file.drop(index=range(stop, len(broker_file.index)))
-        broker_file = broker_file.reset_index(drop=True)
-        
-        self._broker_file = broker_file
+            # Drop top junk rows
+            broker_file = broker_file.drop(index=range(cols_index + 1))
+            broker_file = broker_file.reset_index(drop=True)
+            
+            # Drop bottom junk rows
+            stop = drop_bottom_rows(broker_file)
+            broker_file = broker_file.drop(index=range(stop, len(broker_file.index)))
+            broker_file = broker_file.reset_index(drop=True)
+            
+            self._broker_file = broker_file
+        else:
+            self._broker_file = broker_file
         
     def comp_df(self):
         return self.clean_data(self.broker_file)
@@ -42,8 +45,8 @@ class BrokerFile:
     def clean_data(self, broker_file: pd.DataFrame):
         # Create dict of patterns to look for
         cols_dict = {
-            'date': r'\d{1,2}[/-.]?\d{1,2}[/-.]?\d{2,4}',
-            'underlying': r'[A-Z]{1,4}',
+            'date': r'\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|^\d{6,8}$',
+            'underlying': r'^[A-Z]{1,4}$',
             'comms': r'(\d{1,5}).\d{0,2}'
         }
         
@@ -56,21 +59,66 @@ class BrokerFile:
             # Debug
             print(f'col_str = {col_str}')
             print(f'pattern = {cols_dict[col_str]}')
-            match_str = self.find_col(broker_file, columns, cols_dict[col_str])
+            match_str = self.find_col(broker_file, columns, cols_dict[col_str], col_str)
             if match_str:
                 clean_df[col_str] = broker_file[match_str]
                 
         return clean_df
             
         
-    def find_col(self, broker_file: pd.DataFrame, columns: list, pattern: str):
+    def find_col(self, broker_file: pd.DataFrame, columns: list, pattern: str, col_name: str):
         first_row = list(broker_file.iloc[0])
         
-        for i in columns:
-            search = re.search(pattern, i, re.IGNORECASE)
+        
+        for i in range(len(columns)):
+            search = re.search(pattern, str(first_row[i]), re.IGNORECASE)
             if search:
-                search_str = search.string
+                if col_name == 'comms':
+                    # Additional logic for comms column
+                    if not self.comms_is_correct(broker_file[columns[i]]):
+                        continue
+                    else:
+                        return columns[i]
+                elif col_name == 'underlying':
+                    # Additional logic for underlying column ID: can't have these terms as the data point
+                    if not self.underlying_is_correct(first_row[i]):
+                        continue
+                    else:
+                        return columns[i]
+                else:
+                    return columns[i]
+            else:
+                continue
+    
+    def underlying_is_correct(self, val):
+        for j in ['SIMP', 'buy', 'sell', 'put', 'call']:
+            if re.search(j, str(val), re.IGNORECASE):
+                return False
             else:
                 continue
             
-            
+        return True
+    
+    def comms_is_correct(self, column: pd.Series):
+        try:
+            column = column.astype(float)
+        except ValueError:
+            return False
+        
+        sum = column.sum()
+        if sum > 40:
+            return True
+        else:
+            return False
+        
+    def cols_are_good(self, broker_file: pd.DataFrame):
+        cols = list(broker_file.columns.values)
+        
+        for i in cols:
+            if 'Unnamed' in i:
+                return False
+            else:
+                continue
+        
+        return True
+        
