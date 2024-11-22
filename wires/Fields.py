@@ -1,5 +1,20 @@
-fields = [
-    ['Input Type', 2],
+header_fields = [
+    ['HEADER', 7], # = 'HEADER'
+    ['File Timestamp', 14], # = 'YYYYMMDDHHMMSS'
+    ['Version', 5] # 5 including decimal indicator
+]
+
+trailer_fields = [
+    ['TRAILER', 7], # = 'TRAILER'
+    ['Total Number of Records', 23],
+    ['Hash Total Amount', 17] # sum of all trx in file
+]
+
+
+record_fields = [
+    ['Input Type', 2]
+]
+trx_fields = [
     # Transaction Information
     ['Method', 7],
     ['Debit Bank ID', 11], #direct_input
@@ -12,29 +27,39 @@ fields = [
     ['Beneficiary Residence', 1],
     ['Rate Type', 1],
     ['', 0],
+]
+vd_fields = [
     # Value Date Section
-    ['Value Date', 8], #direct_input
+    ['Value Date', 8] #direct_input #mm/dd/yyy
+]
+
+beneficiary_fields = [
     # Beneficiary Section
-    ['ID Type', 34],
+    ['ID Type', 34], # = 'Account Number' | 'IBAN'
     ['ID Value', 34],
     ['Name', 35], #direct_input
     ['Address 1', 35],
     ['Address 2', 35],
     ['Address 3', 32],
     ['City, State, Postal Code', 0],
-    ['Country', 2],
-    ['Supplementary ID Type', 34],
+    ['Country', 2], # = 'US' | 'IN' | 'KY' (Cayman Islands) | 'GB' | 'ES'
+    ['Supplementary ID Type', 34]
+]
+
+ben_bank_fields = [
     # Beneficiary Bank Section
-    ['Supplementary ID Value', 34],
-    ['ID Type', 34],
-    ['ID Value', 34],
+    ['Supplementary ID Value', 34], # = ''
+    ['ID Type', 34], # = 'United States Fed ABA' | 'Swift ID'
+    ['ID Value', 34], 
     ['Name', 35],
     ['Address 1', 35],
     ['Address 2', 35],
     ['Address 3', 32],
-    ['Country', 2],
-    ['Supplementary ID Type', 34],
-    ['Supplementary ID Value', 34],
+    ['Country', 2], # = 'US' | 'IN' | 'KY' (Cayman Islands) | 'GB' | 'ES'
+    ['Supplementary ID Type', 34], # = 'No ID'
+    ['Supplementary ID Value', 34]
+]
+unused_1 = [
     # Unused
     ['', 0],
     ['', 0],
@@ -42,25 +67,34 @@ fields = [
     ['', 0],
     ['', 0],
     ['', 0],
-    ['', 0],
+    ['', 0]
+]
+
+int_bank_fields = [
     # Intermediary ID Section
-    ['ID Type', 34],
+    ['ID Type', 34], # = 'Swift ID' | 'CHIPS Participant Number' | 
     ['ID Value', 34],
     ['Name', 35],
     ['Address 1', 35],
     ['Address 2', 35],
     ['Address 3', 32],
-    ['Country', 2],
+    ['Country', 2], # = 'US'
     ['Supplementary ID Type', 34],
-    ['Supplementary ID Value', 34],
+    ['Supplementary ID Value', 34]
+]
+
+obo_fields = [
     # On Behalf Of Section
-    ['ID Type', 0],
-    ['ID Value', 0],
-    ['Name', 0],
-    ['Address 1', 0],
-    ['Address 2', 0],
-    ['Address 3', 0],
-    ['Country', 2],
+    ['ID Type', 0], # = ''
+    ['ID Value', 0], # = ''
+    ['Name', 0], # = ''
+    ['Address 1', 0], # = ''
+    ['Address 2', 0], # = ''
+    ['Address 3', 0], # = ''
+    ['Country', 2] # = ''
+]
+
+unused_2 = [
     # Unused
     ['', 0],
     ['', 0],
@@ -79,15 +113,21 @@ fields = [
     ['', 0],
     ['', 0],
     ['', 0],
-    ['', 0],
+    ['', 0]
+]
+
+trx_det_fields = [
     # Transaction Details Section
-    ['Reference Sent with Payment', 16],
-    ['Internal Reference', 16],
-    ['On Behalf Of', 30],
+    ['Reference Sent with Payment', 16], # = ''
+    ['Internal Reference', 16], # = ''
+    ['On Behalf Of', 30], # = ''
     ['Detail 1', 35],
     ['Detail 2', 35],
     ['Detail 3', 35],
-    ['Detail 4', 35],
+    ['Detail 4', 35]
+]
+
+unused_3 = [
     # Unused
     ['', 0],
     ['', 0],
@@ -96,37 +136,46 @@ fields = [
     ['', 0],
     ['', 0],
     ['', 0],
-    ['', 0],
+    ['', 0]
+]
+
+reg_fields = [
     # Regulatory Reporting Section
-    ['Code', 8],
-    ['Country', 2],
-    ['Instruction 1', 33],
-    ['Instruction 2', 33],
-    ['Instruction 3', 33],
+    ['Code', 8], # = ''
+    ['Country', 2], # = ''
+    ['Instruction 1', 33], # = ''
+    ['Instruction 2', 33], # = ''
+    ['Instruction 3', 33] # = ''
+]
+
+b2b_fields = [
     # Bank-to-Bank Section
-    ['Instruction Code 1', 4],
-    ['Instruction Text 1', 30],
-    ['Instruction Code 2', 4],
-    ['Instruction Text 2', 30],
-    ['Instruction Code 3', 4],
-    ['Instruction Text 3', 30],
-    ['Sender to Receiver Code 1', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Sender to Receiver Code 2', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Sender to Receiver Code 3', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Sender to Receiver Code 4', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Sender to Receiver Code 5', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Sender to Receiver Code 6', 8],
-    ['Sender to Receiver Text 1', 30],
-    ['Priority', 1],
+    ['Instruction Code 1', 4], # = ''
+    ['Instruction Text 1', 30], # = ''
+    ['Instruction Code 2', 4], # = ''
+    ['Instruction Text 2', 30], # = ''
+    ['Instruction Code 3', 4], # = ''
+    ['Instruction Text 3', 30], # = ''
+    ['Sender to Receiver Code 1', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Sender to Receiver Code 2', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Sender to Receiver Code 3', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Sender to Receiver Code 4', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Sender to Receiver Code 5', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Sender to Receiver Code 6', 8], # = ''
+    ['Sender to Receiver Text 1', 30], # = ''
+    ['Priority', 1], # = 'No'
     ['', 0],
-    ['Charges', 3],
+    ['Charges', 3], # = 'Remitter'
     ['', 0],
-    ['Additional Details', 35],
+    ['Additional Details', 35] # = ''
+]
+
+other_fields = [
     # Note Section
     ['Note', 70],
     # Beneficiary Email Section
@@ -142,6 +191,22 @@ fields = [
     ['Email Address 3', 70]
 ]
 
+fields = [
+    record_fields,
+    trx_fields,
+    vd_fields,
+    beneficiary_fields,
+    ben_bank_fields,
+    unused_1,
+    int_bank_fields,
+    obo_fields,
+    unused_2,
+    trx_det_fields,
+    unused_3,
+    reg_fields,
+    b2b_fields,
+    other_fields
+]
 
 ################
 # Input Types
