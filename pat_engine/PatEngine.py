@@ -9,6 +9,8 @@ sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
 from cm_exchange_fees.ExchangeFeesDownload import ExchangeFeesDownload
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
 from abn_month_end import test
+sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
+from nacha import NachaMain
 
 class PatEngine(ABC):
     def __init__(self):
@@ -22,7 +24,8 @@ class PatEngine(ABC):
                    'ABN Month End': self.abn_me,
                    'Organize BAML ME Files': self.run_baml_files,
                    'Get CM Exchange Fee Files': self.cm_exchange,
-                   'Unzip Files in Folder': self.unzip_files}
+                   'Unzip Files in Folder': self.unzip_files,
+                   'Create Payables Payment Files': self.nacha}
         
         while True:
             print('Main Menu')
@@ -154,6 +157,16 @@ class PatEngine(ABC):
             downloader.not_cboe_files()
         
         print('Files saved to ' + dl_path)
+        input('Press enter to continue')
+
+        self.main_menu()
+    
+    def nacha(self):
+        os.system('cls')
+        
+        NachaMain.nacha_main()
+        
+        print('NACHA Files Saved to Downloads')
         input('Press enter to continue')
 
         self.main_menu()
