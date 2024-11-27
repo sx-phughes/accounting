@@ -39,6 +39,8 @@ class NachaConstructor():
                 row['Vendor Account'], 
                 '0' * (7 - len(str(sequence_no))) + str(sequence_no)
             )
+            if row['Simplex2'] == 'Investments':
+                print(f'Input amount = {row['Amount']}')
             
             transactions_list.append(transaction)
             sequence_no += 1
@@ -78,6 +80,12 @@ class NachaConstructor():
             trxs = self.trx_table.loc[self.trx_table['Simplex2'] == i]
             
             transactions = self.construct_transactions(trxs)
+            
+            # Debug
+            if i == 'Investments':
+                for j in transactions:
+                    print(f'Output amount = {j.no_decimal_amount}')
+            
             batch = self.construct_batch(transactions, i, '0000001')
             file = self.file_constructor([batch], i, id_modifiers[counter])
             
