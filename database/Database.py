@@ -42,12 +42,12 @@ params = [
     ['695M526',	20241105]
 ]
 
-# for i in params:
-#     account = i[0]
-#     date = i[1]
+for i in params:
+    account = i[0]
+    date = i[1]
     
-#     query = f'select * from trades where account_code LIKE \'{account}%\' AND trade_date = {date}'
+    query = f'select * from trades where account_code LIKE \'{account}%\' AND trade_date = {date}'
     
-#     table = pd.read_sql_query(query, con)
+    table = pd.read_sql_query(query, con)
     
-#     table.to_csv(f'C:/Users/phughes_simplextradi/Downloads/{date} - {account}.csv', index=False)
+    table.to_csv(f'C:/Users/phughes_simplextradi/Downloads/{date} - {account}.csv', index=False)
