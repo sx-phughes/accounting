@@ -2,6 +2,7 @@ import re, math
 from datetime import datetime
 import pandas as pd
 from Fields import fields
+from TemplateFields import template_fields
 
 company_ids = {
         'Holdings': '816680961',
@@ -42,8 +43,8 @@ class WireField():
         else:
             field_value = field_value
         
-        if ',' in field_value:
-            field_value = '"' + field_value + '"'
+        # if ',' in field_value:
+        #     field_value = '"' + field_value + '"'
         
         self._val = field_value
 
@@ -55,6 +56,7 @@ class Vendor:
     
     def get_vendor_info(self, vendor):
         vendor_row = Vendor.vendor_info.loc[Vendor.vendor_info['Vendor'] == vendor]
+        self.template = vendor_row['Wire Template'].values[0]
         self.id = vendor_row['Beneficiary ID'].values[0]
         self.id_type = vendor_row['Beneficiary ID Type'].values[0]
         self.beneficiary_country = vendor_row['Beneficiary Country'].values[0]
@@ -94,50 +96,78 @@ class Field:
         else:
             str_val = str_val
             
-        if ',' in str_val:
-            str_val = '"' + str_val + '"'
+        # if ',' in str_val:
+        #     str_val = '"' + str_val + '"'
         
         self._value = str_val
       
 field_objs = []
 
 for i in fields:
-    section = []
-    
-    for j in i:
-        section.append(Field(j))
+    section = [Field(j) for j in i]
         
     field_objs.append(section)
+    
+template_field_objs = []
+
+for i in template_fields:
+    section = [Field(j) for j in i]
+        
+    template_field_objs.append(section)
 
 class WirePayment:
     fields = field_objs
-    def __init__(self, orig_bank_id, orig_account, amount, value_date: datetime, vendor: Vendor, details: str):
+    template_fields = template_field_objs
+    
+    def __init__(self, orig_bank_id, orig_account, amount, value_date: datetime, vendor: Vendor, details: str, template: bool = False):
         self.orig_bank_id = orig_bank_id
         self.orig_account = orig_account
         self.amount = amount
         self.value_date = value_date
         self.vendor = vendor
         self.details = details
+        self.template = template
         
-        self.record_fields = WirePayment.fields[0]
-        self.trx_fields = WirePayment.fields[1]
-        self.vd_fields = WirePayment.fields[2]
-        self.beneficiary_fields = WirePayment.fields[3]
-        self.ben_bank_fields = WirePayment.fields[4]
-        self.unused_1 = WirePayment.fields[5]
-        self.int_bank_fields = WirePayment.fields[6]
-        self.obo_fields = WirePayment.fields[7]
-        self.unused_2 = WirePayment.fields[8]
-        self.trx_det_fields = WirePayment.fields[9]
-        self.unused_3 = WirePayment.fields[10]
-        self.reg_fields = WirePayment.fields[11]
-        self.b2b_fields = WirePayment.fields[12]
-        self.other_fields = WirePayment.fields[13]
+        if template:
+            self.record_fields = WirePayment.template_fields[0]
+            self.trx_fields = WirePayment.template_fields[1]
+            self.vd_fields = WirePayment.template_fields[2]
+            self.trx_det_fields = WirePayment.template_fields[3]
+            self.reg_fields = WirePayment.template_fields[4]
+            self.b2b_fields = WirePayment.template_fields[5]
+            self.note_fields = WirePayment.template_fields[6]
+            self.email_fields = WirePayment.template_fields[7]
+        else:
+            self.record_fields = WirePayment.fields[0]
+            self.trx_fields = WirePayment.fields[1]
+            self.vd_fields = WirePayment.fields[2]
+            self.beneficiary_fields = WirePayment.fields[3]
+            self.ben_bank_fields = WirePayment.fields[4]
+            self.unused_1 = WirePayment.fields[5]
+            self.int_bank_fields = WirePayment.fields[6]
+            self.obo_fields = WirePayment.fields[7]
+            self.unused_2 = WirePayment.fields[8]
+            self.trx_det_fields = WirePayment.fields[9]
+            self.unused_3 = WirePayment.fields[10]
+            self.reg_fields = WirePayment.fields[11]
+            self.b2b_fields = WirePayment.fields[12]
+            self.other_fields = WirePayment.fields[13]
         
     def __len__(self):
         return 1
-    
+            
     def create_payment(self):
+        template_func_list = [
+            self.set_record, 
+            self.set_trx,
+            self.set_vd,
+            self.set_details,
+            self.set_reg,
+            self.set_b2b_dets,
+            self.set_note, 
+            self.set_email 
+        ]
+        
         func_list = [
             self.set_record,
             self.set_trx,
@@ -151,40 +181,61 @@ class WirePayment:
         ]
         
         fields = []
-        for i in range(len(func_list)):
-            
-            fields += [j.value for j in func_list[i]()]
-            
-            if i == 4:
-                fields += [j.value for j in self.unused_1]
-            elif i == 5:
-                fields += [j.value for j in self.obo_fields]
-                fields += [j.value for j in self.unused_2]
-            elif i == 6:
-                fields += [j.value for j in self.unused_3]
-                fields += [j.value for j in self.reg_fields]
+        
+        if self.template:
+            for i in range(len(template_func_list)):
+                fields += [j.value for j in template_func_list[i]()]
+        else:
+            for i in range(len(func_list)):
+                
+                fields += [j.value for j in func_list[i]()]
+                
+                if i == 4:
+                    fields += [j.value for j in self.unused_1]
+                elif i == 5:
+                    fields += [j.value for j in self.obo_fields]
+                    fields += [j.value for j in self.unused_2]
+                elif i == 6:
+                    fields += [j.value for j in self.unused_3]
+                    fields += [j.value for j in self.reg_fields]
         
         return fields
                 
         
     def set_record(self):
-        self.record_fields[0].value = 'P'
+        if self.template:
+            self.record_fields[0].value = 'PT'
+        else:
+            self.record_fields[0].value = 'P'
+            
         return self.record_fields
         
     def set_trx(self):
-        values = [
-            'WIRES',
-            '021000021',
-            self.orig_account,
-            'N',
-            'USD',
-            self.amount,
-            '',
-            '',
-            '',
-            '',
-            ''
-        ]
+        if self.template:
+            values = [
+                self.orig_bank_id,
+                self.orig_account,
+                self.vendor.template,
+                '',
+                self.amount,
+                '',
+                ''
+            ]
+        else:
+            values = [
+                'WIRES',
+                self.orig_bank_id,
+                self.orig_account,
+                'N',
+                'USD',
+                self.amount,
+                '',
+                '',
+                '',
+                '',
+                ''
+            ]
+            
         for i in range(len(self.trx_fields)):
             self.trx_fields[i].value = values[i]
         
@@ -251,7 +302,10 @@ class WirePayment:
         return self.int_bank_fields
     
     def set_details(self):
-        values = ['', '', '',] + self.details
+        if self.template:
+            values = ['', '', '',] + self.details + [''] * 8
+        else:
+            values = ['', '', '',] + self.details
         
         for i in range(len(self.trx_det_fields)):
             self.trx_det_fields[i].value = values[i]
@@ -259,8 +313,12 @@ class WirePayment:
         return self.trx_det_fields
     
     def set_b2b_dets(self):
-        self.b2b_fields[18].value = 'N'
-        self.b2b_fields[20].value = 'OUR'
+        if self.template:
+            for i in range(len(self.b2b_fields)):
+                self.b2b_fields[i].value = ''
+        else:
+            self.b2b_fields[18].value = 'N'
+            self.b2b_fields[20].value = 'OUR'
         
         return self.b2b_fields
     
@@ -268,6 +326,23 @@ class WirePayment:
         self.other_fields[2].value = 'N'
         
         return self.other_fields
+    
+    def set_reg(self):
+        for i in range(len(self.reg_fields)):
+            self.reg_fields[i].value = ''
+        
+        return self.reg_fields
+    
+    def set_note(self):
+        self.note_fields[0].value = ''
+        
+        return self.note_fields
+    
+    def set_email(self):
+        for i in range(len(self.email_fields)):
+            self.email_fields[i].value = ''
+        
+        return self.email_fields
     
     @property
     def details(self):
