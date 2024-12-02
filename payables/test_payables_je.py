@@ -1,18 +1,20 @@
-from PayablesJes import *
+from payables.PayablesJes import *
 import pandas as pd
 from datetime import datetime
 
-year = int(input('Year:\n>\t'))
-month = int(input('Month:\n>\t'))
-day = int(input('Day:\n>\t'))
 
-batch_date = datetime(year, month, day)
+def run_payables():
+    year = int(input('Year:\n>\t'))
+    month = int(input('Month:\n>\t'))
+    day = int(input('Day:\n>\t'))
 
-payables = JECreator(batch_date)
+    batch_date = datetime(year, month, day)
 
-invoices, vendors, coas = payables.file_getter()
+    payables = JECreator(batch_date)
 
-bill_dfs = payables.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
+    invoices, vendors, coas = payables.file_getter()
 
-for i in bill_dfs.keys():
-    bill_dfs[i].to_csv(f'C:/Users/phughes_simplextradi/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)
+    bill_dfs = payables.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
+
+    for i in bill_dfs.keys():
+        bill_dfs[i].to_csv(f'C:/Users/phughes_simplextradi/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)

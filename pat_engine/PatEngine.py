@@ -2,6 +2,7 @@ import os, sys
 from abc import ABC
 sys.path.append('C:\\gdrive\\My Drive\\code_projects')
 from baycrest.BaycrestSplitter import BaycrestSplitter
+from payables.test_payables_je import run_payables
 from patrick_functions.AbnCash import AbnCash
 from patrick_functions.OrganizeBAMLfiles import BAMLFileMover
 from patrick_functions import UnzipFiles
@@ -16,8 +17,36 @@ class PatEngine(ABC):
     def __init__(self):
         pass
     
-    def main_menu(self):
+    def menu(self, menu_title, options: dict, return_to: list):
         os.system('cls')
+        options[return_to[0]] = return_to[1]
+        
+        while True:
+            os.system('cls')
+            print(menu_title)
+            
+            for i in range(len(options.keys())):
+                print(f'{i+1}. {list(options.keys())[i]}')
+                
+            print('Please select an option by number:')
+            option = int(input('>\t'))
+        
+            if option in range(1, len(options.keys())+1):
+                try:
+                    options[list(options.keys())[option-1]]()
+                except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError) as e:
+                    print('Function encountered error:')
+                    print(e)
+                    input('Press enter to return to menu\n>\t')
+                    
+                    
+                    
+            else:
+                print('That is not a valid option')
+                os.system('cls')
+        
+        
+    def main_menu(self):
         
         options = {'Baycrest': self.run_baycrest,
                    'ABN Cash Files': self.run_abn_cash,
@@ -25,23 +54,28 @@ class PatEngine(ABC):
                    'Organize BAML ME Files': self.run_baml_files,
                    'Get CM Exchange Fee Files': self.cm_exchange,
                    'Unzip Files in Folder': self.unzip_files,
-                   'Create Payables Payment Files': self.nacha}
+                   'Payables': self.payables
+        }
         
-        while True:
-            print('Main Menu')
-            
-            for i in range(len(options.keys())):
-                print(f'{i+1}. {list(options.keys())[i]}')
-            
-            print('Please select an option by number:')
-            option = int(input('>\t'))
-            
-            if option in range(1, len(options.keys())+1):
-                options[list(options.keys())[option-1]]()
-            else:
-                print('That is not a valid option')
-                os.system('cls')
-                
+        self.menu('Main Menu', options, ['Exit Program', self.exit])
+    
+    def payables(self):
+        
+        options = {
+            'Create Payables Payment Files': self.nacha,
+            'Create Paybles JE Files': self.payables_jes
+        }
+        
+        self.menu('Payables Menu', options, ['Main Menu', self.main_menu])
+    
+    def exit(self):
+        os.system('cls')
+
+        print('Exit program?')
+        ans = input('y/n\n>\t')
+        if ans == 'y':
+            sys.exit()
+        
     def run_baycrest(self):
         os.system('cls')
         
@@ -170,3 +204,13 @@ class PatEngine(ABC):
         input('Press enter to continue')
 
         self.main_menu()
+        
+    def payables_jes(self):
+        os.system('cls')
+        
+        print('Create payables JEs')
+        
+        run_payables()
+        
+        print('Payables JEs saved to Downloads')
+        input('Press enter to return to menu options\n>\t')

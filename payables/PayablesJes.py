@@ -10,12 +10,12 @@ class JECreator():
     def file_getter(self):
         ap_path = f'C:/gdrive/Shared drives/accounting/Payables/{str(self.date.year)}/{self.date.strftime('%Y%m')}/{self.date.strftime('%Y-%m-%d')}/{self.date.strftime('%Y-%m-%d')} Payables.xlsm'
         invoices_df = pd.read_excel(ap_path, 'Invoices')
-        vendor_mapping = pd.read_excel('C:/gdrive/Shared drives/accounting/Payables/Vendors.xlsx', 'Vendors')
+        vendor_mapping = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
         
         companies = ['Holdings', 'Technologies', 'Investments', 'Trading']
         coas = {co: '' for co in companies}
         for co in companies:
-            coa_path = f'C:/gdrive/Shared drives/accounting/Simplex {co}/Simplex {co}_Account List.xlsx'
+            coa_path = f'C:/gdrive/Shared drives/accounting/patrick_data_files/gl_account_mappings/Simplex {co}_Account List.xlsx'
             coa = pd.read_excel(coa_path, 'Sheet1', skiprows=3)
             coas[co] = coa
         
