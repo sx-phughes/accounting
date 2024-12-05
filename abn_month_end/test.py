@@ -15,7 +15,7 @@ def main(year: int, month: int):
 
     positions, pivot, categories = now.positions_tab(cm_position)
 
-    save_stem = f'C:/gdrive/Shared drives/accounting/Simplex Trading/{str(year)}/{str(year)+str(month)}/ABN'
+    save_stem = f'C:/gdrive/Shared drives/accounting/Simplex Trading/{str(year)}/ABN'
 
     data_df.to_csv(save_stem + '/data_df.csv', index=False)
     positions.to_csv(save_stem + '/positions_df.csv', index=False)
