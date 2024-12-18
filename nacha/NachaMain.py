@@ -36,6 +36,6 @@ def nacha_main():
     files = nacha_file.main()
     counter = 1
     for i in files:
-        with open(f'C:/Users/phughes_simplextradi/Downloads/{valuedate}_ACHS_{counter}.txt', 'w') as file:
+        with open(f'C:/Users/phugh/Downloads/{valuedate}_ACHS_{counter}.txt', 'w') as file:
             file.write(i.__str__())
         counter += 1
