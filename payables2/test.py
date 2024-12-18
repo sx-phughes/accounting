@@ -6,8 +6,8 @@ if os.path.exists('C:/gdrive/My Drive/code_projects/payables2/payables_test_dir/
     os.remove('C:/gdrive/My Drive/code_projects/payables2/payables_test_dir/202410/Katten Muchin Rosenman40224033 - 40224033.pdf')
 
 pt = PayablesTable()
-kmr = Invoice(40224033, 'Katten', 202410, 381.33, pdf = 'C:/Users/phughes_simplextradi/Downloads/KMR - 40224033.pdf')
-kmr_1 = Amendment(kmr, '40224033_1', 380.00, pdf = 'C:/Users/phughes_simplextradi/Downloads/KMR - 40224033.pdf')
+kmr = Invoice(40224033, 'Katten', 202410, 381.33, pdf = 'C:/Users/phugh/Downloads/KMR - 40224033.pdf')
+kmr_1 = Amendment(kmr, '40224033_1', 380.00, pdf = 'C:/Users/phugh/Downloads/KMR - 40224033.pdf')
 
 
 pt.add_invoice(kmr)
