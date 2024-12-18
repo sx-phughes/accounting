@@ -1,0 +1,21 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>Payables Subledger</title>
+        <h1>Payables Subledger</h1>
+        <h2>Welcome to Simplex Payables Subledger</h2>
+    </head>
+    <body>
+        <p>Current Month: {{monthyear}}</p>
+        <p>Go to month summary:</p>
+        <form action="#" method="post">
+            <label for="month">Choose a month:</label>
+            <select name="month" id="months">
+                {% for i in months: %}
+                <option value="{{i}}">{{i}}</option>
+                {% endfor %}
+            </select>
+            <p><input type="submit" value="Submit"/></p>
+        </form>
+    </body>
+</html>

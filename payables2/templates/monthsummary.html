@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <h1>{{monthyear}} Summary</h1>
+    </head>
+    <body>
+        <h2>Invoice Count</h2>
+        <p>{{month_count}}</p>
+        <h2>Invoice Total</h2>
+        <p>{{month_sum}}</p>
+
+        <div class="table">
+            {{payables|safe}}
+        </div>
+        
+        <a href="/">Home</a>
+    </body>
+</html>
