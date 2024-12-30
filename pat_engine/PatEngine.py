@@ -101,10 +101,10 @@ class PatEngine(ABC):
         print('Year')
         year = int(input('>\t'))
         
-        cash = AbnCash(month=month, year=year)
-        cash.main()
+        # cash = AbnCash(month=month, year=year)
+        # cash.main()
         
-        print(f'Saved to {cash.save_path}')
+        # print(f'Saved to {cash.save_path}')
         
         input('Press enter to continue')
         
@@ -135,7 +135,7 @@ class PatEngine(ABC):
         print('Year:')
         year = int(input('>\t'))
 
-        BAMLFileMover(year, month).main()
+        # BAMLFileMover(year, month).main()
 
         print('Files moved')
         input('Press enter to contiunue')
@@ -158,8 +158,8 @@ class PatEngine(ABC):
         else:
             yn = False
         
-        unzipper = UnzipFiles.UnzipFiles(zip_path, save_path)
-        unzipper.main(delete_zip=yn)
+        # unzipper = UnzipFiles.UnzipFiles(zip_path, save_path)
+        # unzipper.main(delete_zip=yn)
         
         print('Files unzipped to ' + save_path)
         input('Press enter to continue')
