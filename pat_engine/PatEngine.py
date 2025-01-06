@@ -1,11 +1,11 @@
 import os, sys
-from abc import ABC
+import pandas as pd
 sys.path.append('C:\\gdrive\\My Drive\\code_projects')
 from baycrest.BaycrestSplitter import BaycrestSplitter
 from payables.test_payables_je import run_payables
-# from patrick_functions.AbnCash import AbnCash
-# from patrick_functions.OrganizeBAMLfiles import BAMLFileMover
-# from patrick_functions import UnzipFiles
+from patrick_functions.AbnCash import AbnCash
+from patrick_functions.OrganizeBAMLfiles import BAMLFileMover
+from patrick_functions import UnzipFiles
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
 from cm_exchange_fees.ExchangeFeesDownload import ExchangeFeesDownload
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
@@ -13,9 +13,50 @@ from abn_month_end import test
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
 from nacha import NachaMain
 
-class PatEngine(ABC):
+class PatEngine:
     def __init__(self):
-        pass
+        self.settings = self.init_settings()
+    
+    def get_setting(self, id):
+        return self.settings['Value'][list(self.settings['ID'].values()).index(id)]
+    
+    def set_setting(self, id, new_value):
+        self.settings['Value'][list(self.settings['ID'].values()).index(id)] = new_value
+    
+    def save_settings(self):
+        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+    
+    def init_settings(self):
+        if os.path.exists('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv'):
+            df = pd.read_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+            data = df.to_dict()
+        else:
+            data = {'ID': ['userroot', 'googledriveroot'],
+                    'Value': ['C:/Users/' + os.getlogin(), 'C:/gdrive/My Drive']}
+            pd.DataFrame(data).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv', index=False)
+        
+        return data
+            
+    def view_settings(self):
+        os.system('cls')
+        
+        for i in range(len(self.settings['ID'])):
+            curr_id = self.settings['ID'][i]
+            print(f'{str(i+1)}. {curr_id}: {self.get_setting(curr_id)}')
+        print('\n\n')
+        print('Please select a setting to update, or enter to exit:')
+        option = input('>\t')
+        
+        if option:
+            print('Please input new value:')
+            new_val = input('>\t')
+            self.set_setting(self.settings['ID'][int(option)-1], new_val)
+            print('Settings Updated')
+            print('Hit enter to continue')
+            input()
+            self.view_settings()
+        else:
+            self.main_menu()
     
     def menu(self, menu_title, options: dict, return_to: list):
         os.system('cls')
@@ -45,16 +86,16 @@ class PatEngine(ABC):
                 print('That is not a valid option')
                 os.system('cls')
         
-        
     def main_menu(self):
         
         options = {'Baycrest': self.run_baycrest,
-                #    'ABN Cash Files': self.run_abn_cash,
+                   'ABN Cash Files': self.run_abn_cash,
                    'ABN Month End': self.abn_me,
-                #    'Organize BAML ME Files': self.run_baml_files,
+                   'Organize BAML ME Files': self.run_baml_files,
                    'Get CM Exchange Fee Files': self.cm_exchange,
-                #    'Unzip Files in Folder': self.unzip_files,
-                   'Payables': self.payables
+                   'Unzip Files in Folder': self.unzip_files,
+                   'Payables': self.payables,
+                   'Settings': self.view_settings
         }
         
         self.menu('Main Menu', options, ['Exit Program', self.exit])
@@ -101,10 +142,10 @@ class PatEngine(ABC):
         print('Year')
         year = int(input('>\t'))
         
-        # cash = AbnCash(month=month, year=year)
-        # cash.main()
+        cash = AbnCash(month=month, year=year)
+        cash.main()
         
-        # print(f'Saved to {cash.save_path}')
+        print(f'Saved to {cash.save_path}')
         
         input('Press enter to continue')
         
@@ -135,7 +176,7 @@ class PatEngine(ABC):
         print('Year:')
         year = int(input('>\t'))
 
-        # BAMLFileMover(year, month).main()
+        BAMLFileMover(year, month).main()
 
         print('Files moved')
         input('Press enter to contiunue')
@@ -158,8 +199,8 @@ class PatEngine(ABC):
         else:
             yn = False
         
-        # unzipper = UnzipFiles.UnzipFiles(zip_path, save_path)
-        # unzipper.main(delete_zip=yn)
+        unzipper = UnzipFiles.UnzipFiles(zip_path, save_path)
+        unzipper.main(delete_zip=yn)
         
         print('Files unzipped to ' + save_path)
         input('Press enter to continue')
@@ -183,14 +224,14 @@ class PatEngine(ABC):
         print('Skip CBOE downloads? (y/n)')
         skip_cboe = input('>\t')
         
-        downloader = ExchangeFeesDownload(month, year, dl_path)
+        downloader = ExchangeFeesDownload(month, year, self.get_setting('userroot') + '/Downloads')
         
         if skip_cboe == 'n':
             downloader.main()
         else:
             downloader.not_cboe_files()
         
-        print('Files saved to ' + dl_path)
+        print('Files saved to ' + self.get_setting('userroot') + '/Downloads')
         input('Press enter to continue')
 
         self.main_menu()
@@ -198,7 +239,7 @@ class PatEngine(ABC):
     def nacha(self):
         os.system('cls')
         
-        NachaMain.nacha_main()
+        NachaMain.nacha_main(self.get_setting('userroot'))
         
         print('NACHA Files Saved to Downloads')
         input('Press enter to continue')
@@ -210,7 +251,7 @@ class PatEngine(ABC):
         
         print('Create payables JEs')
         
-        run_payables()
+        run_payables(self.get_setting('userroot'))
         
         print('Payables JEs saved to Downloads')
         input('Press enter to return to menu options\n>\t')

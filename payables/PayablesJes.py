@@ -55,9 +55,29 @@ class JECreator():
             bill_dfs[i]['Bill No.'] = bill_dfs[i]['Bill No.'].astype(str)
             bill_dfs[i]['Memo'] = bill_dfs[i]['Memo'].astype(str)
             bill_dfs[i]['Description'] = bill_dfs[i]['Description'].astype(str)
+            bill_dfs[i] = self.fix_dupe_bill_nums(bill_dfs[i], 'Vendor', 'Bill No.')
     
         return bill_dfs
     
+    def fix_dupe_bill_nums(self, df, vendor_col, bill_col):
+        vendors = list(df[vendor_col].values)
+        bill_nos = list(df[bill_col].values)
+        qb_mapping_and_bills = [bill_no + vendor for bill_no, vendor in zip(bill_nos, vendors)]
+
+        for i in range(len(bill_nos)):
+            c1 = bill_nos.count(bill_nos[i])
+            c2 = qb_mapping_and_bills.count(qb_mapping_and_bills[i])
+
+            if c1 > 1 and c2 == 1:
+                new_no = vendors[i][0:4] + bill_nos[i]
+                bill_nos[i] = new_no
+            else:
+                continue
+
+        df[bill_col] = bill_nos
+
+        return df
+
     def bill_creator(self, df_row):
         # ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']
         bill = pd.DataFrame(columns=self.je_headers)

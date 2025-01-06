@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 
 
-def nacha_main():
+def nacha_main(user_root):
     data_types = {
         'Vendor': str,
         'Invoice #': str,
@@ -36,6 +36,6 @@ def nacha_main():
     files = nacha_file.main()
     counter = 1
     for i in files:
-        with open(f'C:/Users/phugh/Downloads/{valuedate}_ACHS_{counter}.txt', 'w') as file:
+        with open(f'{user_root}/Downloads/{valuedate}_ACHS_{counter}.txt', 'w') as file:
             file.write(i.__str__())
         counter += 1
