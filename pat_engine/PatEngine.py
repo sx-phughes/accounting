@@ -224,7 +224,7 @@ class PatEngine:
         print('Skip CBOE downloads? (y/n)')
         skip_cboe = input('>\t')
         
-        downloader = ExchangeFeesDownload(month, year, self.get_setting('userroot') + '/Downloads')
+        downloader = ExchangeFeesDownload(month, year, dl_path)
         
         if skip_cboe == 'n':
             downloader.main()

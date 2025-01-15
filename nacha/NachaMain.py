@@ -1,4 +1,5 @@
 from NachaConstructor import *
+from CheckDuplicates import check_duplicates
 from datetime import datetime
 import pandas as pd
 
@@ -30,12 +31,14 @@ def nacha_main(user_root):
     payables_path = f'C:/gdrive/Shared drives/accounting/Payables/{payables_date.strftime('%Y')}/{payables_date.strftime('%Y%m')}/{payables_date.strftime('%Y-%m-%d')}/{payables_date.strftime('%Y-%m-%d')} Payables.xlsm'
     payables = pd.read_excel(payables_path, 'Invoices', dtype=data_types)
     payables = payables.loc[payables['Payment Type'] == 'ACH'].copy()
+    payables = check_duplicates(payables)
 
     ### value date must be formatted "YYMMDD"
     nacha_file = NachaConstructor(payables, valuedate)
     files = nacha_file.main()
-    counter = 1
+    counter = 0
     for i in files:
-        with open(f'{user_root}/Downloads/{valuedate}_ACHS_{counter}.txt', 'w') as file:
+        
+        with open(f'{user_root}/Downloads/{valuedate}_ACHS_{list(NachaConstructor.company_names.keys())[counter]}.txt', 'w') as file:
             file.write(i.__str__())
         counter += 1

@@ -61,11 +61,12 @@ class AbnMonthEnd(AbnBase):
         data_df_cm_diffs = data_df_cm[data_df_cm['Concat'].isin(diff_concat)].copy()
         data_df_cm_diffs = data_df_cm_diffs.drop(columns='Opening Balance')
         ledger_map_additions = self.input_new_ledger_mappings(data_df_cm_diffs)
+        print(ledger_map_additions)
         
         
         ledger_map = pd.concat([ledger_map, ledger_map_additions])
         ledger_map = ledger_map.reset_index(drop=True)
-        ledger_map.to_csv('C:/gdrive/My Drive/abn_files/ledger_mapping.csv', index=False)
+        ledger_map.to_csv('C:/gdrive/Shared drives/accounting/patrick_data_files/abn_month_end/ABN_ledger_mapping.csv', index=False)
         
         pm_moyr = datetime(self.t_minus_year, self.t_minus_month, 1).strftime('%Y%m')
         cm_renamer = {'Opening Balance': self.moyr}
@@ -131,8 +132,8 @@ class AbnMonthEnd(AbnBase):
             
             diffs_df_new.append(new_mapping)
         
-        diffs_df['Ledger Mapping'] = pd.Series(diffs_df_new)
-        
+        diffs_df['Ledger Mapping'] = diffs_df_new
+        print(diffs_df)
         renamer = {'Account Name': 'AccountID', 'Cash Title': 'CashDescription', 'Concat': 'ABN Map', 'Ledger Mapping': 'Simplex Map'}
         
         diffs_df = diffs_df.rename(columns=renamer)
