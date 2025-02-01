@@ -3,8 +3,8 @@ import os, re, shutil
 from datetime import datetime
         
 class Invoice():
-    _payables_dir = './payables_test_dir'
-    vendors = pd.read_csv('C:/gdrive/My Drive/code_projects/payables2/vendors.csv')
+    _payables_dir = 'C:/gdrive/Shared drives/accounting/payables'
+    vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
     
     def __init__(self, invoiceno, vendor: str, invoicemonth, amount: float, file_paths: list):
         self.invoiceno = str(invoiceno)
@@ -153,8 +153,8 @@ class PayablesTable():
     cols = ['uniqueid', 'invoiceno', 'vendor', 'processdate', 'invoicemonth', 'amount', 'amendment', 'is_paid', 'date_paid','filepaths']
     
     def __init__(self):
-        self.vendors = pd.read_csv('C:/gdrive/My Drive/code_projects/payables2/vendors.csv')
-        self.save_path = 'C:/gdrive/My Drive/code_projects/payables2' # 'C:/gdrive/Shared drives/accounting/patrick_data_files/ap/payables_sub'
+        self.vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
+        self.save_path = 'C:/gdrive/Shared drives/accounting/patrick_data_files/ap/payables_sub'
 
         try:
             self.open()

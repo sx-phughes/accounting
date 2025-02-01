@@ -15,7 +15,6 @@ main_table = main_table.drop(columns='orig_vendor_name')
 
 
 # Data Collection Next Steps:
-#   Import the QB-mapped vendors into the main payables module as vendors - these will serve as the main vendor titles that user will view
 #   Vendors.xlsx in ap data will provide mapping of the input vendors to the QB Mapping vendors
 #   Finish cleaning and formatting old invoice data into the ap module format - creating new columns & what not
 #   Import those items into the ap module
