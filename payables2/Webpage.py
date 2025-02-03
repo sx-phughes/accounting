@@ -13,7 +13,7 @@ app = Flask(__name__)
 def home():
     curr_month = '202411'
     unique_months = []
-    for i in list(payables['invoicemonth'].values):
+    for i in list(payables.payables_table['invoicemonth'].values):
         if i not in unique_months:
             unique_months.append(i)
 
@@ -29,7 +29,7 @@ def home():
 
 @app.route('/summary<monthyear>')
 def month_summary(monthyear):
-    month_table = payables.loc[payables['invoicemonth']==int(monthyear)].copy()
+    month_table = payables.payables_table.loc[payables.payables_table['invoicemonth'] == int(monthyear)].copy()
     month_sum = month_table['amount'].sum()
     month_count = len(month_table)
 
