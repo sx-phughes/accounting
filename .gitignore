@@ -1,3 +1,4 @@
 *.csv
 *.pyc
+*.txt
 _pycache_
