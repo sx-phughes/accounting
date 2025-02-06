@@ -24,16 +24,16 @@ class PatEngine:
         self.settings['Value'][list(self.settings['ID'].values()).index(id)] = new_value
     
     def save_settings(self):
-        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/settings.csv')
     
     def init_settings(self):
-        if os.path.exists('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv'):
-            df = pd.read_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+        if os.path.exists('C:/gdrive/My Drive/settings.csv'):
+            df = pd.read_csv('C:/gdrive/My Drive/settings.csv')
             data = df.to_dict()
         else:
             data = {'ID': ['userroot', 'googledriveroot'],
                     'Value': ['C:/Users/' + os.getlogin(), 'C:/gdrive/My Drive']}
-            pd.DataFrame(data).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv', index=False)
+            pd.DataFrame(data).to_csv('C:/gdrive/My Drive/settings.csv', index=False)
         
         return data
             
@@ -75,7 +75,7 @@ class PatEngine:
             if option in range(1, len(options.keys())+1):
                 try:
                     options[list(options.keys())[option-1]]()
-                except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError) as e:
+                except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError, TypeError) as e:
                     print('Function encountered error:')
                     print(e)
                     input('Press enter to return to menu\n>\t')

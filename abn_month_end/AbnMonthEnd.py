@@ -118,7 +118,12 @@ class AbnMonthEnd(AbnBase):
         
         data_df = data_df[['AccountID', 'CashDescription', self.moyr, pm_moyr, 'Change', 'Strategy', 'Simplex Map', 'ABN Map']]
         
-        data_df_renamer = {'Simplex Map': 'Mapping', 'ABN Map': 'Concatenation'}
+        data_df_renamer = {
+            'Simplex Map': 'Mapping',
+            'ABN Map': 'Concatenation',
+            self.moyr: datetime.strptime(self.moyr + '01', '%Y%m%d').strftime('%b %Y\t'),
+            pm_moyr: datetime.strptime(pm_moyr + '01', '%Y%m%d').strftime('%b %Y\t')
+        }
         data_df = data_df.rename(columns=data_df_renamer)
         
         return data_df
