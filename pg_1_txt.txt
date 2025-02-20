@@ -1,0 +1,47 @@
+BOFA SECURITIES, INC.                  ACCOUNT MANAGEMENT ANALYSIS REPORT        01/31/25 MC830R01 V8  (02/01/25 00.55.44) PAGE 2645
+644-06        SIMPLEX TRADING LLC                                                                                                   
+__________________________________________________01/31/25__________00/00/00__________00/00/00__________00/00/00__________00/00/00__
+EQUITY INFO:                                                                                                                        
+ YESTERDAYS EQUITY                                    0.00              0.00              0.00              0.00              0.00  
+ DAILY P/L CHANGE                                     0.00              0.00              0.00              0.00              0.00  
+ DAILY G/L CHANGE                                    24.90              0.00              0.00              0.00              0.00  
+ TODAYS EQUITY                                       24.90              0.00              0.00              0.00              0.00  
+ TRADE DATE BALANCE                                  24.90CR            0.00              0.00              0.00              0.00  
+ STOCK  - LONG  MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+        - SHORT MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+ OPTION - LONG  MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+        - SHORT MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+ BOND   - LONG  MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+        - SHORT MKT VALUE                             0.00              0.00              0.00              0.00              0.00  
+ TOTAL EQUITY                                        24.90              0.00              0.00              0.00              0.00  
+____________________________________________________________________________________________________________________________________
+INTEREST INFO:                                                                                                                      
+ S.D. LEDGER BALANCE                                 24.90CR            0.00              0.00              0.00              0.00  
+ SHORT MARKET VALUE                                   0.00              0.00              0.00              0.00              0.00  
+ ASSESSED BALANCE                                    24.90CR            0.00              0.00              0.00              0.00  
+____________________________________________________________________________________________________________________________________
+COMMISSION INFO:                                                                                                                    
+ STOCK COMMISSION                                     0.00              0.00              0.00              0.00              0.00  
+ STOCK SHARES TRADED                                     0                 0                 0                 0                 0  
+ AVG COMM PER 100 SHARES                                                                                                            
+ EQUITY OPTIONS COMMISSION                            0.00              0.00              0.00              0.00              0.00  
+ EQUITY OPTIONS TRADED                                   0                 0                 0                 0                 0  
+ AVG COMM PER CONTRACT                                                                                                              
+ INDEX OPTIONS COMMISSION                             0.00              0.00              0.00              0.00              0.00  
+ INDEX OPTIONS TRADED                                    0                 0                 0                 0                 0  
+ AVG COMM PER CONTRACT                                                                                                              
+ BOND COMMISSION                                      0.00              0.00              0.00              0.00              0.00  
+ BONDS TRADED                                            0                 0                 0                 0                 0  
+ AVG COMM PER BOND                                                                                                                  
+ EX/ASG COMMISSION                                    0.00              0.00              0.00              0.00              0.00  
+ TOTAL COMMISSIONS                                    0.00              0.00              0.00              0.00              0.00  
+____________________________________________________________________________________________________________________________________
+MONEY LINE INFO:                                                                                                                    
+ACCOUNT NO.   ACCOUNT NAME                          SD BAL            TD BAL        TD OPT VAL     TD STK/BD VAL            EQUITY  
+644-06865-D8  SIMPLEX INTEREST                       24.90CR           24.90CR            0.00              0.00             24.90  
+              TOTAL                                  24.90-            24.90-             0.00              0.00             24.90  
+Explanation of Signs on Key Information                                                                                             
+    Market Value     Amount only = Long,     Amount followed by (-)  = Short                                                        
+    Balance          Amount only = Debit,    Amount followed by (CR) = Credit                                                       
+    Profit/Loss(P/L) Amount only = Profit,   Amount followed by (-)  = Loss                                                         
+    Equity           Amount only = Positive, Amount followed by (-)  = Negative                                                     

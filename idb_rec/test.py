@@ -11,8 +11,13 @@ def test_broker_file(paths):
         
         if sheets[0] == 'Summary':
             sheets.pop(0)
+            use_sheet = sheets[0]
+        # elif 'IDB' in sheets:
+        #     use_sheet = sheets[sheets.index('IDB')]
+        else:
+            use_sheet = sheets[0]
 
-        df = pd.read_excel(path, sheets[0])
+        df = pd.read_excel(path, use_sheet)
 
         file = BrokerFile(broker_file=df)
 

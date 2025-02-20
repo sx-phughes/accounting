@@ -1,0 +1,11 @@
+ACCOUNT NO.   ACCOUNT NAME                          SD BAL            TD BAL        TD OPT VAL     TD STK/BD VAL            EQUITY  
+644-06865-D8  SIMPLEX INTEREST                       24.90CR           24.90CR            0.00              0.00             24.90  
+ACCOUNT NO.   ACCOUNT NAME                          SD BAL            TD BAL        TD OPT VAL     TD STK/BD VAL            EQUITY  
+644-40300-D4  SIMPLEX TRADING - MM          236,194,532.09     77,914,426.01    172,164,207.90     83,671,094.90-    10,578,686.99  
+644-40846-D6  SIMPLEX TRADING - MM SS GL      3,900,418.81CR    3,900,418.81CR            0.00              0.00      3,900,418.81  
+644-40865-D6  SIMPLEX INTEREST                6,560,962.99      6,560,962.99              0.00              0.00      6,560,962.99- 
+ACCOUNT NO.   ACCOUNT NAME                          SD BAL            TD BAL        TD OPT VAL     TD STK/BD VAL            EQUITY  
+644-98315-D3  SIMPLEX TRADING - JBO                   0.00              0.00              0.00              0.00              0.00  
+ACCOUNT NO.   ACCOUNT NAME                          SD BAL            TD BAL        TD OPT VAL     TD STK/BD VAL            EQUITY  
+644-99821-D9  SIMPLEX CAPITAL               222,522,399.16CR  222,522,399.16CR            0.00              0.00    222,522,399.16  
+644-99865-D6  SIMPLEX INTEREST                  901,568.98CR      901,568.98CR            0.00              0.00        901,568.98  
