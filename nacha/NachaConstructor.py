@@ -34,7 +34,7 @@ class NachaConstructor():
 
         for i, row in trx_table.iterrows():
             # Debug
-            # print(f'Vendor: {row['Vendor Name']} // ABA: {row['Vendor ABA']} // Type: {type(row['Vendor ABA'])}')
+            # print(f'Vendor: {row['Vendor']} // Mapped Vendor: {row['Vendor Name']} // ABA: {row['Vendor ABA']} // Type: {type(row['Vendor ABA'])}')
 
             transaction = TransactionEntry(
                 row['Vendor Name'], 

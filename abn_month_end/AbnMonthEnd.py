@@ -10,6 +10,7 @@
 
 from AbnFileGrabber import AbnFileGrabber
 from AbnBase import *
+from AbnEoyFiles import AbnEoyFile
 from patrick_functions.AbnCash import AbnCash
 from datetime import datetime
 import os, re
@@ -118,7 +119,12 @@ class AbnMonthEnd(AbnBase):
         
         data_df = data_df[['AccountID', 'CashDescription', self.moyr, pm_moyr, 'Change', 'Strategy', 'Simplex Map', 'ABN Map']]
         
-        data_df_renamer = {'Simplex Map': 'Mapping', 'ABN Map': 'Concatenation'}
+        data_df_renamer = {
+            'Simplex Map': 'Mapping',
+            'ABN Map': 'Concatenation',
+            self.moyr: datetime.strptime(self.moyr + '01', '%Y%m%d').strftime('%b %Y\t'),
+            pm_moyr: datetime.strptime(pm_moyr + '01', '%Y%m%d').strftime('%b %Y\t')
+        }
         data_df = data_df.rename(columns=data_df_renamer)
         
         return data_df
@@ -211,8 +217,15 @@ class AbnMonthEnd(AbnBase):
         
         
     def grab_files(self, year, month):
-        file_grabber = AbnFileGrabber(year, month)
-        csv_cash, position = file_grabber.main()
+        if self.t_minus_month == 12 and month == 12:
+            ## NEED TO DO EOY FILES
+            file_grabber = AbnFileGrabber(year, month)
+            position = file_grabber.main()[1]
+            csv_cash = AbnEoyFile(year)
+        else:
+            file_grabber = AbnFileGrabber(year, month)
+            csv_cash, position = file_grabber.main()
+
         
         return (csv_cash, position)
         

@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, traceback
 import pandas as pd
 sys.path.append('C:\\gdrive\\My Drive\\code_projects')
 from baycrest.BaycrestSplitter import BaycrestSplitter
@@ -24,16 +24,16 @@ class PatEngine:
         self.settings['Value'][list(self.settings['ID'].values()).index(id)] = new_value
     
     def save_settings(self):
-        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/settings.csv')
     
     def init_settings(self):
-        if os.path.exists('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv'):
-            df = pd.read_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv')
+        if os.path.exists('C:/gdrive/My Drive/settings.csv'):
+            df = pd.read_csv('C:/gdrive/My Drive/settings.csv')
             data = df.to_dict()
         else:
             data = {'ID': ['userroot', 'googledriveroot'],
                     'Value': ['C:/Users/' + os.getlogin(), 'C:/gdrive/My Drive']}
-            pd.DataFrame(data).to_csv('C:/gdrive/My Drive/code_projects/pat_engine/settings.csv', index=False)
+            pd.DataFrame(data).to_csv('C:/gdrive/My Drive/settings.csv', index=False)
         
         return data
             
@@ -75,9 +75,9 @@ class PatEngine:
             if option in range(1, len(options.keys())+1):
                 try:
                     options[list(options.keys())[option-1]]()
-                except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError) as e:
+                except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError, TypeError):
                     print('Function encountered error:')
-                    print(e)
+                    print(traceback.format_exc())
                     input('Press enter to return to menu\n>\t')
                     
                     
@@ -92,6 +92,7 @@ class PatEngine:
                    'ABN Cash Files': self.run_abn_cash,
                    'ABN Month End': self.abn_me,
                    'Organize BAML ME Files': self.run_baml_files,
+                   'BOFA Just Div Files': self.run_baml_div_files,
                    'Get CM Exchange Fee Files': self.cm_exchange,
                    'Unzip Files in Folder': self.unzip_files,
                    'Payables': self.payables,
@@ -179,6 +180,22 @@ class PatEngine:
         BAMLFileMover(year, month).main()
 
         print('Files moved')
+        input('Press enter to contiunue')
+        self.main_menu()
+
+    def run_baml_div_files(self):
+        os.system('cls')
+
+        print('Run BOFA Div files only')
+
+        print('Month:')
+        month = int(input('>\t'))
+        print('Year:')
+        year = int(input('>\t'))
+
+        BAMLFileMover(year, month).just_div_files()
+
+        print('Div Files Processed')
         input('Press enter to contiunue')
         self.main_menu()
     

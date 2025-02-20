@@ -4,7 +4,7 @@ from datetime import datetime
 class JECreator():
     def __init__(self, date: datetime):
         self.date = date
-        self.je_headers = ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']
+        self.je_headers = ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount', 'Payment Type']
         self.je_data = {col: data for col, data in zip(self.je_headers, [[] for i in range(len(self.je_headers))])}
     
     def file_getter(self):
@@ -62,7 +62,7 @@ class JECreator():
     def fix_dupe_bill_nums(self, df, vendor_col, bill_col):
         vendors = list(df[vendor_col].values)
         bill_nos = list(df[bill_col].values)
-        qb_mapping_and_bills = [bill_no + vendor for bill_no, vendor in zip(bill_nos, vendors)]
+        qb_mapping_and_bills = [str(bill_no) + str(vendor) for bill_no, vendor in zip(bill_nos, vendors)]
 
         for i in range(len(bill_nos)):
             c1 = bill_nos.count(bill_nos[i])
@@ -94,6 +94,7 @@ class JECreator():
         bill.loc[0, 'Category/Account'] = df_row['Expense Account JE']
         bill.loc[0, 'Description'] = df_row['Invoice #']
         bill.loc[0, 'Amount'] = df_row['Amount']
+        bill.loc[0, 'Payment Type'] = df_row['Payment Type']
         
         return bill
 
