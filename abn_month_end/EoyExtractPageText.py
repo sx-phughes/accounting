@@ -30,8 +30,8 @@ def get_data_table(f: str, page: pypdf.PageObject):
     print('Converting acount {account_name}'.format(account_name=account_name))
     
     # DEBUG
-    print(f'Account Name {account_name}\n')
-    print(good_text)
+    # print(f'Account Name {account_name}\n')
+    # print(good_text)
 
     # Get line items
     line_item_pattern = r'([\w\s/&()-]+)(\s*)((?<=\s)[\d,]*\.[\d]{2}\s[DC])(\s*)([\d,]*\.[\d]{2}\s[DC])(\s*)([\d,]*\.[\d]{2}\s[DC])(\s*)([\d,]*\.[\d]{2}\s[DC])?'
@@ -45,12 +45,12 @@ def get_data_table(f: str, page: pypdf.PageObject):
 
     for line in table_by_line:
         # DEBUG
-        print('\n\nSearching line {line}...'.format(line=line[0:20]))
+        # print('\n\nSearching line {line}...'.format(line=line[0:20]))
 
         search = re.search(line_item_pattern, line)
         if search:
             # DEBUG
-            print(f'account {account_name} found line {search.string}')
+            # print(f'account {account_name} found line {search.string}')
 
             relevant_groups = [1,3,5,7,9]
             for i in range(len(table_dict.keys())):

@@ -10,6 +10,7 @@
 
 from AbnFileGrabber import AbnFileGrabber
 from AbnBase import *
+from AbnEoyFiles import AbnEoyFile
 from patrick_functions.AbnCash import AbnCash
 from datetime import datetime
 import os, re
@@ -216,8 +217,15 @@ class AbnMonthEnd(AbnBase):
         
         
     def grab_files(self, year, month):
-        file_grabber = AbnFileGrabber(year, month)
-        csv_cash, position = file_grabber.main()
+        if self.t_minus_month == 12 and month == 12:
+            ## NEED TO DO EOY FILES
+            file_grabber = AbnFileGrabber(year, month)
+            position = file_grabber.main()[1]
+            csv_cash = AbnEoyFile(year)
+        else:
+            file_grabber = AbnFileGrabber(year, month)
+            csv_cash, position = file_grabber.main()
+
         
         return (csv_cash, position)
         
