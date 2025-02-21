@@ -1,4 +1,4 @@
-import os, re
+import os, re, zipfile
 from datetime import datetime
 import pandas as pd
 
@@ -75,3 +75,17 @@ class FileFinder:
         # Create a list of the full paths from C: to the file, not including blanks
         full_paths_list = [self.search_dir + '/' + file for file in self.idb_mapping['File Name'] if file != '']
         return full_paths_list
+    
+    def get_sheet_names(self, path: str):
+        try:
+            f = pd.ExcelFile(path, engine='openpyxl')
+            sheets = f.sheet_names
+            return sheets
+        except zipfile.BadZipFile:
+            self.is_not_excel_file(path)
+            
+    def is_not_excel_file(self, path: str):
+        f_name_ext = path.split('/')[-1]
+        f_name, ext = '.'.join(f_name_ext.split('.')[:-1]), f_name_ext.split('.')[-1]
+        
+                

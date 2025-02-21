@@ -64,15 +64,11 @@ def drop_bottom_rows(df: pd.DataFrame, date_col: str, underlying_col: str, comms
         # If date column is up, use date col check fn; else, use other col check fn
         # Set stop row value to the found stop row
         if col_name == date_col:
-            print(check_date_col(first_col_vals))
             stop_rows[col_name] = check_date_col(first_col_vals)
         else:
             stop_rows[col_name] = check_other_col(first_col_vals, col_name)
             
-        # Debug
-        print(col_name, stop_rows)
-        
-    print(stop_rows)
+    
     final_junk_row_index = min(stop_rows[date_col], stop_rows[underlying_col], stop_rows[comms_col])
         
 

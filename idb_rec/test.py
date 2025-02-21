@@ -1,7 +1,9 @@
 import pandas as pd
 from BrokerFile import BrokerFile
-from get_sheet_names import get_sheet_names
 from FileFinder import FileFinder
+import warnings
+
+warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
 def test_filefinder():
     finder = FileFinder(2024, 10)
@@ -13,7 +15,12 @@ def test_filefinder():
 def test_broker_file(paths):
 
     for path in paths:
-        sheets = get_sheet_names(path)
+        # if 'Canaccord' not in path:
+            # continue
+        
+        print(f'Path:\t{path}')
+        
+        sheets = FileFinder.get_sheet_names(path)
         
         if sheets[0] == 'Summary':
             sheets.pop(0)

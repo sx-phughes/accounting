@@ -16,7 +16,7 @@ class BrokerFile(pd.DataFrame):
     }
 
     def __init__(self, path, sheet_name):
-        super().__init__(pd.read_excel(path, sheet_name))
+        super().__init__(pd.read_excel(path, sheet_name, engine='openpyxl'))
         self.clean_broker_file()
         
     def clean_broker_file(self):
@@ -67,8 +67,7 @@ class BrokerFile(pd.DataFrame):
             # Drop top junk rows
             self.drop(index=range(cols_index + 1), inplace=True)
             self.reset_index(drop=True, inplace=True)
-        else:
-            print('Cols Good')
+        
     
         # debug
         # print(broker_file)
@@ -208,7 +207,7 @@ class BrokerFile(pd.DataFrame):
     def underlying_is_correct(self, col):
         # Keyword testing
         for k in col.values:
-            for j in ['SIMP', 'buy', 'sell', 'put', 'call']:
+            for j in ['SIMP', 'buy', 'sell', 'put', 'call', 'Trader Name']:
                 if re.search(j, str(k), re.IGNORECASE):
                     return False
                 else:
@@ -245,7 +244,7 @@ class BrokerFile(pd.DataFrame):
             # print('return 4')
             return col_is_good
 
-        if re.search('price|strike|ref|quantity|qty|occ|buy|sell', column.name, re.IGNORECASE):
+        if re.search('price|strike|ref|quantity|qty|occ|buy|sell|contracts', column.name, re.IGNORECASE):
             # print('return 5')
             return col_is_good
         
