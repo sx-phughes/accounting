@@ -3,7 +3,7 @@ import math
 
 class TransactionEntry():
     def __init__(self, vendor, amount, invoice_number, vendor_aba, vendor_account, sequence_no):
-        self.no_decimal_amount = int(amount * 100)
+        self.no_decimal_amount = self.no_decimal(amount)
         self.transaction_line = TransactionLine(
             trx_code = 22,
             rec_aba = vendor_aba,
@@ -21,6 +21,17 @@ class TransactionEntry():
         
     def __str__(self):
         return self.transaction_line.__str__() + '\n' + self.addenda_line.__str__()
+    
+    def no_decimal(self, amount):
+        amount = float(amount)
+        amount = str(amount)
+        whole, decimal = amount.split('.')
+        while len(decimal) < 2:
+            decimal += '0'
+            
+        no_dot_amount = int(whole + decimal)
+        
+        return no_dot_amount
 
 class Batch():
     def __init__(self, company_name, company_id, co_entry_descr, effective_date, orig_dfi_id, batch_number, trx_entries: list[TransactionEntry]):

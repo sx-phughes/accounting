@@ -20,7 +20,7 @@ class AbnBase(ABC):
     def get_trading_path(self, year, month, google_drive_root):
         moyr = self.get_moyr(year, month)
         
-        trading_root = google_drive_root + f'/Shared drives/accounting/Simplex Trading/{year}/{moyr}/ABN'
+        trading_root = google_drive_root + f'/Shared drives/accounting/Simplex Trading/{year}/ABN'
         
         return trading_root
     

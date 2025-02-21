@@ -4,18 +4,18 @@ from datetime import datetime
 class JECreator():
     def __init__(self, date: datetime):
         self.date = date
-        self.je_headers = ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']
+        self.je_headers = ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount', 'Payment Type']
         self.je_data = {col: data for col, data in zip(self.je_headers, [[] for i in range(len(self.je_headers))])}
     
     def file_getter(self):
         ap_path = f'C:/gdrive/Shared drives/accounting/Payables/{str(self.date.year)}/{self.date.strftime('%Y%m')}/{self.date.strftime('%Y-%m-%d')}/{self.date.strftime('%Y-%m-%d')} Payables.xlsm'
         invoices_df = pd.read_excel(ap_path, 'Invoices')
-        vendor_mapping = pd.read_excel('C:/gdrive/Shared drives/accounting/Payables/Vendors.xlsx', 'Vendors')
+        vendor_mapping = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
         
         companies = ['Holdings', 'Technologies', 'Investments', 'Trading']
         coas = {co: '' for co in companies}
         for co in companies:
-            coa_path = f'C:/gdrive/Shared drives/accounting/Simplex {co}/Simplex {co}_Account List.xlsx'
+            coa_path = f'C:/gdrive/Shared drives/accounting/patrick_data_files/gl_account_mappings/Simplex {co}_Account List.xlsx'
             coa = pd.read_excel(coa_path, 'Sheet1', skiprows=3)
             coas[co] = coa
         
@@ -55,9 +55,29 @@ class JECreator():
             bill_dfs[i]['Bill No.'] = bill_dfs[i]['Bill No.'].astype(str)
             bill_dfs[i]['Memo'] = bill_dfs[i]['Memo'].astype(str)
             bill_dfs[i]['Description'] = bill_dfs[i]['Description'].astype(str)
+            bill_dfs[i] = self.fix_dupe_bill_nums(bill_dfs[i], 'Vendor', 'Bill No.')
     
         return bill_dfs
     
+    def fix_dupe_bill_nums(self, df, vendor_col, bill_col):
+        vendors = list(df[vendor_col].values)
+        bill_nos = list(df[bill_col].values)
+        qb_mapping_and_bills = [str(bill_no) + str(vendor) for bill_no, vendor in zip(bill_nos, vendors)]
+
+        for i in range(len(bill_nos)):
+            c1 = bill_nos.count(bill_nos[i])
+            c2 = qb_mapping_and_bills.count(qb_mapping_and_bills[i])
+
+            if c1 > 1 and c2 == 1:
+                new_no = vendors[i][0:4] + bill_nos[i]
+                bill_nos[i] = new_no
+            else:
+                continue
+
+        df[bill_col] = bill_nos
+
+        return df
+
     def bill_creator(self, df_row):
         # ['Bill No.', 'Vendor', 'Bill Date', 'Due Date', 'Memo', 'Type', 'Category/Account', 'Description', 'Amount']
         bill = pd.DataFrame(columns=self.je_headers)
@@ -74,6 +94,7 @@ class JECreator():
         bill.loc[0, 'Category/Account'] = df_row['Expense Account JE']
         bill.loc[0, 'Description'] = df_row['Invoice #']
         bill.loc[0, 'Amount'] = df_row['Amount']
+        bill.loc[0, 'Payment Type'] = df_row['Payment Type']
         
         return bill
 

@@ -10,6 +10,7 @@
 
 from AbnFileGrabber import AbnFileGrabber
 from AbnBase import *
+from AbnEoyFiles import AbnEoyFile
 from patrick_functions.AbnCash import AbnCash
 from datetime import datetime
 import os, re
@@ -61,11 +62,12 @@ class AbnMonthEnd(AbnBase):
         data_df_cm_diffs = data_df_cm[data_df_cm['Concat'].isin(diff_concat)].copy()
         data_df_cm_diffs = data_df_cm_diffs.drop(columns='Opening Balance')
         ledger_map_additions = self.input_new_ledger_mappings(data_df_cm_diffs)
+        print(ledger_map_additions)
         
         
         ledger_map = pd.concat([ledger_map, ledger_map_additions])
         ledger_map = ledger_map.reset_index(drop=True)
-        ledger_map.to_csv('C:/gdrive/My Drive/abn_files/ledger_mapping.csv', index=False)
+        ledger_map.to_csv('C:/gdrive/Shared drives/accounting/patrick_data_files/abn_month_end/ABN_ledger_mapping.csv', index=False)
         
         pm_moyr = datetime(self.t_minus_year, self.t_minus_month, 1).strftime('%Y%m')
         cm_renamer = {'Opening Balance': self.moyr}
@@ -117,7 +119,12 @@ class AbnMonthEnd(AbnBase):
         
         data_df = data_df[['AccountID', 'CashDescription', self.moyr, pm_moyr, 'Change', 'Strategy', 'Simplex Map', 'ABN Map']]
         
-        data_df_renamer = {'Simplex Map': 'Mapping', 'ABN Map': 'Concatenation'}
+        data_df_renamer = {
+            'Simplex Map': 'Mapping',
+            'ABN Map': 'Concatenation',
+            self.moyr: datetime.strptime(self.moyr + '01', '%Y%m%d').strftime('%b %Y\t'),
+            pm_moyr: datetime.strptime(pm_moyr + '01', '%Y%m%d').strftime('%b %Y\t')
+        }
         data_df = data_df.rename(columns=data_df_renamer)
         
         return data_df
@@ -131,8 +138,8 @@ class AbnMonthEnd(AbnBase):
             
             diffs_df_new.append(new_mapping)
         
-        diffs_df['Ledger Mapping'] = pd.Series(diffs_df_new)
-        
+        diffs_df['Ledger Mapping'] = diffs_df_new
+        print(diffs_df)
         renamer = {'Account Name': 'AccountID', 'Cash Title': 'CashDescription', 'Concat': 'ABN Map', 'Ledger Mapping': 'Simplex Map'}
         
         diffs_df = diffs_df.rename(columns=renamer)
@@ -210,8 +217,15 @@ class AbnMonthEnd(AbnBase):
         
         
     def grab_files(self, year, month):
-        file_grabber = AbnFileGrabber(year, month)
-        csv_cash, position = file_grabber.main()
+        if self.t_minus_month == 12 and month == 12:
+            ## NEED TO DO EOY FILES
+            file_grabber = AbnFileGrabber(year, month)
+            position = file_grabber.main()[1]
+            csv_cash = AbnEoyFile(year)
+        else:
+            file_grabber = AbnFileGrabber(year, month)
+            csv_cash, position = file_grabber.main()
+
         
         return (csv_cash, position)
         
