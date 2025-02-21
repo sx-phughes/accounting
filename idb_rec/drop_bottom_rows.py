@@ -9,7 +9,7 @@ def check_date_col(vals):
             # debug
             # print(first_col_vals[i])
 
-            if type(vals[i]) == datetime:
+            if type(vals[i]) == datetime or re.search(BrokerFile.BrokerFile.col_patterns['date'], str(vals[i])):
                 
                 # debug
                 # print('Type is datetime')
@@ -22,8 +22,8 @@ def check_date_col(vals):
                     # print('no junk rows found')
 
                     junk_rows_start = math.inf
+                    break
             else:
-
                 # debug
                 # print('value is not datetime')
 
@@ -42,24 +42,37 @@ def check_other_col(vals, col_name=''):
                 continue
         except:
             continue
+    
+    return 0
         
     
 def drop_bottom_rows(df: pd.DataFrame, date_col: str, underlying_col: str, comms_col: str):
 
+    # Dict for rows in which data stops
     stop_rows = {
         date_col: 0,
         underlying_col: 0,
         comms_col: 0
     }
     
+    # Iterate through each of the columns
     for col_name in [date_col, underlying_col, comms_col]:
 
-        first_col_vals = df[col_name].values
+        # Get the column values
+        first_col_vals = df[col_name].values.tolist()
+        
+        # If date column is up, use date col check fn; else, use other col check fn
+        # Set stop row value to the found stop row
         if col_name == date_col:
+            print(check_date_col(first_col_vals))
             stop_rows[col_name] = check_date_col(first_col_vals)
         else:
             stop_rows[col_name] = check_other_col(first_col_vals, col_name)
+            
+        # Debug
+        print(col_name, stop_rows)
         
+    print(stop_rows)
     final_junk_row_index = min(stop_rows[date_col], stop_rows[underlying_col], stop_rows[comms_col])
         
 

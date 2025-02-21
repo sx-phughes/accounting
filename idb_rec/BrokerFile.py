@@ -7,7 +7,7 @@ from find_col_name_row import find_col_name_row
 from drop_bottom_rows import drop_bottom_rows
 from datetime import datetime
 
-class BrokerFile:
+class BrokerFile(pd.DataFrame):
 
     col_patterns = {
         'date': r'\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|^\d{6,8}$|^[1-3]?[0-9][-/.][A-Za-z]{3}[-/.]20\d{2}',
@@ -15,31 +15,27 @@ class BrokerFile:
         'comms': r'\d{1,5}.?\d{0,2}'
     }
 
-    def __init__(self, broker_file: pd.DataFrame):
-        self.broker_file = broker_file
+    def __init__(self, path, sheet_name):
+        super().__init__(pd.read_excel(path, sheet_name))
+        self.clean_broker_file()
         
-    @property
-    def broker_file(self):
-        return self._broker_file
-    
-    @broker_file.setter
-    def broker_file(self, broker_file:pd.DataFrame):
+    def clean_broker_file(self):
         # Cut off junk columns on right-hand side
-        empty_cols = [col for col in broker_file.columns if broker_file[col].isnull().all()]
+        empty_cols = [col for col in self.columns if self[col].isnull().all()]
         
         # debug
         # for i in empty_cols:
         #     print(i)
 
-        broker_file = broker_file.drop(columns=empty_cols)
+        self.drop(columns=empty_cols, inplace=True)
         
-        if not self.cols_are_good(broker_file):
-            print('\nCols not good, finding column headers\n')
+        if not self.cols_are_good():
+            # print('\nCols not good, finding column headers\n')
             # Get row with column names
-            cols_index = find_col_name_row(broker_file)
+            cols_index = find_col_name_row(self)
             
             # Get column names and rename to proper headers
-            main_row = list(broker_file.iloc[cols_index])
+            main_row = list(self.iloc[cols_index])
             
             # Debug
             # print(main_row)
@@ -52,53 +48,55 @@ class BrokerFile:
                 # Debug
                 # print('getting supp row')
 
-                supp_row = list(broker_file.iloc[cols_index-1])
+                supp_row = list(self.iloc[cols_index-1])
                 row = [supp + main if type(supp) == str else main for supp, main in zip(supp_row, main_row)]
             else:
                 row = main_row
                 
-            renamer = {old: new for old, new in zip(list(broker_file.columns.values), row)}
-            broker_file = broker_file.rename(columns=renamer)
-            broker_file.columns = broker_file.columns.fillna('Unnamed')
-            for i in broker_file.columns:
+            renamer = {old: new for old, new in zip(list(self.columns.values), row)}
+            self.rename(columns=renamer, inplace=True)
+            self.columns = self.columns.fillna('Unnamed')
+            for i in self.columns:
                 if 'Unnamed' in i:
-                    broker_file = broker_file.drop(columns=['Unnamed'])
+                    self.drop(columns=['Unnamed'], inplace=True)
                     break
                 else:
                     continue
             
 
             # Drop top junk rows
-            broker_file = broker_file.drop(index=range(cols_index + 1))
-            broker_file = broker_file.reset_index(drop=True)
-            
-            # debug
-            # print(broker_file)
-            
-            # Fill down blank rows in date column with dates
-            date_col = self.find_col(broker_file, BrokerFile.col_patterns['date'], 'date')
-            broker_file = self.copy_dates(broker_file, date_col)
-
-            underlying_col = self.find_col(broker_file, BrokerFile.col_patterns['underlying'], 'underlying')
-            comms_col = self.find_col(broker_file, BrokerFile.col_patterns['comms'], 'comms')
-
-
-            # Drop bottom junk rows
-            stop = drop_bottom_rows(broker_file, date_col, underlying_col, comms_col)
-            
-            if stop > 0:
-                broker_file = broker_file.drop(index=range(stop, len(broker_file.index)))
-                broker_file = broker_file.reset_index(drop=True)
-            
-            self._broker_file = broker_file
+            self.drop(index=range(cols_index + 1), inplace=True)
+            self.reset_index(drop=True, inplace=True)
         else:
-            # print('\nCols good\n')
-            self._broker_file = broker_file
+            print('Cols Good')
+    
+        # debug
+        # print(broker_file)
+        
+        # Fill down blank rows in date column with dates
+        date_col = self.find_col(BrokerFile.col_patterns['date'], 'date')
+        self[date_col] = self.copy_dates(date_col)
+
+        underlying_col = self.find_col(BrokerFile.col_patterns['underlying'], 'underlying')
+        comms_col = self.find_col(BrokerFile.col_patterns['comms'], 'comms')
+        
+        # Remove other columns
+        drop_cols = [col for col in self.columns.tolist() if col not in [date_col, underlying_col, comms_col]]
+        self.drop(columns=drop_cols, inplace=True)
+
+        # Drop bottom junk rows
+        stop = drop_bottom_rows(self, date_col, underlying_col, comms_col)
+        
+        if stop > 0:
+            self.drop(index=range(stop, len(self.index)), inplace=True)
+            self.reset_index(drop=True, inplace=True)
+            return True
+        
         
     def comp_df(self):
         return self.clean_data(self.broker_file)
         
-    def clean_data(self, broker_file: pd.DataFrame):
+    def clean_data(self):
         # Create clean dataframe
         clean_df = pd.DataFrame()
         
@@ -109,18 +107,18 @@ class BrokerFile:
             # print(f'col_str = {col_str}')
             # print(f'pattern = {BrokerFile.col_patterns[col_str]}')
 
-            match_str = self.find_col(broker_file, BrokerFile.col_patterns[col_str], col_str)
+            match_str = self.find_col(self, BrokerFile.col_patterns[col_str], col_str)
             if match_str:
                 
                 # Debug
                 # print(f'found col match for {col_str} in col {match_str}')
 
-                clean_df[col_str] = broker_file[match_str]
+                clean_df[col_str] = self[match_str]
                 
         return clean_df
             
         
-    def find_col(self, broker_file: pd.DataFrame, pattern: str, col_name: str) -> str:
+    def find_col(self, pattern: str, col_name: str) -> str:
         '''
         Find column in df matching pattern.\n
         Args:\n
@@ -130,8 +128,8 @@ class BrokerFile:
 
         Returns: str with df column name that has needed data
         '''
-        first_row = list(broker_file.iloc[0])
-        cols = list(broker_file.columns)
+        first_row = list(self.iloc[0])
+        cols = list(self.columns)
         
         # Test first value in each column for match result
         for i in range(len(cols)):
@@ -144,13 +142,13 @@ class BrokerFile:
             if search and search.string != 'nan':
                 if col_name == 'comms':
                     # Additional logic for comms column
-                    if not self.comms_is_correct(broker_file[cols[i]]):
+                    if not self.comms_is_correct(self[cols[i]]):
                         continue
                     else:
                         return cols[i]
                 elif col_name == 'underlying':
                     # Additional logic for underlying column ID: can't have these terms as the data point
-                    if not self.underlying_is_correct(broker_file[cols[i]]):
+                    if not self.underlying_is_correct(self[cols[i]]):
                         continue
                     else:
                         return cols[i]
@@ -164,7 +162,7 @@ class BrokerFile:
             else:
                 continue
     
-    def copy_dates(self, broker_file: pd.DataFrame, date_col: str) -> pd.DataFrame:
+    def copy_dates(self, date_col: str) -> pd.DataFrame:
         '''
         Copies down dates in the identified date row if necessary\n
         Args:\n
@@ -172,20 +170,22 @@ class BrokerFile:
         \tdate_col: str, name of date column
         '''
 
-        broker_file['is_nan'] = broker_file[date_col].isna()
+        self['is_nan'] = self[date_col].isna()
         new_data = []
         cur_val = 0
 
-        for i, row in broker_file.iterrows():
+        for i, row in self.iterrows():
             if not row['is_nan']:
                 cur_val = row[date_col]
                 new_data.append(row[date_col])
             else:
                 new_data.append(cur_val)
         
-        broker_file[date_col] = new_data
+        self.drop(columns='is_nan', inplace=True)
         
-        return broker_file
+        self[date_col] = new_data
+        
+        return new_data
 
     def date_is_correct(self, val):
         if re.search(r'\d{6}', str(val)):
@@ -253,8 +253,8 @@ class BrokerFile:
         col_is_good = True
         return col_is_good
         
-    def cols_are_good(self, broker_file: pd.DataFrame):
-        cols = list(broker_file.columns.values)
+    def cols_are_good(self):
+        cols = list(self.columns.values)
         
         for i in cols:
             if 'Unnamed' in i:
