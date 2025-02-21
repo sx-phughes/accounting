@@ -3,19 +3,16 @@ import os, re, shutil
 from datetime import datetime
         
 class Invoice():
-    _payables_dir = './payables_test_dir'
-    vendors = pd.read_csv('C:/gdrive/My Drive/code_projects/payables2/vendors.csv')
+    _payables_dir = 'C:/gdrive/Shared drives/accounting/payables'
+    vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
     
-    def __init__(self, invoiceno, vendor: str, invoicemonth, amount: float, **file_paths: str):
+    def __init__(self, invoiceno, vendor: str, invoicemonth, amount: float, file_paths: list):
         self.invoiceno = str(invoiceno)
         self.vendor = self.check_vendor(vendor)
         self.uniquename = self.vendor + self.invoiceno
         self.invoicemonth = self.check_file_month(str(invoicemonth))
         self.amount = amount
-        self.files: list[str] = []
-        
-        for i in list(file_paths.keys()):
-            self.files.append(file_paths[i])
+        self.files = file_paths
     
     def __str__(self) -> str:
         return f'Invoice object for {self.uniquename}'
@@ -156,16 +153,58 @@ class PayablesTable():
     cols = ['uniqueid', 'invoiceno', 'vendor', 'processdate', 'invoicemonth', 'amount', 'amendment', 'is_paid', 'date_paid','filepaths']
     
     def __init__(self):
-        self.payables_table = pd.DataFrame(columns=PayablesTable.cols)
-        self.vendors = pd.read_csv('C:/gdrive/My Drive/code_projects/payables2/vendors.csv')
+        self.vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
+        self.save_path = 'C:/gdrive/Shared drives/accounting/patrick_data_files/ap/payables_sub'
+
+        try:
+            self.open()
+        except:
+            self.payables_table = pd.DataFrame(columns=PayablesTable.cols)
+            self.save()
         
+        
+    
+    @property
+    def save_path(self):
+        return self._save_path
+    
+    @save_path.setter
+    def save_path(self, path):
+        self._save_path = path
+
+    def open(self):
+        self.payables_table = pd.read_csv(self.save_path + './payables.csv')
+
+    def save(self):
+        self.payables_table.to_csv(self.save_path + '/payables.csv', index=False)
+    
+    def view_by(self):
+        opts = {}
+
+        for i in range(len(PayablesTable.cols)):
+            opts[i+1] = PayablesTable.cols[i]
+
+        for i in opts.keys():
+            print(f'{i}.\t{opts[i]}')
+
+        view_by_opt = opts[int(input('>\t'))]
+        
+        list_i = list(self.payables_table[view_by_opt].values)
+        unique_i = []
+
+        for i in list_i:
+            if i not in unique_i:
+                unique_i.append(i)
+            else:
+                continue
+
     def add_invoice(self, invoice: Invoice):
         index = len(self.payables_table.index)
         data = invoice.df_row()
         self.payables_table.loc[index] = data
-        new_paths = invoice.organize_files()
+        # new_paths = invoice.organize_files()
         
-        self.payables_table.loc[index, 'filepaths'] = new_paths
+        # self.payables_table.loc[index, 'filepaths'] = new_paths
 
     def consolidate_amendments(self, unqiueid):
         invoice_amendments_df = self.payables_table.loc[self.payables_table['uniqueid'] == unqiueid].copy(deep=True)
