@@ -102,7 +102,7 @@ class TpIcapFile(object):
                 
                     
             # Rejoin the full text                
-            full_text = ''.join(text_lines)
+            full_text = ''.join(new_lines)
             
             # Remove the stupid 3D things
             full_text = full_text.replace('3D', '')
