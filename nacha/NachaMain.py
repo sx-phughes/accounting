@@ -24,6 +24,12 @@ def nacha_main(user_root):
     pb_year = int(input('Payables Year:\n>\t'))
     pb_month = int(input('Payables Month:\n>\t'))
     pb_day = int(input('Payables Day:\n>\t'))
+    
+    debug = input('Debug? y/n\n>\t')
+    if debug == 'y':
+        debug = True
+    else:
+        debug = False
 
     payables_date = datetime(pb_year,pb_month,pb_day)
     valuedate = datetime(vd_year,vd_month,vd_day).strftime('%y%m%d')
@@ -34,7 +40,7 @@ def nacha_main(user_root):
     payables = check_duplicates(payables)
 
     ### value date must be formatted "YYMMDD"
-    nacha_file = NachaConstructor(payables, valuedate)
+    nacha_file = NachaConstructor(payables, valuedate, debug)
     files = nacha_file.main()
     counter = 0
     for i in files:

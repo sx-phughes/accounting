@@ -22,9 +22,10 @@ class NachaConstructor():
         'Technologies': '071000013',
         'Trading': '071000013'
     }
-    def __init__(self, trx_table: pd.DataFrame, value_date):
+    def __init__(self, trx_table: pd.DataFrame, value_date, debug=False):
         self.trx_table = trx_table
         self.value_date = value_date
+        self.debug = debug
     
     def construct_transactions(self, trx_table):
         transactions_list = []
@@ -42,7 +43,8 @@ class NachaConstructor():
                 row['Invoice #'], 
                 row['Vendor ABA'], 
                 row['Vendor Account'], 
-                '0' * (7 - len(str(sequence_no))) + str(sequence_no)
+                '0' * (7 - len(str(sequence_no))) + str(sequence_no),
+                debug = self.debug
             )
             # Debug
             # if row['Simplex2'] == 'Investments':

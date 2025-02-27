@@ -2,8 +2,17 @@ from NachaLine import *
 import math
 
 class TransactionEntry():
-    def __init__(self, vendor, amount, invoice_number, vendor_aba, vendor_account, sequence_no):
+    def __init__(self, vendor, amount, invoice_number, vendor_aba, vendor_account, sequence_no, debug):
         self.no_decimal_amount = self.no_decimal(amount)
+        if debug:
+            print('----------Begin Transaction Entry----------------')
+            vars = ['vendor', 'amount', 'invoice_number', 'vendor_aba', 'vendor_account', 'sequence_no']
+            for var_name, var_val in zip(vars, [vendor, amount, invoice_number, vendor_aba, vendor_account, sequence_no]):
+                print(f'{var_name} = ')
+                print(var_val)
+                
+            print('------------End Transaction Entry----------------\n\n')
+        
         self.transaction_line = TransactionLine(
             trx_code = 22,
             rec_aba = vendor_aba,
