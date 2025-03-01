@@ -24,3 +24,10 @@ company_abas = {
 }
 
 
+company_ids2 = {                        # Company Names
+        'Holdings': '9680961001',       # Mishkin 961
+        'Investments': '9684771001',    # S I 4771
+        'Technologies': '9711101001',   # Simplex 1101
+        'Trading': '9007310001'         # Simplex 7310
+}
+

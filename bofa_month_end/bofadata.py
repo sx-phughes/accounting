@@ -4,11 +4,11 @@ from itertools import *
 from comb_headers import comb_headers
 from div_headers import div_headers
 
-ARCHIVE = 'C:/gdrive/Shared drives/Clearing Archive/BOFA_Archive'
+archive = 'C:/gdrive/Shared drives/Clearing Archive/BOFA_Archive'
 
-COMB = 'WSB806TZ.COMBFI26.CSV.{date}'
-DIV = 'WSB863TW.CST478BK.CSV.{date}'
-HC = '644.644.RBH_SUM_CSV.{date}.csv'
+comb = 'WSB806TZ.COMBFI26.CSV.{date}'
+div = 'WSB863TW.CST478BK.CSV.{date}'
+hc = '644.644.RBH_SUM_CSV.{date}.csv'
 
 class BOFAData(object):
     def __init__(self, start, end):
@@ -37,7 +37,7 @@ class BOFAData(object):
         return '.'.join([year, month, day])
     
     def get_directories(self):
-        folders = os.listdir(ARCHIVE)
+        folders = os.listdir(archive)
         
         curr_month_folders = list(filter(lambda x: x[:6] == self.date_to_path(self.start)[:6]))
         
@@ -47,12 +47,12 @@ class BOFAData(object):
     def get_combfiles(self):
         comb_file_paths = []
         for i in self.curr_directories:
-            f_name = COMB.format(date=i)
-            full_path = ARCHIVE + '/' + i + '/' + f_name
+            f_name = comb.format(date=i)
+            full_path = archive + '/' + i + '/' + f_name
             comb_file_paths.append(full_path)
         self.comb_paths = comb_file_paths
         
-        comb_data = pd.read_csv(ARCHIVE + '/' + self.curr_directories[-1] + '/' + COMB.format(date=self.curr_directories[-1]))
+        comb_data = pd.read_csv(archive + '/' + self.curr_directories[-1] + '/' + comb.format(date=self.curr_directories[-1]))
         
         main_fee_df = pd.DataFrame()
         
@@ -71,8 +71,8 @@ class BOFAData(object):
     def get_divfiles(self):
         div_file_paths = []
         for i in self.curr_directories:
-            f_name = DIV.format(date=i)
-            full_path = ARCHIVE + '/' + '/' + f_name
+            f_name = div.format(date=i)
+            full_path = archive + '/' + '/' + f_name
             div_file_paths.append(full_path)
         
         summary_data = {'Date': [],
@@ -83,20 +83,24 @@ class BOFAData(object):
         
         combined_dfs = pd.DataFrame()
         for i in div_file_paths:
+            # Transaction Category --> Origin Code
+            # Dividend Type --> Type of Entry
+            # BAML Account --> Account #
+
             main_df_w_headers = pd.DataFrame(columns=div_headers)
             main_df = pd.read_csv(i)
             main_w_data_and_headers = pd.concat([main_df_w_headers, main_df])
-            main_just_dv = main_w_data_and_headers.loc[main_w_data_and_headers['Transaction Category'] == 'DV']
+            main_just_dv = main_w_data_and_headers.loc[main_w_data_and_headers['Origin Code'] == 'DV']
             
             combined_dfs = pd.concat([combined_dfs, main_just_dv])
             
             file_name = str.split(i, '/')[-1]
             file_date = file_name.split('.')[-1]
             
-            divs_received = main_just_dv.loc[(main_just_dv['Amount'] > 0) & (main_just_dv['Dividend Type'] != 'DIVP') & (main_just_dv['BAML Account'] == '64498315D3'), 'Amount'].sum().value
-            divs_paid = main_just_dv.loc[(main_just_dv['Amount'] < 0) & (main_just_dv['Dividend Type'] != 'DIVP') & (main_just_dv['BAML Account'] == '64498315D3'), 'Amount'].sum().value
-            divs_received_MM = main_just_dv.loc[(main_just_dv['Amount'] > 0) & (main_just_dv['Dividend Type'] != 'DIVP') & (main_just_dv['BAML Account'] == '64440300D4'), 'Amount'].sum().value
-            divs_paid_MM = main_just_dv.loc[(main_just_dv['Amount'] < 0) & (main_just_dv['Dividend Type'] != 'DIVP') & (main_just_dv['BAML Account'] == '64440300D4'), 'Amount'].sum().value
+            divs_received = main_just_dv.loc[(main_just_dv['Amount'] > 0) & (main_just_dv['Type of Entry'] != 'DIVP') & (main_just_dv['Account #'] == '64498315D3'), 'Amount'].sum().value
+            divs_paid = main_just_dv.loc[(main_just_dv['Amount'] < 0) & (main_just_dv['Type of Entry'] != 'DIVP') & (main_just_dv['Account #'] == '64498315D3'), 'Amount'].sum().value
+            divs_received_MM = main_just_dv.loc[(main_just_dv['Amount'] > 0) & (main_just_dv['Type of Entry'] != 'DIVP') & (main_just_dv['Account #'] == '64440300D4'), 'Amount'].sum().value
+            divs_paid_MM = main_just_dv.loc[(main_just_dv['Amount'] < 0) & (main_just_dv['Type of Entry'] != 'DIVP') & (main_just_dv['Account #'] == '64440300D4'), 'Amount'].sum().value
             
             summary_data['Date'].append(file_date)
             summary_data['Divs Received'].append(divs_received)
@@ -107,7 +111,7 @@ class BOFAData(object):
         fee_summary = pd.DataFrame(summary_data)
         self.fee_summary = fee_summary
         
-        gl_detail_df = combined_dfs.loc[combined_dfs['Dividend Type'].isin(['GJE', 'JE', 'INTI', 'FPE', 'FSD', 'WCK', 'INTE'])]
+        gl_detail_df = combined_dfs.loc[combined_dfs['Type of Entry'].isin(['GJE', 'JE', 'INTI', 'FPE', 'FSD', 'WCK', 'INTE'])]
         self.gl_detail_df = gl_detail_df
         
     def get_gldata(self):
@@ -128,8 +132,8 @@ class BOFAData(object):
                         'RBH Haircut': []}
         for i in self.curr_directories:
             hc_date = self.date_to_hc_date(i)
-            f_name = HC.format(date=hc_date)
-            full_path = ARCHIVE + '/' + i + '/' + f_name
+            f_name = hc.format(date=hc_date)
+            full_path = archive + '/' + i + '/' + f_name
             temp_df = pd.read_csv(full_path)
             
             rbh = temp_df.loc[(temp_df['Category'] == 'Gross Haircuts') & (temp_df['AccountType'] == 'Proprietary'), 'OffsetGroup'].sum().value

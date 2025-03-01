@@ -12,6 +12,11 @@ sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
 from abn_month_end import test
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
 from nacha import NachaMain
+sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
+from update_vendors.main import update_vendor
+
+def cls():
+    os.system('cls')
 
 class PatEngine:
     def __init__(self):
@@ -96,6 +101,7 @@ class PatEngine:
                    'Get CM Exchange Fee Files': self.cm_exchange,
                    'Unzip Files in Folder': self.unzip_files,
                    'Payables': self.payables,
+                   'Update Vendor Value': self.run_update_vendor,
                    'Settings': self.view_settings
         }
         
@@ -109,6 +115,15 @@ class PatEngine:
         }
         
         self.menu('Payables Menu', options, ['Main Menu', self.main_menu])
+        
+    def run_update_vendor(self):
+        cls()
+        
+        print('Update Vendor Value in AP Central DB')
+        
+        update_vendor(self.get_setting('googledriveroot').replace('/My Drive', ''))
+        
+        self.main_menu()
     
     def exit(self):
         os.system('cls')

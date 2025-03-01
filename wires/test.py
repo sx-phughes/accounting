@@ -12,4 +12,4 @@ pmt = WirePayment('021000021', '0000000000000000000000000559711101', 500.00, dat
 
 file = WireFile(pmt)
 
-file.write_file('C:/Users/phughes_simplextradi/Downloads', 'Test File')
+file.write_file('C:/Users/phugh/Downloads', 'Test File')

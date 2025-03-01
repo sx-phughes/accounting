@@ -8,7 +8,7 @@
 #       a. EQTCASH_yyyymmdd.CSV
 #       b. MICS_Cash_20240501.csv
 
-from AbnFileGrabber import AbnFileGrabber
+from abn_month_end.FileGrabber import AbnFileGrabber
 from AbnBase import *
 from AbnEoyFiles import AbnEoyFile
 from patrick_functions.AbnCash import AbnCash

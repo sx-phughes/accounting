@@ -1,4 +1,4 @@
-import os, re, pypdf
+import re, pypdf
 import pandas as pd
 
 def get_page_nos(pages: list[pypdf.PageObject]):
@@ -12,7 +12,13 @@ def get_page_nos(pages: list[pypdf.PageObject]):
 
     return page_nos
 
+def get_account_name(page: pypdf.PageObject) -> str:
+    text = page.extract_text().split('\n')
+    account_line = text[5]
+    account_match = re.search(r'(ACCOUNT[\s]*:\s)([\d]*\s)([A-Z\d]*)', account_line) 
+    account_name = account_match.group(3)
 
+    return account_name
 
 
 def get_data_table(f: str, page: pypdf.PageObject):
