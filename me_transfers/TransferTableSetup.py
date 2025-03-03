@@ -91,7 +91,14 @@ class AbnOptTransferTable(TransferTable):
         super().__init__(AbnOptTransferTable.headers)
         self.type = tfr_type
         
-    def add_data_row(self, account, amount):
+    def add_data_row(self, account, amount, flip=True):
+        if flip:
+            new_amount = amount * -1
+            self.je_total += amount
+        else:
+            new_amount = amount
+            self.je_total -= amount
+            
         row = [
             '',
             'A',
@@ -99,7 +106,7 @@ class AbnOptTransferTable(TransferTable):
             account[3:4],
             account[4:],
             '',
-            amount * -1,
+            new_amount,
             '10001',
             'USD',
             '',
@@ -110,7 +117,6 @@ class AbnOptTransferTable(TransferTable):
         ]
 
         self.add_row(row)
-        self.je_total += amount
     
     def add_final_row(self):
         row = [
@@ -152,7 +158,8 @@ class AbnFutTransferTable(TransferTable):
             'SIMP2': 'SICSH',
             'SIMP7': 'SICSH',
             'SIMP4': 'SIMP6',
-            'SIMP3': 'SIMP6'
+            'SIMP3': 'SIMP6',
+            'SIMP9': 'SIMP6'
         }
     
     def __init__(self):

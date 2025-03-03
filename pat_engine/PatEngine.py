@@ -30,9 +30,10 @@ class PatEngine:
     
     def set_setting(self, id, new_value):
         self.settings['Value'][list(self.settings['ID'].values()).index(id)] = new_value
+        self.save_settings()
     
     def save_settings(self):
-        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/settings.csv')
+        pd.DataFrame(self.settings).to_csv('C:/gdrive/My Drive/settings.csv', index=False)
     
     def init_settings(self):
         if os.path.exists('C:/gdrive/My Drive/settings.csv'):

@@ -4,7 +4,7 @@ from datetime import datetime
 
 def baml_path(date: datetime):
     
-    path = f'C:/gdrive/My Drive/BAML/Account Mgmt Analysis Reports/Account Management Analysis Report-64499-{date.strftime('%Y-%m-%d')}.pdf'
+    path = f'C:/gdrive/My Drive/BAML/Account Mgmt Analysis Reports/Account Management Analysis Report-64499-{date.strftime('%m-%d-%Y')}.pdf'
     
     return path
 
@@ -56,7 +56,7 @@ def run_baml_table(date: datetime, save_path = '.'):
 
     baml_table.add_final_row()
 
-    baml_table.to_csv(save_path + f'/{date} BofA Transfers.csv')
+    baml_table.to_csv(save_path + f'/{date.strftime('%Y%m%d')} BofA Transfers.csv')
     
     
 def run_abn_tables(date: datetime, save_path = '.'):
@@ -99,6 +99,12 @@ def run_abn_tables(date: datetime, save_path = '.'):
         'Fut': futures_tfr_table
     }
     
+    acct_mapping = {
+        '695': abn_eqt_accounts,
+        '813': abn_eqt_accounts,
+        'Fut': abn_fut_accounts
+    }
+    
     data_ref = {
         '695': eqt_data,
         '813': eqt_data,
@@ -113,17 +119,18 @@ def run_abn_tables(date: datetime, save_path = '.'):
     }
     
     for acct_group in table_dict.keys():
-        for i in abn_eqt_accounts:
-            if i[0:3] == acct_group or (i[0:3] == '008' and acct_group == '813'):
+        for i in acct_mapping[acct_group]:
+            if i[0:3] == acct_group or (i[0:3] == '008' and acct_group == '813') or acct_group == 'Fut':
                 table_dict[acct_group].add_data_row(i, data_ref[acct_group][i])
             else:
                 continue
+            
             
         if acct_group != 'Fut':
             table_dict[acct_group].add_final_row()
     
     for acct in et_table['Account']:
-        et_tfr_table.add_data_row(acct, et_table.loc[et_table['Account'] == acct, 'Transfer'].values[0])
+        et_tfr_table.add_data_row(acct, et_table.loc[et_table['Account'] == acct, 'Transfer'].values[0], flip=False)
         
     et_tfr_table.add_final_row()
            
@@ -131,4 +138,6 @@ def run_abn_tables(date: datetime, save_path = '.'):
     
     for acct_group in table_dict.keys():
         table_dict[acct_group].to_csv(f'{save_path}/{date_str}{f_names[acct_group]}', index=False)
+    
+    et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}')
         
