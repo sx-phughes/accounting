@@ -1,22 +1,17 @@
 import pandas as pd
 from datetime import datetime
-from abc import ABC
 
-#### BAML Transfer Table ####
-class TransferTable(pd.DataFrame, ABC):
-    def __init__(self, columns: list[str]):
-        super().__init__(columns=columns)
+class TransferTable(pd.DataFrame):
+    def __init__(self, col_names: list[str]):
+        super().__init__(columns=col_names)
+        # self.columns = col_names
         self.je_total = 0
 
     def add_row(self, data: list):
         self.loc[len(self)] = data
 
-
-
-
 class BamlTransferTable(TransferTable):
-    def __init__(self, transfer_date: str):
-        self._headers = [
+    cols = [
             'Firm',
             'TOE',
             'Debit_Credit',
@@ -34,12 +29,22 @@ class BamlTransferTable(TransferTable):
             'Call_Put',
             'Strike_Price'
         ]
+    
+    def __init__(self, transfer_date: str):
 
-        super().__init__(columns=self._headers)
+        super().__init__(col_names=BamlTransferTable.cols)
         self.settle_date = transfer_date
-        self.dt_settle_date = datetime.strptime(transfer_date, '%m/%d/%Y')
-        self.comment_date_str = datetime(self.dt_settle_date.year, self.dt_settle_date.month - 1, 1).strftime('%b %Y')
 
+    @property
+    def settle_date(self):
+        return self._settle_date
+    
+    @settle_date.setter
+    def settle_date(self, date):
+        self._settle_date = date
+        self.dt_settle_date = datetime.strptime(date, '%m/%d/%Y')
+        self.comment_date_str = datetime(self.dt_settle_date.year, self.dt_settle_date.month - 1, 1).strftime('%b %Y')
+    
     def add_data_row(self, account_no: str, amount: float, user: str = 'KPIE'):
         account_no = account_no.replace('-','')
 
@@ -59,8 +64,7 @@ class BamlTransferTable(TransferTable):
 
 
 class AbnOptTransferTable(TransferTable):
-    def __init__(self, tfr_type: str):
-        self._headers = [
+    headers = [
             'Code',
             'CA',
             'Firm',
@@ -76,22 +80,24 @@ class AbnOptTransferTable(TransferTable):
             'CostCenter',
             'Description'
         ]
-        self._offsets = {
+    
+    offsets = {
             '695': ['695', 'C', '10S'],
             'ET': ['695', 'C', '10S'],
             '813': ['813', '1', 'SICSH']
         }
-        super().__init__(self._headers)
+    
+    def __init__(self, tfr_type: str):
+        super().__init__(AbnOptTransferTable.headers)
         self.type = tfr_type
-        
         
     def add_data_row(self, account, amount):
         row = [
             '',
             'A',
-            account[0:3],
-            account[4:5],
-            account[5:],
+            str(account[0:3]),
+            account[3:4],
+            account[4:],
             '',
             amount * -1,
             '10001',
@@ -110,9 +116,9 @@ class AbnOptTransferTable(TransferTable):
         row = [
             '',
             'A',
-            self._offsets[self.type][0],
-            self._offsets[self.type][1],
-            self._offsets[self.type][2],
+            AbnOptTransferTable.offsets[self.type][0],
+            AbnOptTransferTable.offsets[self.type][1],
+            AbnOptTransferTable.offsets[self.type][2],
             '',
             self.je_total,
             '10001',
@@ -126,8 +132,7 @@ class AbnOptTransferTable(TransferTable):
         self.add_row(row)
 
 class AbnFutTransferTable(TransferTable):
-    def __init__(self):
-        self._headers = [
+    headers = [
             'Code',
             'Firm',
             'Office',
@@ -141,27 +146,33 @@ class AbnFutTransferTable(TransferTable):
             'Offset_AT',
             'Blank'
         ]
-        self._offsets = {
+    
+    offsets = {
             'SIMP1': 'SICSH',
             'SIMP2': 'SICSH',
             'SIMP7': 'SICSH',
             'SIMP4': 'SIMP6',
             'SIMP3': 'SIMP6'
         }
-        super().__init__()
+    
+    def __init__(self):
+        super().__init__(col_names=AbnFutTransferTable.headers)
 
-    def add_data_row(self, account, amount):
+    def add_data_row(self, account: str, amount: float):
+        
+        short_account = account[4:]
+        
         row = [
             '',
             'X',
             '',
-            account,
+            short_account,
             'RU',
             amount * -1,
             '',
             'Journal Transfer',
             '',
-            self._offsets[account],
+            self.offsets[short_account],
             'RU',
             ''
         ]

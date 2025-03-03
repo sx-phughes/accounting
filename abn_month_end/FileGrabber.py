@@ -36,7 +36,7 @@ class MonthlyStatement:
     
     @date.setter
     def date(self, date):
-        self._date = datetime.strptime(date, '%Y%m%d')
+        self._date = datetime.strptime(date, '%Y%m%d')  
 
     @property
     def margin(self):

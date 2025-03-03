@@ -2,45 +2,32 @@ import pypdf, re
 import pandas as pd
 from datetime import datetime
 
-def BamlMonthEndStmtReader(f_path: str):
+def BamlReader2(f_path: str):
     f = pypdf.PdfReader(f_path)
 
     # Get pages with money line data
     num_pages = len(f.pages)
-    moneyline_pages = {}
+    
+    account_lines = []
+    
+    account_pattern = r'644-\d{5}-D\d'
 
-    for i in range(num_pages):
-        reader = f.pages[i]
-        if 'MONEY LINE' in reader.extract_text():
-            moneyline_pages[i] = reader.extract_text()
-
-    # Get relevant money line data from each page
-    needed_lines = []
-
-    for i in range(len(moneyline_pages.keys())):
-        i_key = list(moneyline_pages.keys())[i]
-        split_text = moneyline_pages[i_key]
-        split_text = split_text.split('\n')
-
-        start = 0
-        end = 0
-        for j in range(len(split_text)):
-
-            if 'MONEY LINE' in split_text[j]:
-                start = j + 1
-            elif 'TOTAL' in split_text[j] and start != 0:
-                end = j
-                break
-            else:
-                continue
-        
-        for j in range(start, end):
-            needed_lines.append(split_text[j])
-
+    for page_num in range(num_pages):
+        reader = f.pages[page_num]
+        text_lines = reader.extract_text().split('\n')
+        for line in text_lines:
+            if re.search(account_pattern, line):
+                account_lines.append(line)
+    
+    # Debug
+    # for i in account_lines:
+    #     print(i)
+    # input()
+    
     # Clean data of extra spaces, convert numbers to proper format, recombine lines
     
     # Substitute out spaces from each line and replace with delimiter //
-    no_space_needed_lines = [re.subn(r'\s{2,}', '//', line)[0] for line in needed_lines]
+    no_space_needed_lines = [re.subn(r'\s{2,}', '//', line)[0] for line in account_lines]
     new_lines = []
     
     # Iterating through each line of text
@@ -67,28 +54,33 @@ def BamlMonthEndStmtReader(f_path: str):
         # Append to clean lines list
         new_lines.append(row_vals)
     
-    # Remove extra header lines
-    pop_lines = []
+    # # Debug
+    # for i in new_lines:
+    #     print(i)
+    # input()
     
-    for i in range(1, len(new_lines)):
-        if 'ACCOUNT' in new_lines[i][0]:
-            pop_lines.append(i)
-
-    for i in sorted(pop_lines, reverse=True):
-        new_lines.pop(i)
-
     # Convert data to df
-    headers = new_lines[0]
+    headers = [
+        'Account No.',
+        'Account Name',
+        'SD Bal',
+        'TD Bal',
+        'TD Opt Val',
+        'TD STK/BD Val',
+        'Equity'
+    ]
+    
     data = {i: [] for i in headers}
 
     for i in range(1, len(new_lines)):
         for j in range(len(headers)):
             data[headers[j]].append(new_lines[i][j])
 
+    # print(data)
+    
     df = pd.DataFrame(data)
 
     return df
-
 
 def AbnMonthEndStatements(date: str):
     abn_root = f'C:/gdrive/Shared drives/Clearing Archive/ABN_Archive/{date}'
@@ -102,10 +94,18 @@ def AbnMonthEndStatements(date: str):
 
     return files
 
-def EtMonthEnd(month, year):
+def EtMonthEnd(year, month):
     yrmo = datetime(year=year,month=month,day=1).strftime('%Y%m')
     path = f'C:/gdrive/My Drive/ET Payout Reports/{yrmo} - ET Payout Traders Report.xlsx'
     file = pd.read_excel(path, 'Transfer Check')
     file = file.fillna(0)
+    new_headers = file.iloc[0].to_list()
+    renamer = {old: new for old, new in zip(file.columns.to_list(), new_headers)}
+    file = file.rename(columns=renamer).drop(index=0).reset_index(drop=True)
+    
+    totals_i = file.loc[file['Account'] == 'Totals'].index[0]
+    drop_index = file.iloc[totals_i:].index
+    file = file.drop(index=drop_index).reset_index(drop=True)
+    file = file.drop(index=file.loc[file['Transfer'] == 0].index).reset_index(drop=True)
 
     return file

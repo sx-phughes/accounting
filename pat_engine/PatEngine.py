@@ -1,5 +1,6 @@
 import os, sys, traceback
 import pandas as pd
+from datetime import datetime
 sys.path.append('C:\\gdrive\\My Drive\\code_projects')
 from baycrest.BaycrestSplitter import BaycrestSplitter
 from payables.test_payables_je import run_payables
@@ -14,6 +15,8 @@ sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
 from nacha import NachaMain
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
 from update_vendors.main import update_vendor
+sys.path.append('C:\\gdrive\\My Drive\\code_projects\\me_transfers')
+from me_transfers import MeTransfers
 
 def cls():
     os.system('cls')
@@ -90,15 +93,19 @@ class PatEngine:
             else:
                 print('That is not a valid option')
                 os.system('cls')
-        
+         
+         
+                
+    ############################################
+    # Menu Functions ###########################
+    ############################################
+    
     def main_menu(self):
         
         options = {'Baycrest': self.run_baycrest,
                    'ABN Cash Files': self.run_abn_cash,
-                   'ABN Month End': self.abn_me,
-                   'Organize BAML ME Files': self.run_baml_files,
                    'BOFA Just Div Files': self.run_baml_div_files,
-                   'Get CM Exchange Fee Files': self.cm_exchange,
+                   'Month-End Related Functions': self.me_menu,
                    'Unzip Files in Folder': self.unzip_files,
                    'Payables': self.payables,
                    'Update Vendor Value': self.run_update_vendor,
@@ -106,6 +113,16 @@ class PatEngine:
         }
         
         self.menu('Main Menu', options, ['Exit Program', self.exit])
+    
+    def me_menu(self):
+        options = {
+            'ME Transfers': self.me_transfers,
+            'ABN Month End': self.abn_me,
+            'Organize BAML ME Files': self.run_baml_files,
+            'Get CM Exchange Fee Files': self.cm_exchange,
+        }
+        
+        self.menu('Month-End Functions', options, ['Main Menu', self.main_menu])
     
     def payables(self):
         
@@ -115,6 +132,31 @@ class PatEngine:
         }
         
         self.menu('Payables Menu', options, ['Main Menu', self.main_menu])
+    
+    
+    
+    ############################################
+    # Script Functions #########################
+    ############################################ 
+        
+    def me_transfers(self):
+        cls()
+        
+        date = {'Year': '', 'Month': '', 'Day': ''}
+        for unit in date.keys():
+            date[unit] = int(input(f'Input ME {unit}:\n>\t'))
+        
+        save_path = input('Input desired save path (default is downloads):\n>\t')
+        if save_path == '':
+            save_path = f'{self.get_setting('userroot')}/Downloads'
+        
+        dt = datetime(date['Year'], date['Month'], date['Day'])
+        
+        MeTransfers.run_abn_tables(dt, save_path)
+        MeTransfers.run_baml_table(dt, save_path)
+        
+        print(f'ABN and BofA ME Transfers Saved to {save_path}')
+        
         
     def run_update_vendor(self):
         cls()
