@@ -61,7 +61,7 @@ class AbnFileGrabber(AbnBase):
         super().__init__(year, month)
         
         self.last_biz_day = last_biz_day(year, month)
-        self.moyr = self.last_biz_day.strftime('%Y%m')
+        # self.moyr = self.last_biz_day.strftime('%Y%m')
         self.date_str = self.last_biz_day.strftime('%Y%m%d')
         
     def main(self):
@@ -78,8 +78,8 @@ class AbnFileGrabber(AbnBase):
         self.position_zip = self.archive_path + f'/{self.date_str}/{self.position_name}'
 
     def unzip(self):
-        paths_list = [[self.csvcash_zip, self.csvcash_zip.split('/')[-1].replace('.zip', ''), self.trading_path],
-                      [self.position_zip, self.position_zip.split('/')[-1].replace('.zip', ''), self.trading_path]]
+        paths_list = [[self.csvcash_zip, self.csvcash_zip.split('/')[-1].replace('.zip', ''), self.trading_path + '/' + self.moyr],
+                      [self.position_zip, self.position_zip.split('/')[-1].replace('.zip', ''), self.trading_path  + '/' + self.moyr]]
         
         
         for i in paths_list:
@@ -91,9 +91,9 @@ class AbnFileGrabber(AbnBase):
 
     def archive_date_path(self, day=0):
         if day == 0:
-            date_str = last_biz_day(self.close_year, self.close_month).strftime('%Y%m%d')
+            date_str = last_biz_day(self.year, self.month).strftime('%Y%m%d')
         else:
-            date_str = datetime(self.close_year, self.close_month, day).strftime('%Y%m%d')
+            date_str = datetime(self.year, self.month, day).strftime('%Y%m%d')
 
         dir_path = self.archive_path + '/' + date_str
 
@@ -117,8 +117,6 @@ class AbnFileGrabber(AbnBase):
         proper_files = self.get_ABN_pdfs(f_pattern)
         
         os.chdir(dir_path)
-
-        account_types = {}
 
         account_file_mapping = {}
 
@@ -170,7 +168,7 @@ class AbnFileGrabber(AbnBase):
 
         f_pattern = r'[\w_\d]*DPR_SU_EOY.pdf'
 
-        proper_files = self.get_ABN_pdfs(self.close_year, 12, f_pattern)
+        proper_files = self.get_ABN_pdfs(self.year, 12, f_pattern)
 
         os.chdir(dir)
 

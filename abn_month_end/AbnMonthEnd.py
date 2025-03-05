@@ -37,6 +37,8 @@ class AbnMonthEnd(AbnBase):
         
         positions, pivot, categories = self.positions_tab(cm_position)
         
+        self.misc_breakdown(self.year, self.month).to_csv(self.save_to + '/misc_breakdown.csv', index=False)
+        interest_data.to_csv(self.save_to + '/interest_data.csv', index=False)
         data_tab_df.to_csv(self.save_to + '/data_df.csv', index=False)
         positions.to_csv(self.save_to + '/positions_df.csv', index=False)
         pivot.to_csv(self.save_to + '/positions-pivot_df.csv', index=False)
@@ -69,7 +71,6 @@ class AbnMonthEnd(AbnBase):
         data_df_cm_diffs = data_df_cm[data_df_cm['Concat'].isin(diff_concat)].copy()
         data_df_cm_diffs = data_df_cm_diffs.drop(columns='Opening Balance')
         ledger_map_additions = self.input_new_ledger_mappings(data_df_cm_diffs)
-        print(ledger_map_additions)
         
         
         ledger_map = pd.concat([ledger_map, ledger_map_additions])
@@ -139,17 +140,17 @@ class AbnMonthEnd(AbnBase):
     def input_new_ledger_mappings(self, diffs_df:pd.DataFrame):
         diffs_df_new = []
         for i, row in diffs_df.iterrows():
-            print(f'{row[0]} // {row[1]}')
+            print(f'{row.iloc[0]} // {row.iloc[1]}')
             print('Input new ledger mapping:')
             new_mapping = input('>\t')
             
             diffs_df_new.append(new_mapping)
         
         diffs_df['Ledger Mapping'] = diffs_df_new
-        print(diffs_df)
         renamer = {'Account Name': 'AccountID', 'Cash Title': 'CashDescription', 'Concat': 'ABN Map', 'Ledger Mapping': 'Simplex Map'}
         
         diffs_df = diffs_df.rename(columns=renamer)
+        input('\n\nClose ledger mapping file if open, enter to continue')
         
         return diffs_df
     
@@ -237,7 +238,7 @@ class AbnMonthEnd(AbnBase):
         return (csv_cash, position)
         
     def run_cash(self, year, month):
-        cash_files = AbnCash(year, month, self.trading_path)
+        cash_files = AbnCash(year, month, self.trading_path + '/' + self.moyr)
         eqt_data, mics_data = cash_files.main()
         
         return (eqt_data, mics_data)
@@ -262,3 +263,8 @@ class AbnMonthEnd(AbnBase):
         all_int = pd.concat([eqt_int, mics_int])
         
         return all_int
+    
+    def misc_breakdown(self, year, month):
+        df = self.run_cash(year, month)[0]
+        
+        return df.loc[df['LedgerNumber'] == 8200].copy()

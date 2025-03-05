@@ -64,7 +64,7 @@ class AbnBase(ABC):
         t0 = datetime(self.year, self.month, 1)
         td = timedelta(days=20)
         t_minus = t0 - td
-        t_minus_eom = t_minus + timedelta(days=(last_biz_day(t_minus.year, t_minus.month) - t_minus.day))
+        t_minus_eom = t_minus + timedelta(days=(last_biz_day(t_minus.year, t_minus.month).day - t_minus.day))
         
         return t_minus_eom
     

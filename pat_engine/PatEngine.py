@@ -217,7 +217,7 @@ class PatEngine:
         
         month = int(input('Closing month:\n>\t'))
         year = int(input('Closing month year:\n>\t'))
-        AbnMonthEnd.main(year, month)
+        AbnMonthEnd(year, month).main()
         
         print('ABN Month End files completed')
         input('Press enter to continue')
