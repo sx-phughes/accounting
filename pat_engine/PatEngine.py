@@ -10,7 +10,7 @@ from patrick_functions import UnzipFiles
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
 from cm_exchange_fees.ExchangeFeesDownload import ExchangeFeesDownload
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
-from abn_month_end import test
+from abn_month_end.AbnMonthEnd import AbnMonthEnd
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
 from nacha import NachaMain
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
@@ -217,7 +217,7 @@ class PatEngine:
         
         month = int(input('Closing month:\n>\t'))
         year = int(input('Closing month year:\n>\t'))
-        test.main(year, month)
+        AbnMonthEnd.main(year, month)
         
         print('ABN Month End files completed')
         input('Press enter to continue')

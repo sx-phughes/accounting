@@ -24,8 +24,8 @@ class AbnBase(ABC):
         self.month = close_month
         self.gdrive_root = google_drive_root
         
-        self.t_minus_year, self.t_minus_month = self.get_t_minus(close_year, close_month)
-        self.t_plus_year, self.t_plus_month = self.get_t_plus(close_year, close_month)
+        self.t_minus_year, self.t_minus_month = (self.t_minus.year, self.t_minus.month)
+        self.t_plus_year, self.t_plus_month = (self.t_plus.year, self.t_plus.month)
     
     @property
     def year(self):
@@ -57,7 +57,7 @@ class AbnBase(ABC):
     
     @property
     def archive_path(self):
-        return self.google_drive_root + '/Shared drives/Clearing Archive/ABN_Archive'
+        return self.gdrive_root + '/Shared drives/Clearing Archive/ABN_Archive'
     
     @property
     def t_minus(self):

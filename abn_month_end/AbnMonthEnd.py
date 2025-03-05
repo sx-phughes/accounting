@@ -19,9 +19,10 @@ import pandas as pd
 class AbnMonthEnd(AbnBase):
     def __init__(self, year: int, month: int):
         super().__init__(year, month)
+        self.save_to = f'{self.trading_path}/{self.moyr}'
         
     def main(self):
-        cm_csv_cash, cm_position = self.grab_files(self.close_year, self.close_month)
+        cm_csv_cash, cm_position = self.grab_files(self.year, self.month)
         pm_csv_cash, pm_position = self.grab_files(self.t_minus_year, self.t_minus_month)
         
         t_plus_eqt, t_plus_mics = self.run_cash(self.t_plus_year, self.t_plus_month)
@@ -33,6 +34,13 @@ class AbnMonthEnd(AbnBase):
         interest_w_strat = pd.merge(interest_data, account_mapping[['ACCOUNT', 'Strategy']], 'left', left_on='Account', right_on='ACCOUNT',)
         
         data_tab_df = self.data_tab(cm_csv_cash, pm_csv_cash, ledger_mapping, account_mapping)
+        
+        positions, pivot, categories = self.positions_tab(cm_position)
+        
+        data_tab_df.to_csv(self.save_to + '/data_df.csv', index=False)
+        positions.to_csv(self.save_to + '/positions_df.csv', index=False)
+        pivot.to_csv(self.save_to + '/positions-pivot_df.csv', index=False)
+        categories.to_csv(self.save_to + '/positions-by-category_df.csv', index=False)
         
         return data_tab_df
         
