@@ -13,6 +13,7 @@ sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
 from abn_month_end.AbnMonthEnd import AbnMonthEnd
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
 from nacha import NachaMain
+from nacha import BlankBatch
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
 from update_vendors.main import update_vendor
 sys.path.append('C:\\gdrive\\My Drive\\code_projects\\me_transfers')
@@ -110,6 +111,7 @@ class PatEngine:
                    'Unzip Files in Folder': self.unzip_files,
                    'Payables': self.payables,
                    'Update Vendor Value': self.run_update_vendor,
+                   'Create custom NACHA batch': self.custom_nacha,
                    'Settings': self.view_settings
         }
         
@@ -289,24 +291,34 @@ class PatEngine:
         
         print('Download path (no trailing backslash):')
         dl_path = input('>\t')
-
         print('Exchange Fee Month:')
         month = int(input('>\t'))
-        
         print('Exchange Fee Year:')
         year = int(input('>\t'))
-        
         print('Skip CBOE downloads? (y/n)')
         skip_cboe = input('>\t')
         
+        
         downloader = ExchangeFeesDownload(month, year, dl_path)
         
-        if skip_cboe == 'n':
-            downloader.main()
-        else:
-            downloader.not_cboe_files()
         
-        print('Files saved to ' + self.get_setting('userroot') + '/Downloads')
+        if skip_cboe == 'n':
+            print('Input CBOE Username:')
+            username = input('>\t')
+            print('Input CBOE Password:')
+            pw = input('>\t')
+            
+            downloader.cboe_files(username, pw)
+
+
+        print('Input SSH Username:')
+        ssh_un = input('>\t')
+        print('Input SSH Password:')
+        ssh_pw = input('>\t')
+
+        downloader.other_exchange_files(ssh_un, ssh_pw)
+        
+        print('Files saved to ' + dl_path)
         input('Press enter to continue')
 
         self.main_menu()
@@ -330,3 +342,29 @@ class PatEngine:
         
         print('Payables JEs saved to Downloads')
         input('Press enter to return to menu options\n>\t')
+    
+    def custom_nacha(self):
+        cls()
+        
+        print('Create Blank Nacha Batch')
+        
+        f_path = input('Input full path to file with ACH info:\n>\t')
+        save_to = input('Input desired save location, including file name:\n>\t')
+        vd = datetime.strptime(input('Input desired value date in format mm/dd/yyyy:\n>\t'), '%m/%d/%Y')
+        company = BlankBatch.nacha_company_selector()
+        trx_line_note = input('Input note to include with transactions:\n>\t')
+        batch_description = input('Input batch description (e.g., \'Payables\', \'Reimbursements\', etc.):\n>\t')
+        
+        print('Processing file...')
+        BlankBatch.process_file(
+            src_path=f_path,
+            save_path=save_to,
+            company_name=company,
+            value_date=vd,
+            trx_note=trx_line_note,
+            batch_descr=batch_description
+        )
+        print('NACHA File created and saved to {save_to}'.format(save_to=save_to))
+        input('Press enter to continue')
+        
+        self.main_menu()

@@ -1,20 +1,17 @@
 import paramiko, re
+from datetime import datetime
 from patrick_functions.UnzipFiles import UnzipFiles
 
 
-def get_exchange_fees(year, month, download_path):
-    
-    if month < 10:
-        year_month = str(year) + '-0' + str(month)
-    else:
-        year_month = str(year) + '-' + str(month)
+def get_exchange_fees(year, month, download_path, un, pw):
+    year_month = datetime(year, month, 1).strftime('%Y-%m')
     
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     source_ip = 'off2.s'
-    user = 'sx'
-    password = 'oldsx=2insecure'
+    user = un
+    password = pw
 
     print('Connecting to off2.s')
     ssh.connect(source_ip, username=user, password=password)
@@ -31,7 +28,7 @@ def get_exchange_fees(year, month, download_path):
 
     files_to_copy = []
 
-    for path in list(file_dict.keys()):
+    for path in file_dict.keys():
         for file_mask in file_dict[path]:
             search_path = f'{root}{path}{file_mask}*'
             print('Searching ' + search_path)
