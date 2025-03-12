@@ -9,7 +9,7 @@
 #       b. MICS_Cash_20240501.csv
 
 from abn_month_end.FileGrabber import AbnFileGrabber
-from AbnBase import *
+from abn_month_end.AbnBase import *
 from patrick_functions.AbnCash import AbnCash
 from datetime import datetime
 import re

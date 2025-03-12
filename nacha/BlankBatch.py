@@ -1,5 +1,5 @@
-from NachaConstructor import *
-from NachaFile import *
+from nacha.NachaConstructor import *
+from nacha.NachaFile import *
 from datetime import datetime
 
 relevant_cols = ('name on account', 'beneficiary bank', 'aba', 'account number', 'amount')

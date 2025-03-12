@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 
 
-def run_payables(user_root):
+def run_payables():
     year = int(input('Year:\n>\t'))
     month = int(input('Month:\n>\t'))
     day = int(input('Day:\n>\t'))

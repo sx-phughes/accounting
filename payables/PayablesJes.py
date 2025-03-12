@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime
+import os
 
 class JECreator():
     def __init__(self, date: datetime):
@@ -171,3 +172,19 @@ class JECreator():
         dr_exp_row['Currency'] = 'USD'
         
         return dr_exp_row
+    
+def run_payables():
+    year = int(input('Year:\n>\t'))
+    month = int(input('Month:\n>\t'))
+    day = int(input('Day:\n>\t'))
+
+    batch_date = datetime(year, month, day)
+
+    payables = JECreator(batch_date)
+
+    invoices, vendors, coas = payables.file_getter()
+
+    bill_dfs = payables.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
+
+    for i in bill_dfs.keys():
+        bill_dfs[i].to_csv(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)

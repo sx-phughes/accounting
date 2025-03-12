@@ -1,4 +1,3 @@
-
 class NachaLine():
     def __init__(self, **fields: list):
         # field_dict formatted as follows: {field_name: [field_len, field_value]}

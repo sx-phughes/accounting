@@ -1,4 +1,4 @@
-from NachaLine import *
+from nacha.NachaLine import *
 import math
 
 class TransactionEntry():

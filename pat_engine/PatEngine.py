@@ -4,7 +4,7 @@ import pandas as pd
 
 
 # PATH Updates
-sys.path.append('C:\\gdrive\\My Drive\\code_projects')
+sys.path.append(f'{os.environ['HOMEPATH']}\\accounting')
 # sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
 # sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
 # sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
@@ -14,7 +14,7 @@ sys.path.append('C:\\gdrive\\My Drive\\code_projects')
 
 # Package Imports
 from baycrest import BaycrestSplitter
-from payables import RunPayables
+from payables import PayablesJes
 from patrick_functions import AbnCash
 from patrick_functions import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
@@ -67,7 +67,7 @@ class PatEngine:
     
     def menu(self, menu_title, options: dict, return_to: str, do_settings: bool=False):
         os.system('cls')
-        options[return_to[0]] = None
+        options[return_to] = None
         
         while True:
             os.system('cls')
@@ -92,7 +92,11 @@ class PatEngine:
                     try:
                         selection = list(options.items())[option - 1]
                         
-                        self.function_runner(selection[1][0], selection[1][1])
+                        if hasattr(selection[1], '__call__'):
+                            selection[1]()
+                        else:
+                            self.function_wrapper(selection[1][0], selection[1][1])
+                            
                     except(KeyError, NameError, FileNotFoundError, ValueError, PermissionError, FileExistsError, IndexError, TypeError):
                         print('Function encountered error:')
                         print(traceback.format_exc())
@@ -104,21 +108,31 @@ class PatEngine:
             else:
                 print('That is not a valid option')
                 os.system('cls')
-                
-    def function_runner(self, screen_header, functions):
-        # Inputs to be formatted in 2D array - [[val_name, default], etc.]
+    def run_f(self, fn):
+        input_dict = {}
         
-        print(screen_header)
-        
-        for f in functions:
-            input_dict = {}
+        if inspect.getfullargspec(fn).args:
             
-            for arg, default in zip(inspect.getfullargspec(f).args, inspect.getfullargspec(f).defaults):
+            for arg, default in zip(inspect.getfullargspec(fn).args, inspect.getfullargspec(fn).defaults):
                 print(f'Input value for parameter {arg} (default={default}):')
                 val = input('>\t')
                 input_dict.update({arg, val})
             
-            f(**input_dict)
+            fn(**input_dict)
+        
+        else:
+            fn()
+        
+        
+    def function_wrapper(self, screen_header, functions):
+        # Inputs to be formatted in 2D array - [[val_name, default], etc.]
+        
+        print(screen_header)
+        if type(functions) == list:    
+            for f in functions:
+                self.run_f(f)
+        else:
+            self.run_f(functions)
 
 
        
@@ -127,14 +141,14 @@ class PatEngine:
     ############################################
     def main_menu(self):
         
-        options = {'Baycrest': BaycrestSplitter.split,
-                   'ABN Cash Files': AbnCash.script_wrapper,
-                   'BOFA Just Div Files': self.run_baml_div_files,
+        options = {'Baycrest': ['Split Baycrest invoice by IDB and IX', BaycrestSplitter.split],
+                   'ABN Cash Files': ['Run ABN Cash Blotter', AbnCash.script_wrapper],
+                   'BOFA Just Div Files': ['Pull Full Dividend Summary from BofA Data', OrganizeBAMLfiles.div_file_wrapper],
                    'Month-End Related Functions': self.me_menu,
-                   'Unzip Files in Folder': UnzipFiles.script_wrapper,
+                   'Unzip Files in Folder': ['Unzip Files in a Folder', UnzipFiles.script_wrapper],
                    'Payables': self.payables,
-                   'Update Vendor Value': UpdateVendors.update_vendor,
-                   'Create custom NACHA batch': BlankBatch.process_file,
+                   'Update Vendor Value': ['Update a value in the vendor database', UpdateVendors.update_vendor],
+                   'Create custom NACHA batch': ['Process custom NACHA batch', BlankBatch.process_file],
                    'Settings': self.settings_menu
         }
         
@@ -150,9 +164,9 @@ class PatEngine:
     def me_menu(self):
         options = {
             'ME Transfers': ['Create Month-End Transfer Journals', MeTransfers.run_ME_Transfers],
-            'ABN Month End': AbnMonthEnd.script_wrapper,
-            'Organize BAML ME Files': OrganizeBAMLfiles.script_wrapper,
-            'Get CM Exchange Fee Files': ExchangeFeesDownload.ExchangeFeesDownload,
+            'ABN Month End': ['Run ABN Month End Process - process data files and save to CM directory', AbnMonthEnd.script_wrapper],
+            'Organize BAML ME Files': ['Move BofA ME Data Files and Process to Summary Files', OrganizeBAMLfiles.file_mover_wrapper],
+            'Get CM Exchange Fee Files': ['Fetch Exchange Fees Files for a Given Month', ExchangeFeesDownload.ExchangeFeesDownload],
         }
         
         self.menu('Month-End Functions', options, 'Main Menu')
@@ -160,8 +174,8 @@ class PatEngine:
     def payables(self):
         
         options = {
-            'Create Payables Payment Files': NachaMain.nacha_main,
-            'Create Paybles JE Files': RunPayables.run_payables
+            'Create Payables Payment Files': ['Create NACHA files for a Payables Batch', NachaMain.nacha_main],
+            'Create Paybles JE Files': ['Create Payables JE files for upload to QB', PayablesJes.run_payables]
         }
         
         self.menu('Payables Menu', options, 'Main Menu')

@@ -1,5 +1,5 @@
-from DataGathering import *
-from TransferTableSetup import *
+from me_transfers.DataGathering import *
+from me_transfers.TransferTableSetup import *
 from datetime import datetime
 import os
 

@@ -1,5 +1,5 @@
-from NachaConstructor import *
-from CheckDuplicates import check_duplicates
+from nacha.NachaConstructor import *
+from nacha.CheckDuplicates import check_duplicates
 from datetime import datetime
 import pandas as pd
 import os
