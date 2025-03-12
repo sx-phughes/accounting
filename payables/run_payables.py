@@ -1,6 +1,6 @@
 from payables.PayablesJes import *
-import pandas as pd
 from datetime import datetime
+import os
 
 
 def run_payables(user_root):
@@ -17,4 +17,4 @@ def run_payables(user_root):
     bill_dfs = payables.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
 
     for i in bill_dfs.keys():
-        bill_dfs[i].to_csv(f'{user_root}/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)
+        bill_dfs[i].to_csv(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)

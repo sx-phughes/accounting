@@ -2,9 +2,10 @@ from NachaConstructor import *
 from CheckDuplicates import check_duplicates
 from datetime import datetime
 import pandas as pd
+import os
 
 
-def nacha_main(user_root):
+def nacha_main():
     data_types = {
         'Vendor': str,
         'Invoice #': str,
@@ -45,6 +46,6 @@ def nacha_main(user_root):
     counter = 0
     for i in files:
         
-        with open(f'{user_root}/Downloads/{valuedate}_ACHS_{list(NachaConstructor.company_names.keys())[counter]}.txt', 'w') as file:
+        with open(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{valuedate}_ACHS_{list(NachaConstructor.company_names.keys())[counter]}.txt', 'w') as file:
             file.write(i.__str__())
         counter += 1

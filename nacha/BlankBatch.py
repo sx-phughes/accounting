@@ -85,11 +85,11 @@ def process_transactions(df: pd.DataFrame, note: str) -> NachaFile:
     
     return transactions
 
-def process_file(src_path: str, save_path: str, company_name: str, value_date: datetime, trx_note: str='', batch_descr: str=''):
+def process_file(src_path: str, save_path: str, company_name: str, value_date_y2m2d2: str, trx_note: str='', batch_descr: str=''):
     pmt_info = read_table(src_path)
     
     transactions = process_transactions(pmt_info, trx_note)
-    batches = make_batch(transactions, company_name, '0000001', value_date=value_date.strftime('%y%m%d'), entry_descr=batch_descr)
+    batches = make_batch(transactions, company_name, '0000001', value_date=value_date_y2m2d2, entry_descr=batch_descr)
     file_obj = make_file(batches, company_name, 'A')
     
     with open(file=save_path, mode='w') as nacha_file:

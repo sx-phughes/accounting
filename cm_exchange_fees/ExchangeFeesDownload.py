@@ -1,19 +1,8 @@
 from cm_exchange_fees.cboe_fees_dl import get_cboe_fees
 from cm_exchange_fees.exchange_fees_ssh import get_exchange_fees
-import os
-
-class ExchangeFeesDownload:
-    def __init__(self, month, year, download_path):
-        self.month = month
-        self.year = year
-        self.download_path = download_path
         
-    def cboe_files(self, un, pw):
-        os.system('cls')
-
-        get_cboe_fees(self.year, self.month, self.download_path, un, pw)
-        
-    def other_exchange_files(self, un, pw):
-        os.system('cls')
-        
-        get_exchange_fees(self.year, self.month, self.download_path, un, pw)
+def ExchangeFeesDownload(year, month, download_path, pull_cboe, cboe_un, cboe_pw, off2s_un, off2s_pw):
+    if pull_cboe:
+        get_cboe_fees(year, month, download_path, cboe_un, cboe_pw)
+    
+    get_exchange_fees(year, month, download_path, off2s_un, off2s_pw)

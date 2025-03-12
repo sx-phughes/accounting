@@ -268,3 +268,7 @@ class AbnMonthEnd(AbnBase):
         df = self.run_cash(year, month)[0]
         
         return df.loc[df['LedgerNumber'] == 8200].copy()
+    
+def script_wrapper(year, month):
+    me_obj = AbnMonthEnd(year, month)
+    me_obj.main()

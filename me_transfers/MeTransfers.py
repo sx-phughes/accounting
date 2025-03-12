@@ -1,6 +1,7 @@
 from DataGathering import *
 from TransferTableSetup import *
 from datetime import datetime
+import os
 
 def baml_path(date: datetime):
     
@@ -141,3 +142,9 @@ def run_abn_tables(date: datetime, save_path = '.'):
     
     et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}')
         
+def run_ME_Transfers(year, month, day, save_path=os.environ['HOMEPATH'] + '\\Downloads'):
+    
+    dt = datetime(year, month, day)
+    
+    run_abn_tables(dt, save_path)
+    run_baml_table(dt, save_path)
