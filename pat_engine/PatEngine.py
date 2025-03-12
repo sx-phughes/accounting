@@ -1,20 +1,20 @@
 # Standard imports
 import os, sys, traceback, inspect
 import pandas as pd
-from datetime import datetime
 
 
 # PATH Updates
 sys.path.append('C:\\gdrive\\My Drive\\code_projects')
-sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
-sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
-sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
-sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
-sys.path.append('C:\\gdrive\\My Drive\\code_projects\\me_transfers')
+# sys.path.append('C:\\gdrive\\My Drive\\code_projects\\cm_exchange_fees')
+# sys.path.append('C:\\gdrive\\My Drive\\code_projects\\abn_month_end')
+# sys.path.append('C:\\gdrive\\My Drive\\code_projects\\nacha')
+# sys.path.append('C:\\gdrive\\My Drive\\code_projects\\update_vendors')
+# sys.path.append('C:\\gdrive\\My Drive\\code_projects\\me_transfers')
+
 
 # Package Imports
 from baycrest import BaycrestSplitter
-from payables import run_payables
+from payables import RunPayables
 from patrick_functions import AbnCash
 from patrick_functions import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
@@ -161,211 +161,7 @@ class PatEngine:
         
         options = {
             'Create Payables Payment Files': NachaMain.nacha_main,
-            'Create Paybles JE Files': run_payables.run_payables
+            'Create Paybles JE Files': RunPayables.run_payables
         }
         
         self.menu('Payables Menu', options, 'Main Menu')
-    
-    
-    
-    ############################################
-    # Script Functions #########################
-    ############################################ 
-    # def me_transfers(self):
-    #     cls()
-        
-    #     date = {'Year': '', 'Month': '', 'Day': ''}
-    #     for unit in date.keys():
-    #         date[unit] = int(input(f'Input ME {unit}:\n>\t'))
-        
-    #     save_path = input('Input desired save path (default is downloads):\n>\t')
-    #     if save_path == '':
-    #         save_path = f'{self.settings['userroot']}/Downloads'
-        
-    #     dt = datetime(date['Year'], date['Month'], date['Day'])
-        
-    #     MeTransfers.run_abn_tables(dt, save_path)
-    #     MeTransfers.run_baml_table(dt, save_path)
-        
-    #     print(f'ABN and BofA ME Transfers Saved to {save_path}')
-        
-        
-    # def run_update_vendor(self):
-    #     cls()
-    #     print('Update Vendor Value in AP Central DB')
-    #     update_vendor(self.settings['googledriveroot'].replace('/My Drive', ''))
-        
-    # def run_baycrest(self):
-    #     cls()
-        
-    #     print('Baycrest IX-IDB Splitter')
-        
-    #     print('File Path:')
-    #     f_path = input('>\t')
-    #     print('Save Path:')
-    #     s_path = input('>\t')
-
-    #     file = BaycrestSplitter(f_path, s_path)
-    #     file.run()
-        
-    # def run_abn_cash(self):
-    #     cls()
-        
-    #     print('ABN Cash Blog')
-        
-    #     print('Month')
-    #     month = int(input('>\t'))
-    #     print('Year')
-    #     year = int(input('>\t'))
-        
-    #     cash = AbnCash(month=month, year=year)
-    #     cash.main()
-        
-    #     print(f'Saved to {cash.save_path}')
-        
-    #     input('Press enter to continue')
-    
-    # def abn_me(self):
-    #     cls()
-        
-    #     print('ABN Month End Process')
-        
-    #     month = int(input('Closing month:\n>\t'))
-    #     year = int(input('Closing month year:\n>\t'))
-    #     AbnMonthEnd(year, month).main()
-        
-    #     print('ABN Month End files completed')
-    #     input('Press enter to continue')
-        
-        
-    # def run_baml_files(self):
-    #     cls()
-
-    #     print('Organize BAML Files into BAML ME Folder')
-
-    #     print('Month:')
-    #     month = int(input('>\t'))
-    #     print('Year:')
-    #     year = int(input('>\t'))
-
-    #     BAMLFileMover(year, month).main()
-
-    #     print('Files moved')
-    #     input('Press enter to contiunue')
-
-    # def run_baml_div_files(self):
-    #     cls()
-
-    #     print('Run BOFA Div files only')
-
-    #     print('Month:')
-    #     month = int(input('>\t'))
-    #     print('Year:')
-    #     year = int(input('>\t'))
-
-    #     BAMLFileMover(year, month).just_div_files()
-
-    #     print('Div Files Processed')
-    #     input('Press enter to contiunue')
-    
-    # def unzip_files(self):
-    #     cls()
-
-    #     print('Unzip all .zip/.gz/.xz files in a directory')
-
-    #     print('Directory path:')
-    #     zip_path = input('>\t')
-    #     print('Save Path:')
-    #     save_path = input('>\t')
-    #     print('Delete archive files? (y/n)')
-    #     yn = input('>\t')
-
-    #     if yn == 'y':
-    #         yn = True
-    #     else:
-    #         yn = False
-        
-    #     unzipper = UnzipFiles.UnzipFiles(zip_path, save_path)
-    #     unzipper.main(delete_zip=yn)
-        
-    #     print('Files unzipped to ' + save_path)
-    #     input('Press enter to continue')
-        
-    # def cm_exchange(self):
-    #     cls()
-        
-    #     print('Download all CM exchange fee files from CBOE and off2.s')
-        
-    #     print('Download path (no trailing backslash):')
-    #     dl_path = input('>\t')
-    #     print('Exchange Fee Month:')
-    #     month = int(input('>\t'))
-    #     print('Exchange Fee Year:')
-    #     year = int(input('>\t'))
-    #     print('Skip CBOE downloads? (enter to skip)')
-    #     skip_cboe = input('>\t')
-        
-        
-    #     ExchangeFeesDownload(month, year, dl_path, bool(skip_cboe), )
-        
-        
-    #     if not skip_cboe:
-    #         print('Input CBOE Username:')
-    #         username = input('>\t')
-    #         print('Input CBOE Password:')
-    #         pw = input('>\t')
-            
-    #         downloader.cboe_files(username, pw)
-
-
-    #     print('Input SSH Username:')
-    #     ssh_un = input('>\t')
-    #     print('Input SSH Password:')
-    #     ssh_pw = input('>\t')
-
-    #     downloader.other_exchange_files(ssh_un, ssh_pw)
-        
-    #     print('Files saved to ' + dl_path)
-    #     input('Press enter to continue')
-    
-    # def nacha(self):
-    #     cls()
-        
-    #     NachaMain.nacha_main(self.get_setting('userroot'))
-        
-    #     print('NACHA Files Saved to Downloads')
-    #     input('Press enter to continue')
-        
-    # def payables_jes(self):
-    #     cls()
-        
-    #     print('Create payables JEs')
-        
-    #     run_payables(self.settings['userroot'])
-        
-    #     print('Payables JEs saved to Downloads')
-    #     input('Press enter to return to menu options\n>\t')
-    
-    # def custom_nacha(self):
-    #     cls()
-        
-    #     print('Create Blank Nacha Batch')
-        
-    #     f_path = input('Input full path to file with ACH info:\n>\t')
-    #     save_to = input('Input desired save location, including file name:\n>\t')
-    #     vd = datetime.strptime(input('Input desired value date in format mm/dd/yyyy:\n>\t'), '%m/%d/%Y')
-    #     company = BlankBatch.nacha_company_selector()
-    #     trx_line_note = input('Input note to include with transactions:\n>\t')
-    #     batch_description = input('Input batch description (e.g., \'Payables\', \'Reimbursements\', etc.):\n>\t')
-        
-    #     print('Processing file...')
-    #     BlankBatch.process_file(
-    #         src_path=f_path,
-    #         save_path=save_to,
-    #         company_name=company,
-    #         value_date=vd,
-    #         trx_note=trx_line_note,
-    #         batch_descr=batch_description
-    #     )
-    #     print('NACHA File created and saved to {save_to}'.format(save_to=save_to))
-    #     input('Press enter to continue')
