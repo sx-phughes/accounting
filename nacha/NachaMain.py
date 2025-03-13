@@ -6,6 +6,9 @@ import os
 
 
 def nacha_main():
+    """UI Function for converting standard payables sheet into NACHA ACH batch
+    files for import into JPM Access
+    """
     data_types = {
         'Vendor': str,
         'Invoice #': str,
