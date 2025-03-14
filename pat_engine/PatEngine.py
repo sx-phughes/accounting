@@ -145,21 +145,23 @@ class PatEngine:
             else:
                 print('That is not a valid option')
                 os.system('cls')
+
     def run_f(self, fn):
         """Run function with standard UI for inputs"""
         input_dict = {}
         
         if inspect.getfullargspec(fn).args:
-            
-            for arg, default in zip(inspect.getfullargspec(fn).args,
-                                    inspect.getfullargspec(fn).defaults):
+            args = inspect.getfullargspec(fn).args
+            default_args = inspect.getfullargspec(fn).defaults
+            valid_defaults = self.validate_default_args(default_args, len(args))
+
+            for arg, default in zip(args, valid_defaults):
                 
                 print(f'Input value for parameter {arg} (default={default}):')
                 val = input('>\t')
                 input_dict.update({arg, val})
             
             fn(**input_dict)
-        
         else:
             fn()
         
@@ -176,6 +178,12 @@ class PatEngine:
                 self.run_f(f)
         else:
             self.run_f(functions)
+
+    def validate_default_args(self, default_args: list|None, num_args: int):
+        if isinstance(default_args, list):
+            return default_args
+        elif default_args is None:
+            return [None] * num_args
 
 
        
