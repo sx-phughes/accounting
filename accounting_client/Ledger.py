@@ -29,7 +29,15 @@ class LedgerAccessor:
     def credits(self):
         credits = self._obj.credit.sum()
         return credits
-    
+
+
+def load_ledger(path):
+    df = pd.read_csv(path)
+    gl = Ledger(df)
+    gl.set_entry_id()
+    return gl
+
+
 class Ledger(pd.DataFrame):
     """Class for general ledger object based on pandas DataFrame"""
 
@@ -74,12 +82,15 @@ class Ledger(pd.DataFrame):
                 data['post_date'].append(datetime.now())
             
             entry_df = pd.DataFrame(data)
+            print('\n\nLedger: add_entry() line 85: printing entry df')
+            print(entry_df)
             entry_index = pd.Index(range(len(self.index), len(self.index) + len(entry_df.index)))
             
             entry_df = entry_df.set_index(entry_index, drop=True)
             
             df_concat = pd.concat([self, Ledger(entry_df)])
-            
+            print('\n\nLedger: add_entry() line 91: printing concatted df')
+            print(df_concat)
             
             return Ledger(df_concat)
         else:
@@ -107,3 +118,10 @@ class Ledger(pd.DataFrame):
         balance = df[pos].sum() + df[neg].sum()
         
         return balance
+    
+    def save_to_file(self, path):
+        self.to_csv(path, index=False)
+
+    def set_entry_id(self):
+        last_id = self.id.max()
+        Entry._id = last_id + 1

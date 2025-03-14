@@ -2,7 +2,7 @@
 """
 # Standard imports
 import re
-import numpy as np
+import pandas as pd
 
 segt1_vals = {
     'TRD': 'trading',
@@ -41,9 +41,11 @@ def keys(seg_dict: dict):
 class Account:
     """Base class for account structure"""
     
-    active_accounts = []
+    _active_accounts = {}
+    _account_groups = {}
     
-    pattern = r'([A-Z]{3})-(\d)-(\d{4})-([A-Z]{2})?-([\dA-Z]{3})?'
+    _pattern = r'([A-Z]{3})-(\d)-(\d{4})-([A-Z]{2})?-([\dA-Z]{3})?'
+
     def __init__(
         self,
         seg1: str = None,
@@ -51,21 +53,35 @@ class Account:
         seg3: str = None,
         seg4: str = None,
         seg5: str = None,
-        full_acct: str = None
+        full_acct: str = None,
+        category: str = None,
+        admin: bool = False
     ):
-        
-        if isinstance(full_acct, str) and self._validate(full_acct):
-            temp_segments = full_acct.split('-')
-        elif self._validate([seg1, seg2, seg3, seg4, seg5]):
-            temp_segments = [seg1, seg2, seg3, seg4, seg5]
+        if not admin:
+            if isinstance(full_acct, str) and self._validate(full_acct):
+                temp_segments = full_acct.split('-')
+            elif self._validate([seg1, seg2, seg3, seg4, seg5]):
+                temp_segments = [seg1, seg2, seg3, seg4, seg5]
+            else:
+                raise AttributeError('Account does not match pattern')
+            
+            temp_segments[1] = int(temp_segments[1])
+            temp_segments[2] = int(temp_segments[2])
+            
+            self._segments = temp_segments
+            self._category = category
+
+            Account._active_accounts.update({self.full_account: self})
+            self.add_to_group()
         else:
-            raise AttributeError('Account does not match pattern')
-        
-        temp_segments[1] = int(temp_segments[1])
-        temp_segments[2] = int(temp_segments[2])
-        
-        self._segments = temp_segments
-        
+            pass
+
+    def __getitem__(self, account_no: str):
+        return self._active_accounts[account_no]
+
+    def __setitem__(self, account_no: str, account):
+        self._active_accounts[account_no] = account
+        self.add_to_group(account)
     
     def __repr__(self):
         return self.full_account
@@ -76,7 +92,7 @@ class Account:
         else:
             tester = '-'.join(input)
             
-        if re.match(Account.pattern, tester):
+        if re.match(Account._pattern, tester):
             return True
         else:
             raise TypeError('Segments do not conform to pattern' + Account.pattern)
@@ -93,5 +109,31 @@ class Account:
             str_seg = str(seg)
         
             return str(seg) + '0' * (seg_lens[seg_num] - len(str_seg))
-        
-        
+    
+    def add_to_group(self, acct=None):
+        use_var = self if acct is None else acct
+
+        try:
+            Account._account_groups[use_var._category].append(use_var.full_account)
+        except KeyError:
+            Account._account_groups.update({use_var._category: [use_var.full_account]})
+
+   
+def is_balance_sheet(account: Account):
+    """for determining which statement account goes to"""
+    if account._segments[1] < 4:
+        return True
+    else:
+        return False
+    
+def load_accounts(path: str):
+    account_table = pd.read_csv(path)
+    account_i = 0
+    category_i = 7
+
+    for i in range(len(account_table.index)):
+        full_acct = account_table['account'].iloc[i]
+        category = account_table['category'].iloc[i]
+        acct_obj = Account(full_acct=full_acct, category=category)
+
+mgr = Account(admin=True)

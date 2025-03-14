@@ -28,12 +28,12 @@ class EntryLine:
 
 class Entry:
     """Base class for GL Entry"""
-    id = 0
+    _id = 0
     def __init__(
             self, date: np.ndarray[np.int64] | datetime = None,
             lines: list[EntryLine] | EntryLine = None):
-        self._id = Entry.id
-        Entry.id += 1
+        self._id = Entry._id
+        Entry._id += 1
         
         self._debits = 0
         self._credits = 0
@@ -53,8 +53,10 @@ class Entry:
     
     @date.setter
     def date(self, date: np.ndarray[np.int64] | datetime):
-        if type(date) == np.ndarray:
-            self._date = datetime(date[0], date[1], date[2])
+        if isinstance(date, np.ndarray):
+            self._date = datetime(date[0], date[1], date[2]).date()
+        elif isinstance(date, datetime):
+            self._date = date.date()
         else:
             self._date = date
     
