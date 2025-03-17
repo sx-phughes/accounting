@@ -85,6 +85,7 @@ class Ledger(pd.DataFrame):
             print('\n\nLedger: add_entry() line 85: printing entry df')
             print(entry_df)
             entry_index = pd.Index(range(len(self.index), len(self.index) + len(entry_df.index)))
+            print(entry_index)
             
             entry_df = entry_df.set_index(entry_index, drop=True)
             

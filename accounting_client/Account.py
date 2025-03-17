@@ -4,7 +4,7 @@
 import re
 import pandas as pd
 
-segt1_vals = {
+seg1_vals = {
     'TRD': 'trading',
     'TEC': 'technologies',
     'INV': 'investments',
