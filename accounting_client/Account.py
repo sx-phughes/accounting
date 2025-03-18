@@ -128,8 +128,6 @@ def is_balance_sheet(account: Account):
     
 def load_accounts(path: str):
     account_table = pd.read_csv(path)
-    account_i = 0
-    category_i = 7
 
     for i in range(len(account_table.index)):
         full_acct = account_table['account'].iloc[i]

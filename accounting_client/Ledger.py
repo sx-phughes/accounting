@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import os
 
 # Package Imports
 from Entry import Entry
@@ -122,7 +123,15 @@ class Ledger(pd.DataFrame):
     
     def save_to_file(self, path):
         self.to_csv(path, index=False)
+        self._last_save = os.stat(path).st_mtime
 
     def set_entry_id(self):
         last_id = self.id.max()
         Entry._id = last_id + 1
+
+    def check_save_time(self, path):
+        stat = os.stat(path)
+        if stat > self._last_save:
+            return True
+        else:
+            return False
