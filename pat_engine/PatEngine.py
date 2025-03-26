@@ -159,7 +159,7 @@ class PatEngine:
                 
                 print(f'Input value for parameter {arg} (default={default}):')
                 val = input('>\t')
-                input_dict.update({arg, val})
+                input_dict.update({arg: val})
             
             fn(**input_dict)
         else:

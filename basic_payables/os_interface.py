@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 # Package Imports
-from .payables_wb import PayablesWorkbook
-from .functions import *
+from payables_wb import PayablesWorkbook
+from functions import *
 
 def cls():
     os.system('cls')
@@ -14,7 +14,7 @@ class OsInterface():
     payables_path = 'C:/gdrive/Shared drives/Accounting/Payables'
 
     def __init__(self):
-        self.payables = PayablesWorkbook(self.ui_workbook_date())
+        self.payables = PayablesWorkbook(date=self.ui_workbook_date())
         self.vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
         self.main()
 
@@ -65,7 +65,13 @@ class OsInterface():
         vendor = input('Vendor:\t')
         invoice_num = input('Invoice Number:\t')
         amount = np.float64(input('Invoice Amount:\t'))
-        invoice_data = [vendor, invoice_num, amount]
+        CC = input('Credit card (y/n):\t')
+        if CC == 'y':
+            CC = True
+        else:
+            CC = False
+
+        invoice_data = [vendor, invoice_num, amount, CC]
         
         return invoice_data
     
@@ -81,7 +87,11 @@ class OsInterface():
         while True:
             cls()
 
-            self.payables.insert_invoice(self.get_invoice_data())
+            invoice_data = self.get_invoice_data()
+            if invoice_data[3] == True:
+                self.cc_invoice(invoice_data)
+            else:
+                self.payables.insert_invoice(invoice_data[:-1])
 
             add_more = input('Add another invoice (y/n)\n>\t')
             
@@ -89,6 +99,11 @@ class OsInterface():
                 break
 
         self.payables.save_workbook()
+
+    def cc_invoice(self, invoice_data):
+        cc_user = input('Enter initials of CC user:\t')
+        vendor = cc_user + ' - ' + invoice_data[0]
+        self.payables.move_files(vendor, invoice_data[1])
 
     def print_invoices(self):
         cls()
@@ -102,7 +117,7 @@ class OsInterface():
         
         
         def print_headers():
-            print(f'{self.turn_to_field(field_lens['Index', 5], 'Index')} {self.turn_to_field(field_lens['Vendor'], 'Vendor')} {self.turn_to_field(field_lens['Invoice #'], 'Invoice #')} {self.turn_to_field(field_lens['Amount'], 'Amount')}')
+            print(f'{self.turn_to_field(field_lens['Index'], 'Index')} {self.turn_to_field(field_lens['Vendor'], 'Vendor')} {self.turn_to_field(field_lens['Invoice #'], 'Invoice #')} {self.turn_to_field(field_lens['Amount'], 'Amount')}')
         
         count = 0
         for i, row in self.payables.iterrows():
@@ -130,12 +145,16 @@ class OsInterface():
         return field
     
     def view_invoices(self):
-        self.print_invoices()
+        pd.set_option('display.max_rows', None)        
+        print(self.payables)
+                  # self.print_invoices()
 
         input('\n\nPress enter to return to main menu\n')
 
     def remove_invoice(self):
-        self.print_invoices()
+        pd.set_option('display.max_rows', None)
+        print(self.payables)
+                  # self.print_invoices()
 
         index_to_remove = int(input('Input index of invoice to remove'))
         
