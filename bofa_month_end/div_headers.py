@@ -1,0 +1,21 @@
+div_headers = [
+    'Record ID',
+    'Record#',
+    'Business Date',
+    'Reference #',
+    'Account #',
+    'Security Type',
+    'CUSIP #',
+    'ISIN #',
+    'SEDOL #',
+    'SYMBOL',
+    'Security Description',
+    'B/S',
+    'QTY',
+    'Debt Credit Code',
+    'Amount',
+    'Type of Entry',
+    'Origin Code',
+    'Memo code',
+    'Symbol 21'
+]

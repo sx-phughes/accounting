@@ -1,0 +1,8 @@
+Currently Working in branch idb_rec
+
+Main Issue:
+Stupid TP ICAP invoice won't parse. Can't see to get the new text to stick when I combine it all.
+
+Bugs:
+- File finder pulls BGC file three times
+- Warning to apply openpyxl default stylesheet - should supress
