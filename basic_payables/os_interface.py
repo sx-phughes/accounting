@@ -2,7 +2,10 @@
 import os
 import numpy as np
 import pandas as pd
+<<<<<<< HEAD
 from pynput.keyboard import Key, Listener
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 
 # Package Imports
 from payables_wb import PayablesWorkbook
@@ -11,11 +14,14 @@ from functions import *
 def cls():
     os.system('cls')
 
+<<<<<<< HEAD
 def on_press(key: Key):
     if key == Key.esc:
        raise ValueError 
 
 
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 class OsInterface():
     payables_path = 'C:/gdrive/Shared drives/Accounting/Payables'
 
@@ -33,7 +39,10 @@ class OsInterface():
         self._payables = payables_wb
 
     def main(self):
+<<<<<<< HEAD
         input('Enter to initialize main...')
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         while True:
             cls()
 
@@ -69,6 +78,7 @@ class OsInterface():
         return payables_date
 
     def get_invoice_data(self):
+<<<<<<< HEAD
         try:
             vendor = input('Vendor:\t')
             invoice_num = input('Invoice Number:\t')
@@ -84,6 +94,20 @@ class OsInterface():
             return invoice_data
         except ValueError:
             return False
+=======
+        vendor = input('Vendor:\t')
+        invoice_num = input('Invoice Number:\t')
+        amount = np.float64(input('Invoice Amount:\t'))
+        CC = input('Credit card (y/n):\t')
+        if CC == 'y':
+            CC = True
+        else:
+            CC = False
+
+        invoice_data = [vendor, invoice_num, amount, CC]
+        
+        return invoice_data
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
     
     def insert_invoice(self, invoice_data: list):
         self.payables.loc[len(self.payables.index)] = invoice_data
@@ -94,6 +118,7 @@ class OsInterface():
         print('CLEAR DOWNLOADS FOLDER BEFORE BEGINNING')
         input()
 
+<<<<<<< HEAD
         listener = Listener(on_press=on_press)
         listener.start()
         try:
@@ -119,6 +144,22 @@ class OsInterface():
             self.payables.save_workbook()
 
         listener.stop() 
+=======
+        while True:
+            cls()
+
+            invoice_data = self.get_invoice_data()
+            if invoice_data[3] == True:
+                self.cc_invoice(invoice_data)
+            else:
+                self.payables.insert_invoice(invoice_data[:-1])
+
+            add_more = input('Add another invoice (y/n)\n>\t')
+            
+            if add_more == 'n':
+                break
+
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         self.payables.save_workbook()
 
     def cc_invoice(self, invoice_data):

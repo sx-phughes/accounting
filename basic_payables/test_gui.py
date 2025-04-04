@@ -29,6 +29,7 @@ def show_rewrite():
     cursor_down()
 
     print('Back to bottom!')
+<<<<<<< HEAD
 class GuiMenu:
     def __init__(self, menu_name: str, lines: list[str], bool_vals:
                  list[bool]):
@@ -64,6 +65,31 @@ class GuiMenu:
         line7 = 'Enter Invoice' 
 
         lines = [
+=======
+
+def on_press(key):
+    if key == Key.up:
+        cursor_up()
+    elif key == Key.down:
+        cursor_down()
+    else:
+        pass
+
+def on_release(key):
+    if key == Key.esc:
+        return False
+
+def test_menu():
+    line1 = 'This Is the Menu Title!'
+    line2 = ''
+    line3 = 'this is a subtitle!'
+    line4 = '\tinput1!'
+    line5 = '\tinput2!'
+    line6 = ''
+    line7 = 'Submit!!'
+
+    lines = [
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
             line1,
             line2,
             line3,
@@ -71,6 +97,7 @@ class GuiMenu:
             line5,
             line6,
             line7
+<<<<<<< HEAD
         ]
 
         inputs = [
@@ -90,3 +117,14 @@ class GuiMenu:
 
         with Listener(on_press=on_press, on_release=on_release) as listener:
             listener.join()
+=======
+            ]
+    for i in lines:
+        print(i)
+
+        
+    with Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
+
+test_menu()
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04

@@ -32,7 +32,11 @@ def save_df(df: pd.DataFrame, path: str):
 def update_vendor(gdrive_root: str):
     vendors_path = gdrive_root + '/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx'
     
+<<<<<<< HEAD
     vendors_df = pd.read_excel(vendors_path, 'Vendors', dtype=str)
+=======
+    vendors_df = pd.read_excel(vendors_path, 'Vendors')
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
     
     vendor_i = search_for_vendor(vendors_df)
     
@@ -45,3 +49,9 @@ def update_vendor(gdrive_root: str):
     update_value(vendors_df, vendor_i, item_to_update, new_val)
     
     save_df(vendors_df, vendors_path)
+<<<<<<< HEAD
+=======
+    
+    
+        
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04

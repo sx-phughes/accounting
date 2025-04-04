@@ -64,6 +64,7 @@ def run_abn_tables(date: datetime, save_path = '.'):
     date_str = abn_date(date)
     
     abn_eqt_accounts = (
+<<<<<<< HEAD
         '008MMXV',      # MM    VIX Options
         '695M526',      # MM    NXM SPY Stock and ETFs
         '695M622',      # MM    Main MM Account
@@ -80,6 +81,24 @@ def run_abn_tables(date: datetime, save_path = '.'):
         '8131SIMP1',    # MM    XM VIX Futures
         '8131SIMP2',    # MM    XM EMini Futures
         '8131SIMP7'     # MM    XM NQ, RTY Futures
+=======
+        '008MMXV',
+        '695M526',
+        '695M622',
+        '695M679',
+        '695MMXZ',
+        '813M473',
+        '813M758'
+    )
+
+    abn_fut_accounts = (
+        '6901SIMP3',
+        '6901SIMP4',
+        '6901SIMP9',
+        '8131SIMP1',
+        '8131SIMP2',
+        '8131SIMP7'
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
     )
     
     sixnine_tfr_table = AbnOptTransferTable('695')
@@ -143,8 +162,16 @@ def run_abn_tables(date: datetime, save_path = '.'):
     et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}')
         
 def run_ME_Transfers(year, month, day, save_path=os.environ['HOMEPATH'] + '\\Downloads'):
+<<<<<<< HEAD
      
     dt = datetime(int(year), int(month), int(day))
     
     run_abn_tables(dt, save_path)
     run_baml_table(dt, save_path)
+=======
+    
+    dt = datetime(year, month, day)
+    
+    run_abn_tables(dt, save_path)
+    run_baml_table(dt, save_path)
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04

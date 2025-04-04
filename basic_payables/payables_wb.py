@@ -4,7 +4,10 @@ import os
 import re
 import shutil
 import pandas as pd
+<<<<<<< HEAD
 from pynput.keyboard import Key, Listener
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 
 # Package imports
 from functions import *
@@ -23,7 +26,11 @@ class PayablesWorkbook(pd.DataFrame):
         if data is not None:
             input_data = data
         else:
+<<<<<<< HEAD
             input_data = self.initialize_from_date()
+=======
+            input_data = pd.read_excel(self.wb_path, 'Invoices')[['Vendor', 'Invoice #', 'Amount']]
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 
         super().__init__(input_data, index, columns, dtype, copy)
     
@@ -82,6 +89,7 @@ class PayablesWorkbook(pd.DataFrame):
     @f_name.setter
     def f_name(self, f_name):
         self._f_name = f_name
+<<<<<<< HEAD
     
     def initialize_from_date(self):
         path = self.wb_path.replace(self.f_name, '')
@@ -92,6 +100,8 @@ class PayablesWorkbook(pd.DataFrame):
                                                        'Amount']]
         return data
         
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 
     def insert_invoice(self, invoice_data: list):
         self.loc[len(self.index)] = invoice_data
@@ -104,6 +114,7 @@ class PayablesWorkbook(pd.DataFrame):
         self.reset_index(drop=True, inplace=True)
         self.save_workbook()
     
+<<<<<<< HEAD
     def check_path(self, path):
         if os.path.exists(path):
             return True
@@ -116,6 +127,8 @@ class PayablesWorkbook(pd.DataFrame):
         with pd.ExcelWriter(self.wb_path, 'xlsxwriter') as writer:
             df.to_excel(writer, 'Invoices', index=False)
 
+=======
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
     def save_workbook(self):
         with pd.ExcelWriter(self.wb_path, 'xlsxwriter') as writer:
             self.to_excel(writer, 'Invoices', index=False)

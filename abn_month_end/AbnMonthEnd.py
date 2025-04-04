@@ -29,6 +29,7 @@ class AbnMonthEnd(AbnBase):
         
         ledger_mapping, account_mapping = self.get_mapping_files()
         
+<<<<<<< HEAD
         if not t_plus_eqt.empty:
             interest_data = self.interest_data(t_plus_eqt, t_plus_mics)
         
@@ -46,6 +47,18 @@ class AbnMonthEnd(AbnBase):
         positions, pivot, categories = self.positions_tab(cm_position)
         
         self.misc_breakdown(self.year, self.month).to_csv(self.save_to + '/misc_breakdown.csv', index=False)
+=======
+        interest_data = self.interest_data(t_plus_eqt, t_plus_mics)
+        
+        interest_w_strat = pd.merge(interest_data, account_mapping[['ACCOUNT', 'Strategy']], 'left', left_on='Account', right_on='ACCOUNT',)
+        
+        data_tab_df = self.data_tab(cm_csv_cash, pm_csv_cash, ledger_mapping, account_mapping)
+        
+        positions, pivot, categories = self.positions_tab(cm_position)
+        
+        self.misc_breakdown(self.year, self.month).to_csv(self.save_to + '/misc_breakdown.csv', index=False)
+        interest_data.to_csv(self.save_to + '/interest_data.csv', index=False)
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         data_tab_df.to_csv(self.save_to + '/data_df.csv', index=False)
         positions.to_csv(self.save_to + '/positions_df.csv', index=False)
         pivot.to_csv(self.save_to + '/positions-pivot_df.csv', index=False)
@@ -77,8 +90,12 @@ class AbnMonthEnd(AbnBase):
         
         data_df_cm_diffs = data_df_cm[data_df_cm['Concat'].isin(diff_concat)].copy()
         data_df_cm_diffs = data_df_cm_diffs.drop(columns='Opening Balance')
+<<<<<<< HEAD
         ledger_map_additions = self.input_new_ledger_mappings(data_df_cm_diffs,
                                                              ledger_map)
+=======
+        ledger_map_additions = self.input_new_ledger_mappings(data_df_cm_diffs)
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         
         
         ledger_map = pd.concat([ledger_map, ledger_map_additions])
@@ -145,6 +162,7 @@ class AbnMonthEnd(AbnBase):
         
         return data_df
         
+<<<<<<< HEAD
     def input_new_ledger_mappings(self, diffs_df:pd.DataFrame,
                                   ledger_map:pd.DataFrame):
         diffs_df_new = []
@@ -162,6 +180,12 @@ class AbnMonthEnd(AbnBase):
                 print(f'\t{similar_items.loc[i, 'AccountID']} //' +
                       f'{similar_items.loc[i, 'Simplex Map']}')
 
+=======
+    def input_new_ledger_mappings(self, diffs_df:pd.DataFrame):
+        diffs_df_new = []
+        for i, row in diffs_df.iterrows():
+            print(f'{row.iloc[0]} // {row.iloc[1]}')
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
             print('Input new ledger mapping:')
             new_mapping = input('>\t')
             
@@ -291,5 +315,10 @@ class AbnMonthEnd(AbnBase):
         return df.loc[df['LedgerNumber'] == 8200].copy()
     
 def script_wrapper(year, month):
+<<<<<<< HEAD
     me_obj = AbnMonthEnd(int(year), int(month))
     me_obj.main()
+=======
+    me_obj = AbnMonthEnd(year, month)
+    me_obj.main()
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04

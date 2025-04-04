@@ -108,4 +108,8 @@ def EtMonthEnd(year, month):
     file = file.drop(index=drop_index).reset_index(drop=True)
     file = file.drop(index=file.loc[file['Transfer'] == 0].index).reset_index(drop=True)
 
+<<<<<<< HEAD
     return file
+=======
+    return file
+>>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
