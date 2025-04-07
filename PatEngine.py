@@ -25,8 +25,6 @@ import update_vendors.main as UpdateVendors
 from me_transfers import MeTransfers
 
 
-
-
 def cls():
     """Shortcut to clear screen"""
     os.system('cls')
@@ -99,7 +97,7 @@ class PatEngine:
                 going to be used for settings. Defaults to False.
 
         Returns:
-            _type_: _description_
+            None 
         """
         os.system('cls')
         options[return_to] = None
@@ -107,69 +105,104 @@ class PatEngine:
         while True:
             os.system('cls')
             print(menu_title)
-            
-            for i in range(len(options.keys())):
-                print(f'{i+1}. {list(options.keys())[i]}')
-        
+            self.print_options(options) 
             print('Please select an option by number:')
-            option = int(input('>\t'))
-        
-            if option in range(1, len(options.keys())):
-                
-                if do_settings:
-                    
-                    new_val = input('Please input new value for setting:\n>\t')
-                    self.settings[self.settings.vals[option]] = new_val
-                    print('Settings updated')
-                    print('Press enter to return to main menu')
-                else:
-                    
-                    try:
-                        selection = list(options.items())[option - 1]
-                        
-                        if hasattr(selection[1], '__call__'):
-                            selection[1]()
-                        else:
-                            self.function_wrapper(selection[1][0], selection[1][1])
-                            
-                    except (
-                        KeyError, NameError, FileNotFoundError, ValueError,
-                        PermissionError, FileExistsError, IndexError, TypeError
-                    ):
-                        print('Function encountered error:')
-                        print(traceback.format_exc())
-                        input('Press enter to return to menu\n>\t')
-                        
-            elif option == len(options.keys()) or option == '':
+            option = self.get_option_selection(options) 
+
+            if option == len(options.keys()) or option == '':
                 break
-            
+            elif do_settings:
+                self.update_settings()            
             else:
-                print('That is not a valid option')
-                os.system('cls')
+                self.do_option(option)
+
+    def do_option(self, option: int) -> None:
+        """Run user input option"""
+        try:
+            self.run_selection(option)            
+        except (
+            KeyError, NameError, FileNotFoundError, ValueError,
+            PermissionError, FileExistsError, IndexError, TypeError
+        ):
+            self.function_encountered_error()                
+
+    def function_encountered_error(self):
+        """Messages for when function encounters error"""
+        print('Function encountered error:')
+        print(traceback.format_exc())
+        input('Press enter to return to menu\n>\t')
+        
+    def run_selection(self, option: int):
+        """Get function from list of options and run function or initialize
+        next menu
+        """
+        selection = list(options.items())[option - 1]
+        if hasattr(selection[1], '__call__'):
+            selection[1]()
+        else:
+            self.function_wrapper(selection[1][0], selection[1][1])
+
+    def get_option_selection(self, options: dict):
+        """Loop for getting a valid option selection"""
+        option = 0 
+        while not option:
+            option = self.get_option_selection(options)
+        return option
+
+    def get_option_input(self, options: dict):
+        num_options = len(list(options.keys()))
+        selection = input('>\t')
+        validated = self.validate_option(selection, num_options)
+        return validated
+
+    def validate_option(self, selection: str, num_options: int):
+        """Confirm option is an integer and in range of options"""
+        if re.match(r'\d+', selection):
+            integer_selection = int(selection)
+            if integer_selection <= num_options:
+                return integer_selection
+        print('Bad option!')
+
+    def update_settings(self):
+        new_val = input('Please input new value for setting:\n>\t')
+        self.settings[self.settings.vals[option]] = new_val
+        print('Settings updated')
+        print('Press enter to return to main menu')
+
+    def print_options(self, options: dict):
+        """Print menu options to screen"""
+        for i in range(len(options.keys())):
+            print(f'{i+1}. {list(options.keys())[i]}')
 
     def run_f(self, fn):
         """Run function with standard UI for inputs"""
-        input_dict = {}
-        
         if inspect.getfullargspec(fn).args:
-            args = inspect.getfullargspec(fn).args
-            default_args = inspect.getfullargspec(fn).defaults
-
-            print('Params: ', args)
-            print('Defaults: ', default_args)
-
-            for arg in args:
-                print(f'Input value for parameter {arg}: ') 
-                val = input('>\t')
-                typed_val = self.type_val(val)
-                input_dict.update({arg: typed_val})
-            
-            fn(**input_dict)
+            self.run_fn_with_args(fn)
         else:
             fn()
+
+    def run_fn_with_args(self, fn):
+        input_dict = {}
+        args = inspect.getfullargspec(fn).args
+        default_args = inspect.getfullargspec(fn).defaults
+
+        print('Params: ', args)
+        print('Defaults: ', default_args)
+
+        for arg in args:
+            self.get_arg(arg, input_dict)
         
+        fn(**input_dict)
+        
+    def get_arg(self, arg: str, arg_storage: dict):
+        """Get argument value from user"""
+        print(f'Input value for parameter {arg}: ') 
+        val = input('>\t')
+        typed_val = self.type_val(val)
+        arg_storage.update({arg: typed_val})
         
     def type_val(self, val):
+        """Convert user input to an integer"""
         if re.match(r'\d+', val):
             return int(val)
         else:
@@ -188,14 +221,6 @@ class PatEngine:
         else:
             self.run_f(functions)
 
-    def validate_default_args(self, default_args: list|None, num_args: int):
-
-        if isinstance(default_args, list) and len(default_args) == num_args:
-            return default_args
-        elif default_args == None:
-            none_list = [None for i in range(num_args)]
-            return none_list 
-       
     ############################################
     # Menu Functions ###########################
     ############################################
