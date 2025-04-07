@@ -2,10 +2,7 @@
 import os
 import numpy as np
 import pandas as pd
-<<<<<<< HEAD
 from pynput.keyboard import Key, Listener
-=======
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 
 # Package Imports
 from payables_wb import PayablesWorkbook
@@ -14,14 +11,6 @@ from functions import *
 def cls():
     os.system('cls')
 
-<<<<<<< HEAD
-def on_press(key: Key):
-    if key == Key.esc:
-       raise ValueError 
-
-
-=======
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
 class OsInterface():
     payables_path = 'C:/gdrive/Shared drives/Accounting/Payables'
 
@@ -39,10 +28,7 @@ class OsInterface():
         self._payables = payables_wb
 
     def main(self):
-<<<<<<< HEAD
         input('Enter to initialize main...')
-=======
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         while True:
             cls()
 
@@ -78,7 +64,6 @@ class OsInterface():
         return payables_date
 
     def get_invoice_data(self):
-<<<<<<< HEAD
         try:
             vendor = input('Vendor:\t')
             invoice_num = input('Invoice Number:\t')
@@ -94,7 +79,6 @@ class OsInterface():
             return invoice_data
         except ValueError:
             return False
-=======
         vendor = input('Vendor:\t')
         invoice_num = input('Invoice Number:\t')
         amount = np.float64(input('Invoice Amount:\t'))
@@ -107,7 +91,6 @@ class OsInterface():
         invoice_data = [vendor, invoice_num, amount, CC]
         
         return invoice_data
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
     
     def insert_invoice(self, invoice_data: list):
         self.payables.loc[len(self.payables.index)] = invoice_data
@@ -118,9 +101,6 @@ class OsInterface():
         print('CLEAR DOWNLOADS FOLDER BEFORE BEGINNING')
         input()
 
-<<<<<<< HEAD
-        listener = Listener(on_press=on_press)
-        listener.start()
         try:
             while True:
                 cls()
@@ -143,8 +123,6 @@ class OsInterface():
         except ValueError:
             self.payables.save_workbook()
 
-        listener.stop() 
-=======
         while True:
             cls()
 
@@ -159,7 +137,6 @@ class OsInterface():
             if add_more == 'n':
                 break
 
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
         self.payables.save_workbook()
 
     def cc_invoice(self, invoice_data):
@@ -167,56 +144,15 @@ class OsInterface():
         vendor = cc_user + ' - ' + invoice_data[0]
         self.payables.move_files(vendor, invoice_data[1])
 
-    def print_invoices(self):
-        cls()
-
-        field_lens = {
-            'Index': 5,
-            'Vendor': 20,
-            'Invoice #': 20,
-            'Amount': 10,
-        }
-        
-        
-        def print_headers():
-            print(f'{self.turn_to_field(field_lens['Index'], 'Index')} {self.turn_to_field(field_lens['Vendor'], 'Vendor')} {self.turn_to_field(field_lens['Invoice #'], 'Invoice #')} {self.turn_to_field(field_lens['Amount'], 'Amount')}')
-        
-        count = 0
-        for i, row in self.payables.iterrows():
-            if count % 20 == 0:
-                print_headers()
-
-            fields = [
-                self.turn_to_field(field_lens['Index'], str(i)),
-                self.turn_to_field(field_lens['Vendor'], row['Vendor']),
-                self.turn_to_field(field_lens['Invoice #'], row['Invoice #']),
-                self.turn_to_field(field_lens['Amount'], str(row['Amount']))
-            ]
-            
-            print(' '.join(fields))
-
-            count += 1
-    
-    def turn_to_field(self, field_len, datum: str) -> str:
-        spaces_len = field_len - len(datum)
-        if spaces_len < 0:
-            field = datum[0:(field_len + 1)]
-        else:
-            field = datum + spaces_len * ' '
-        
-        return field
-    
     def view_invoices(self):
         pd.set_option('display.max_rows', None)        
         print(self.payables)
-                  # self.print_invoices()
 
         input('\n\nPress enter to return to main menu\n')
 
     def remove_invoice(self):
         pd.set_option('display.max_rows', None)
         print(self.payables)
-                  # self.print_invoices()
 
         index_to_remove = int(input('Input index of invoice to remove'))
         
