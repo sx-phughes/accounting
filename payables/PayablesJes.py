@@ -46,11 +46,8 @@ class JECreator():
             # payables.to_csv('C:/Users/phughes_simplextradi/Downloads/payables_after_coa_merge.csv')
             
             for i, row in co_payables.iterrows():
-<<<<<<< HEAD
                 print(f'Processing bill {row['Vendor']} - {row['Invoice #']}',
                       end = '\r')
-=======
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04
                 bill = self.bill_creator(row)
 
                 bill_dfs[co] = pd.concat([bill_dfs[co], bill])
@@ -192,8 +189,5 @@ def run_payables():
     bill_dfs = payables.initiator(payables=invoices, vendor_mapping=vendors, account_mappings=coas)
 
     for i in bill_dfs.keys():
-<<<<<<< HEAD
         bill_dfs[i].to_csv(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)
-=======
         bill_dfs[i].to_csv(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{i} {batch_date.strftime('%Y-%m-%d')} Bills.csv', index=False)
->>>>>>> 9325cd371a8bd70a67527f7fe426df02c9ee9e04

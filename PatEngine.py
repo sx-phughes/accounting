@@ -23,6 +23,7 @@ from nacha import NachaMain
 from nacha import BlankBatch
 import update_vendors.main as UpdateVendors
 from me_transfers import MeTransfers
+from basic_payables import os_interface
 
 
 def cls():
@@ -114,12 +115,12 @@ class PatEngine:
             elif do_settings:
                 self.update_settings()            
             else:
-                self.do_option(option)
+                self.do_option(option, options)
 
-    def do_option(self, option: int) -> None:
+    def do_option(self, option: int, options: dict) -> None:
         """Run user input option"""
         try:
-            self.run_selection(option)            
+            self.run_selection(option, options)            
         except (
             KeyError, NameError, FileNotFoundError, ValueError,
             PermissionError, FileExistsError, IndexError, TypeError
@@ -132,7 +133,7 @@ class PatEngine:
         print(traceback.format_exc())
         input('Press enter to return to menu\n>\t')
         
-    def run_selection(self, option: int):
+    def run_selection(self, option: int, options: dict):
         """Get function from list of options and run function or initialize
         next menu
         """
@@ -146,7 +147,7 @@ class PatEngine:
         """Loop for getting a valid option selection"""
         option = 0 
         while not option:
-            option = self.get_option_selection(options)
+            option = self.get_option_input(options)
         return option
 
     def get_option_input(self, options: dict):
@@ -301,6 +302,10 @@ class PatEngine:
     def payables(self):
         """Sub-menu options for running payables-related scripts"""
         options = {
+            'Input Payables': [
+                'Manage Payables Workbook: view/input/remove',
+                os_interface.__main__
+            ],
             'Create Payables Payment Files': [
                 'Create NACHA files for a Payables Batch',
                 NachaMain.nacha_main

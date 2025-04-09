@@ -2,11 +2,13 @@
 import os
 import numpy as np
 import pandas as pd
-from pynput.keyboard import Key, Listener
+import sys
+import time
 
 # Package Imports
-from payables_wb import PayablesWorkbook
-from functions import *
+from basic_payables.payables_wb import PayablesWorkbook
+from basic_payables.functions import *
+from basic_payables.test_gui import cursor_up, cursor_down
 
 def cls():
     os.system('cls')
@@ -44,37 +46,36 @@ class OsInterface():
     # class methods
     def main(self):
         """Main user interface menu function"""
-        while True:
-            cls()
-
-            print('Invoice Input Main Menu\n')
-            self.print_main_menu()
-
-            selected = 0
-            while not selected:
-                selected = self.get_user_input()
-
-            if selected == list(options.keys())[-1]:
-                break
-            else:
-                options[selected][1]()
-
-    def get_user_input(self):
-        """Receive user input for main menu selection"""
-        selection = input('\nPlease enter number of option:\n>\t'))
-        if re.match(r'\d+', selection):
-            return int(selection)
-        else:
-            print('Bad option!')
-
-    def print_main_menu(self):
         options = {
             1: ['Add Invoices', self.add_invoices],
             2: ['View Invoices', self.view_invoices],
             3: ['Remove Invoices', self.remove_invoice],
             4: ['Exit']
         }
+        while True:
+            cls()
 
+            print('Invoice Input Main Menu\n')
+            self.print_main_menu(options)
+
+            selected = 0
+            while not selected:
+                selected = self.main_menu_input()
+
+            if selected == list(options.keys())[-1]:
+                break
+            else:
+                options[selected][1]()
+
+    def main_menu_input(self):
+        """Receive user input for main menu selection"""
+        selection = input('\nPlease enter number of option:\n>\t')
+        if re.match(r'\d+', selection):
+            return int(selection)
+        else:
+            print('Bad option!')
+
+    def print_main_menu(self, options: dict):
         for i in range(len(options.keys())):
             print(f'{str(i + 1)}: {options[list(options.keys())[i]][0]}')
 
@@ -85,7 +86,10 @@ class OsInterface():
             while True:
                 cls()
 
-                invoice_data = self.get_invoice_data()
+                try:
+                    invoice_data = self.get_invoice_data()
+                except EOFError:
+                    invoice_data = False
                 if invoice_data == False:
                     break
                 elif invoice_data[3] == True:
@@ -125,16 +129,68 @@ class OsInterface():
 
     def get_inputs(self):
         """UI for receiving user input for a new invoice"""
-        vendor = input('Vendor:\t')
-        invoice_num = input('Invoice Number:\t')
-        amount = np.float64(input('Invoice Amount:\t'))
-        credit_card = input('Credit card (y/n):\t')
-        if credit_card == 'y':
-            credit_card = True
-        else:
-            credit_card = False
+        # vendor = input('Vendor:\t')
+        # invoice_num = input('Invoice Number:\t')
+        # amount = np.float64(input('Invoice Amount:\t'))
+        # credit_card = input('Credit card (y/n):\t')
+        # if credit_card == 'y':
+        #     credit_card = True
+        # else:
+        #     credit_card = False
+        # return (vendor, invoice_num, amount, credit_card)
 
-        return (vendor, invoice_num, amount, credit_card)
+        # TEST NAVIGABLE INPUT 
+        prompts = [
+            'Vendor:\t',
+            'Invoice Number:\t',
+            'Invoice Amount:\t',
+            'Credit card (y/n):\t'
+        ]
+        inputs = [0, 0, 0, 0]
+        i = 0
+        while 0 in inputs:
+            i = self.get_user_input(prompts, inputs, i)
+            
+        if inputs[2] == 'y':
+            inputs[2] = True
+        else:
+            inputs[2] = False
+
+        
+        return inputs
+
+    def get_user_input(self, prompts: list[str], input_list: list, curr_index: int):
+        index = curr_index 
+        collected = 0
+        end = len(prompts) - 1
+
+        print(prompts[index], end='')
+        data = input()
+        if data == 'k':
+            index = self.up_arrow(index)
+            print('', end='\r')
+        elif data == 'j':
+            index = self.down_arrow(index, end)
+            print('', end='\r')
+        else:
+            input_list[index] = data 
+            index += 1
+
+        return index 
+
+    def up_arrow(self, index: int):
+        if index > 0:
+            index -= 1
+            cursor_up()
+        return index
+
+    def down_arrow(self, index: int, end_index: int):
+        if index >= end_index:
+           index += 1
+           cursor_down()
+           # print('', end='\r', flush=True)
+        return index
+
 
     def add_cc_user(self, invoice_data):
         """Add credit card user to invoice data for credit card invoices"""
@@ -216,4 +272,3 @@ class OsInterface():
 def __main__():
     OsInterface()
 
-__main__()
