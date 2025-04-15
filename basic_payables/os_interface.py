@@ -151,10 +151,10 @@ class OsInterface():
         while 0 in inputs:
             i = self.get_user_input(prompts, inputs, i)
             
-        if inputs[2] == 'y':
-            inputs[2] = True
+        if inputs[3] == 'y':
+            inputs[3] = True
         else:
-            inputs[2] = False
+            inputs[3] = False
 
         
         return inputs

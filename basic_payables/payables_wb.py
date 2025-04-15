@@ -200,7 +200,7 @@ class PayablesWorkbook(pd.DataFrame):
 
     def save_workbook(self):
         with pd.ExcelWriter(self.wb_path, 'xlsxwriter') as writer:
-            self.to_excel(writer, 'Invoices', index=False)
+            self.to_excel(writer, sheet_name='Invoices', index=False)
 
     def move_files(self):
         """Move invoice files from Downloads to relevant payables folder with
@@ -261,7 +261,7 @@ class PayablesWorkbook(pd.DataFrame):
     def get_vendor(self, row: pd.Series):
         """Returns vendor, or CC User and Vendor for CC charges"""
         vendor = row['Vendor']
-        if row['CC']:
+        if row['CC'] == 1:
             vendor = row['CC User'] + ' - ' + vendor 
         return vendor
 
@@ -271,7 +271,8 @@ class PayablesWorkbook(pd.DataFrame):
 
     def get_invoice_files(self):
         """Get files in download folder"""
-        downloads= os.environ['HOMEPATH'].replace('\\', '/') + '/Downloads'
+        drive = 'C:'
+        downloads = drive + os.environ['HOMEPATH'].replace('\\', '/') + '/Downloads'
         files = list(filter(lambda x: '.ini' not in x, os.listdir(downloads)))
         old_paths = [downloads + '/' + file for file in files]
 
