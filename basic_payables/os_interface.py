@@ -15,6 +15,13 @@ def cls():
 
 class OsInterface():
     payables_path = 'C:/gdrive/Shared drives/Accounting/Payables'
+    data_path = 'C:/gdrive/Shared drives/accounting/patrick_data_files/ap'
+    invoice_prompts = [
+        'Vendor:\t',
+        'Invoice Number:\t',
+        'Invoice Amount:\t',
+        'Credit card (y/n):\t'
+    ]
 
     # initialization
     def __init__(self):
@@ -123,39 +130,25 @@ class OsInterface():
 
     def add_to_row(self, new_row: list):
         """Get new invoice data and copy into a blank row"""
-        inputs = self.get_inputs()
+        inputs = self.get_inputs(OsInterface.invoice_prompts)
         for i in range(len(inputs)):
             new_row[i] = inputs[i]
 
-    def get_inputs(self):
+    def get_inputs(self, prompts: list[str]):
         """UI for receiving user input for a new invoice"""
-        # vendor = input('Vendor:\t')
-        # invoice_num = input('Invoice Number:\t')
-        # amount = np.float64(input('Invoice Amount:\t'))
-        # credit_card = input('Credit card (y/n):\t')
-        # if credit_card == 'y':
-        #     credit_card = True
-        # else:
-        #     credit_card = False
-        # return (vendor, invoice_num, amount, credit_card)
-
-        # TEST NAVIGABLE INPUT 
-        prompts = [
-            'Vendor:\t',
-            'Invoice Number:\t',
-            'Invoice Amount:\t',
-            'Credit card (y/n):\t'
-        ]
-        inputs = [0, 0, 0, 0]
+        inputs = [0 for i in range(len(prompts))]
         i = 0
         while 0 in inputs:
             i = self.get_user_input(prompts, inputs, i)
             
-        if inputs[3] == 'y':
-            inputs[3] = True
-        else:
-            inputs[3] = False
-
+        try:
+            cc_index = prompts.index('Credit card (y/n):\t')
+            if inputs[cc_index] = 'y':
+                inputs[cc_index] = True
+            else:
+                inputs[cc_index] = False
+        except:
+            inputs = inputs
         
         return inputs
 
@@ -208,18 +201,19 @@ class OsInterface():
             i += 1
 
         return no_data
+    def print_invoices(self):
+        pd.set_option('display.max_rows', None)
+        print(self.payables)
 
     def view_invoices(self):
         """Prints invoices to screen"""
-        pd.set_option('display.max_rows', None)        
-        print(self.payables)
+        self.print_invoices()
 
         input('\n\nPress enter to return to main menu\n')
 
     def remove_invoice(self):
         """UI for removing one or multiple invoices from the workbook"""
-        pd.set_option('display.max_rows', None)
-        print(self.payables)
+        self.print_invoices()
 
         index = self.get_index_input()
         if index:
@@ -231,9 +225,9 @@ class OsInterface():
         input('Enter to return to main menu')
         
     def get_index_input(self):
-        """Get index(es) for removal"""
+        """Get index(es) selection from user"""
         prompts = [
-            'Input index to remove in the following formats:\n',
+            'Input index in the following formats:\n',
             '\tSingle index, e.g., 10\n',
             '\tComma-separated list, e.g. 10,15,29\n',
             '\tRange of indexes, e.g. 10-15\n',
@@ -268,6 +262,62 @@ class OsInterface():
         trimmed_inputs = [str.strip(index) for index in split]
         int_indexes = [int(index) for index in trimmed_inputs]
         return int_indexes
+
+    def view_idb(self):
+        pd.set_option('display.max_rows', None)
+        print(self.get_idb_table())
+
+        input('\n\nPress enter to return to main menu\n')
+
+    def get_idb_table(self):
+        payables = self.payables.copy()
+        idb = payables.loc[self.idb_mask()]
+        return idb.sort_values(by='Vendor')
+
+    def idb_mask(self):
+        payables_with_idb = self.payables.copy()
+        idb_mask = payables_with_idb['Vendor'].isin(self.get_idb_brokers())
+        return idb_mask
+
+    def get_idb_brokers(self):
+        idb = pd.read_csv(OsInterface.data_path + 'idb.csv')['IDB Brokers']
+        idb_to_list = idb.values.to_list()
+        return idb_to_list
+
+    def edit_invoice(self):
+        cls()
+        self.print_invoices()
+        print('\n\n Input invoices to edit\n')
+         
+    def do_edits(self):
+        indexes = self.get_index_input()
+        for index in indexes:
+            self.perform_edit(index)
+
+    def perform_edit(self, index: int):
+        data = self.payables.loc[index].copy()
+        edit_prompts = self.make_edit_prompts(data)
+        inputs = self.get_input(edit_prompts)
+        self.payables.loc[index] = inputs
+
+    def make_edit_prompts(self, new_data):
+        table_cols = self.payables.columns.to_list()
+        no_nans = self.remove_nans(new_data)
+        prompts = [col + ': ' + no_nans[col] for col in table_cols]
+        return prompts
+
+    def remove_nans(self, new_data):
+        no_nans = {}
+        for col in self.payables.columns.to_list():
+            val = self.substitue_nan(new_data[col], '')
+            updater = {col: val}
+            no_nans.update(updater)
+        return no_nans
+
+    def substitue_nan(self, value, sub):
+        if isinstance(value, float) and np.isnan(value):
+            value = sub
+        return value
 
 def __main__():
     OsInterface()
