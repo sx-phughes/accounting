@@ -63,7 +63,7 @@ def clean_table() -> pd.DataFrame:
     top_rows_dropped = df.drop(df.index[0:17]).reset_index(drop=True)
     columns_renamed = rename_columns(top_rows_dropped)
     dates_fixed = fix_dates(columns_renamed)
-    nulls_dropped = dates_fixed.loc[df['Trader'].isna() == False]
+    nulls_dropped = dates_fixed.loc[dates_fixed['Trader'].isna() == False]
 
     return nulls_dropped
 
