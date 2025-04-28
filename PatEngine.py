@@ -110,6 +110,7 @@ class PatEngine:
                 self.update_settings()            
             else:
                 self.do_option(option, options)
+                input()
 
     def do_option(self, option: int, options: dict) -> None:
         """Run user input option"""
@@ -224,7 +225,7 @@ class PatEngine:
         options = {
             'Baycrest': [
                 'Split Baycrest invoice by IDB and IX',
-                BaycrestSplitter.split
+                BaycrestSplitter.splitter
             ],
             'ABN Cash Files': [
                 'Run ABN Cash Blotter',
