@@ -1,15 +1,9 @@
 # Standard imports
 import os
-import sys
 import re
 import traceback
 import inspect
 import pandas as pd
-
-
-# PATH Updates
-# sys.path.append(f'{os.environ['HOMEPATH']}\\accounting')
-
 
 # Package Imports
 from baycrest import BaycrestSplitter
@@ -166,7 +160,7 @@ class PatEngine:
 
     def update_settings(self):
         new_val = input('Please input new value for setting:\n>\t')
-        self.settings[self.settings.vals[option]] = new_val
+        # self.settings[self.settings.vals[option]] = new_val
         print('Settings updated')
         print('Press enter to return to main menu')
 
@@ -251,6 +245,10 @@ class PatEngine:
             'Update Vendor Value': [
                 'Update a value in the vendor database',
                 UpdateVendors.update_vendor
+            ],
+            'Add a Vendor': [
+                'Add a New Vendor',
+                UpdateVendors.add_vendor
             ],
             'Create custom NACHA batch': [
                 'Process custom NACHA batch',
