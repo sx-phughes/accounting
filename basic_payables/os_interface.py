@@ -143,7 +143,7 @@ class OsInterface():
             
         try:
             cc_index = prompts.index('Credit card (y/n):\t')
-            if inputs[cc_index] = 'y':
+            if inputs[cc_index] == 'y':
                 inputs[cc_index] = True
             else:
                 inputs[cc_index] = False
