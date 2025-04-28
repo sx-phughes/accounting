@@ -14,6 +14,8 @@ def get_removal_option(trx_table: pd.DataFrame, duplicate: list):
 def check_duplicates(trx_table: pd.DataFrame):
     trx_table['Concat'] = trx_table['Vendor'] + trx_table['Invoice #'] + trx_table['Amount'].astype(str)
 
+    print(trx_table.loc[trx_table.duplicated('Concat')])
+
     trx_table = trx_table.drop_duplicates('Concat', keep='first')
     trx_table = trx_table.drop(columns='Concat')
 
