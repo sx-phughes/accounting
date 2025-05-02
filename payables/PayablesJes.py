@@ -18,7 +18,8 @@ class JECreator():
         for co in companies:
             coa_path = f'C:/gdrive/Shared drives/accounting/patrick_data_files/gl_account_mappings/Simplex {co}_Account List.xlsx'
             coa = pd.read_excel(coa_path, 'Sheet1', skiprows=3)
-            coas[co] = coa
+            no_total_line = coa.loc[coa['Account #'] != 'TOTAL']
+            coas[co] = no_total_line
         
         return (invoices_df, vendor_mapping, coas)
         
