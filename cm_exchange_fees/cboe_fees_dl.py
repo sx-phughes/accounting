@@ -1,4 +1,5 @@
 import requests
+import re
 import pandas as pd
 from datetime import datetime
 
@@ -16,8 +17,14 @@ mpidUrl = 'https://files.catnmsplan.com/firm-data/IMID_Daily_List.txt'
 mpidFileName = 'all_exch_mpids.csv'
 suffixes = ('', 'a')
 cboeUsername, cboePassword = None, None
+global debug
+debug = False
 
-def get_cboe_fees(year: int, month: int, download_path: str):
+def debugger(to_print: any) -> None:
+    if debug:
+        print(to_print)
+
+def get_cboe_fees(year: int, month: int, download_path: str, debugger_on: bool):
     """Download CBOE Exchange Fee Files
 
     Params:
@@ -27,6 +34,9 @@ def get_cboe_fees(year: int, month: int, download_path: str):
 
     Returns: None
     """
+    global debug
+    debug = debugger_on 
+
     global downloadPath
     downloadPath = download_path
 
@@ -34,6 +44,7 @@ def get_cboe_fees(year: int, month: int, download_path: str):
     moyr = getMonthYear(year, month)
         
     updateMpids()
+    debugger("Updated Mpids")
 
     mpids = uniqueSxMpids()
 
@@ -43,11 +54,13 @@ def get_cboe_fees(year: int, month: int, download_path: str):
 def getInvoices(mpids: list):
     """Download CBOE Invoices for given list of MPIDs"""
     for exch in exchanges:
+        debugger(f"Getting invoices for {exch}...")
         getInvoicesByExchange(mpids, exch)
 
 def getInvoicesByExchange(mpids: list, exchangeCode: str):
-    """Download invoices from a specific CBOE exchange for a list of MPIDs"""
+    """Download invoiices from a specific CBOE exchange for a list of MPIDs"""
     for mpid in mpids:
+        debugger(f"Getting invoices for MPID {mpid}")
         getInvoicesBySuffix(exchangeCode, mpid)
 
 def getInvoicesBySuffix(exchangeCode: str, mpid: str):
@@ -60,20 +73,23 @@ def downloadInvoice(mpid: str, exchangeCode: str, suffix: str):
     potential suffix
     """
     fileName = constructInvoiceName(mpid, exchangeCode, suffix)
+    debugger(fileName)
     url = constructUrl(exchangeCode)
     un, pw = checkAuth()
 
     file = makeRequest(url, fileName, un, pw)
     if file:
-        saveFile(file)
+        debugger(f"Found invoice {fileName}, saving to disk...")
+        saveFile(file, fileName)
 
 def constructInvoiceName(mpid, exchangeCode, suffix):
-    return mpid + moyr + suffix + '-' + exchangeCode
+    return mpid + moyr + suffix + '-' + exchangeCode + '.csv'
 
 def constructUrl(code):
+    global exchangeUrlIdentifiers, exchanges
     exchangeUrlId = exchangeUrlIdentifiers[exchanges.index(code)]
-    exchangeUrl = f'https://www.batstrading.com/{exchangeUrlId}/account/files/\
-            invoice/'
+    exchangeUrl = \
+    f'https://www.batstrading.com/{exchangeUrlId}/account/files/invoice/'
     return exchangeUrl
 
 def makeRequest(url, invoice, un, pw):
@@ -87,6 +103,7 @@ def makeRequest(url, invoice, un, pw):
 
 def checkAuth():
     "Check for username and password, set them, and return them"""
+    global cboeUsername, cboePassword
     if cboeUsername is None and cboePassword is None:
         cboeUsername = getUsername()
         cboePassword = getPassword()
@@ -102,16 +119,16 @@ def getPassword():
     return pw
 
 def saveFile(fileObject, fileName):
-    with open(downloadPath + '/' + fileName) as f:
+    with open(downloadPath + '/' + fileName, 'wb') as f:
         f.write(fileObject)
 
 def getMonthYear(year, month):
-    return datetime(year, month, 1).strftime('%m%Y')
+    return datetime(year, month, 1).strftime('%m%y')
 
 def updateMpids():
     """Update Simplex MPID listing and write to disk"""
     mpidsData = getNewMpids()
-    print('Updating CBOE MPIDs data...')
+    debugger('Updating CBOE MPIDs data...')
     writeNewMpids(mpidsData)
 
 def writeNewMpids(mpidsData):
@@ -138,7 +155,10 @@ def getSxMpidsList():
 
 def getSxMpids():
     cboeMpids = getCboeMpids()
-    sxMask = (cboeMpids['firmName'] == 'SIMPLEX TRADING LLC')
+    sxMask = (cboeMpids['firmName'].str.contains(
+        "SIMPLEX",
+        flags=re.IGNORECASE
+        )) 
     sxMpids = cboeMpids.loc[sxMask]
     return sxMpids.copy()
 

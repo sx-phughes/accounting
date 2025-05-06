@@ -37,7 +37,8 @@ def download_from_sftp(download_path: str) -> None:
     sftp = ssh.open_sftp()
 
     for f in files_to_copy:
-        sftp.get(f, download_path + '/' + f)
+        fName = f.split('/')[-1]
+        sftp.get(f, download_path + '/' + fName)
 
     sftp.close()
     
@@ -57,7 +58,7 @@ def search_for_file(path: str, file_pattern: str) -> str:
     
     curr_files = []
     for f in filesToSearch:
-        checkFile(f)
+        checkFile(f, curr_files)
 
     try:
         file = curr_files[-1]

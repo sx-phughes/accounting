@@ -1,10 +1,10 @@
-from cboe_fees_dl import get_cboe_fees
+import cboe_fees_dl
 from exchange_fees_ssh import get_exchange_fees
 
-dl = "C:/Users/phugh/Downloads"
+dl = "C:/Users/Patrick/Downloads"
 yr = 2025
 mo = 4
 
-get_cboe_fees(yr, mo, dl)
+cboe_fees_dl.get_cboe_fees(yr, mo, dl, True)
 
-get_exchange_fees(yr, mo, dl)
+# get_exchange_fees(yr, mo, dl)
