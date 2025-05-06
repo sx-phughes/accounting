@@ -1,6 +1,4 @@
 import requests
-import re
-import os
 import pandas as pd
 from datetime import datetime
 
@@ -35,7 +33,7 @@ def get_cboe_fees(year: int, month: int, download_path: str):
     global moyr 
     moyr = getMonthYear(year, month)
         
-    updateExchangeCodes()
+    updateMpids()
 
     mpids = uniqueSxMpids()
 
@@ -47,17 +45,17 @@ def getInvoices(mpids: list):
     for exch in exchanges:
         getInvoicesByExchange(mpids, exch)
 
-def getInvoicesByExchange(exchangeCode, mpids):
+def getInvoicesByExchange(mpids: list, exchangeCode: str):
     """Download invoices from a specific CBOE exchange for a list of MPIDs"""
     for mpid in mpids:
         getInvoicesBySuffix(exchangeCode, mpid)
 
-def getInvoicesBySuffix(exchangeCode, mpid):
+def getInvoicesBySuffix(exchangeCode: str, mpid: str):
     """Download invoices for a given CBOE exchange and MPID"""
     for suffix in suffixes:
         downloadInvoice(mpid, exchangeCode, suffix) 
 
-def downloadInvoice(mpid, exchangeCode, suffix):
+def downloadInvoice(mpid: str, exchangeCode: str, suffix: str):
     """Download fees invoice for a specific MPID and CBOE exchange with a
     potential suffix
     """
@@ -67,14 +65,14 @@ def downloadInvoice(mpid, exchangeCode, suffix):
 
     file = makeRequest(url, fileName, un, pw)
     if file:
-        save_file(file)
+        saveFile(file)
 
 def constructInvoiceName(mpid, exchangeCode, suffix):
     return mpid + moyr + suffix + '-' + exchangeCode
 
 def constructUrl(code):
     exchangeUrlId = exchangeUrlIdentifiers[exchanges.index(code)]
-    exchangeUrl = f'https://www.batstrading.com/{exchangeUrlID}/account/files/\
+    exchangeUrl = f'https://www.batstrading.com/{exchangeUrlId}/account/files/\
             invoice/'
     return exchangeUrl
 
@@ -118,7 +116,7 @@ def updateMpids():
 
 def writeNewMpids(mpidsData):
     with open(mpidFileName, 'wb') as file:
-        file.write(exchangeCodes)
+        file.write(mpidsData)
 
 def getNewMpids():
     response = requests.get(mpidUrl)
@@ -136,7 +134,7 @@ def uniqueSxMpids():
 
 def getSxMpidsList():
     sxMpids = getSxMpids()
-    return sxMpids['IMID'].values.to_list() 
+    return sxMpids['IMID'].values.tolist() 
 
 def getSxMpids():
     cboeMpids = getCboeMpids()
