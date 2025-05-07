@@ -6,18 +6,18 @@ import inspect
 import pandas as pd
 
 # Package Imports
-from baycrest import BaycrestSplitter
-from payables import PayablesJes
-from patrick_functions import AbnCash
-from bofa_month_end import OrganizeBAMLfiles
+import BaycrestSplitter
+from Payables import PayablesJes
+from Payables.Interface import os_interface
+import AbnCash
+from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
-from cm_exchange_fees import ExchangeFeesDownload
-from abn_month_end import AbnMonthEnd
-from nacha import NachaMain
-from nacha import BlankBatch
-import update_vendors.main as UpdateVendors
-from me_transfers import MeTransfers
-from basic_payables import os_interface
+from MonthEnd.ExchangeFees import ExchangeFeesDownload
+from MonthEnd.Abn import AbnMonthEnd
+from Payables.nacha import NachaMain
+from Payables.nacha import BlankBatch
+import UpdateVendors
+from MonthEnd.Transfers import MeTransfers
 
 
 def cls():

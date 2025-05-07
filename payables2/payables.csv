@@ -1,7 +1,0 @@
-uniqueid,invoiceno,vendor,processdate,invoicemonth,amount,amendment,is_paid,date_paid,filepaths
-Katten Muchin Rosenman1,1,Katten Muchin Rosenman,20241218,202411,500,False,False,,
-Katten Muchin Rosenman2,2,Katten Muchin Rosenman,20241218,202411,500,False,False,,
-Katten Muchin Rosenman3,3,Katten Muchin Rosenman,20241218,202411,500,False,False,,
-Anova4,4,Anova,20241218,202410,500,False,False,,
-Cogent5,5,Cogent,20241218,202410,250,False,False,,
-CBOE6,6,CBOE,20241218,202410,250,False,False,,
