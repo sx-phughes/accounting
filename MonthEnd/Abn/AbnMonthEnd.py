@@ -7,7 +7,7 @@ import numpy as np
 # Package Imports
 from MonthEnd.Abn.FileGrabber import AbnFileGrabber
 from MonthEnd.Abn.AbnBase import *
-from patrick_functions.AbnCash import AbnCash
+from AbnCash import AbnCash
 
 
 class AbnMonthEnd(AbnBase):
