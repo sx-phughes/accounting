@@ -7,15 +7,15 @@ import pandas as pd
 
 # Package Imports
 import BaycrestSplitter
-from Payables import PayablesJes
-from Payables.Interface import os_interface
+from payables import PayablesJes
+from payables.Interface import os_interface
 import AbnCash
 from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
 from MonthEnd.ExchangeFees import ExchangeFeesDownload
 from MonthEnd.Abn import AbnMonthEnd
-from Payables.nacha import NachaMain
-from Payables.nacha import BlankBatch
+from payables.nacha import NachaMain
+from payables.nacha import BlankBatch
 import UpdateVendors
 from MonthEnd.Transfers import MeTransfers
 
