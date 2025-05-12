@@ -7,7 +7,7 @@ import numpy as np
 # Package Imports
 from MonthEnd.Abn.FileGrabber import AbnFileGrabber
 from MonthEnd.Abn.AbnBase import *
-from patrick_functions.AbnCash import AbnCash
+from AbnCash import AbnCash
 
 
 class AbnMonthEnd(AbnBase):
@@ -273,7 +273,6 @@ class AbnMonthEnd(AbnBase):
         return (csv_cash, position)
         
     def run_cash(self, year, month) -> tuple[pd.DataFrame, pd.DataFrame]:
-
         cash_files = AbnCash(year, month, self.trading_path + '/' + self.moyr)
         eqt_data, mics_data = cash_files.main()
         
