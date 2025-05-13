@@ -1,9 +1,6 @@
-# Basic Imports
 from datetime import datetime, timedelta
 from patrick_functions.DateFunctions import last_biz_day
-from MonthEnd.Abn import FileGrabber
 import pandas as pd
-from MonthEnd.Abn import EoyCashFile
 
 def set_globals(data_year: int, data_month: int, gdrive: str) -> None:
     global year, month, gdrive_root, t_minus, t_plus, save_to
@@ -23,12 +20,6 @@ def set_globals(data_year: int, data_month: int, gdrive: str) -> None:
     global patrick_data_files
     patrick_data_files = "C:/gdrive/Shared drives/accounting/patrick_data_files"
 
-    global cm_cash, cm_position, pm_cash, pm_position
-    cm_cash, cm_position = grab_files(year, month)
-    pm_cash, pm_position = grab_files(t_minus.year, t_minus.month)
-
-    if t_minus.month == 12:
-        pm_cash = EoyCashFile.convert_to_eoy_cash(year - 1, pm_cash)
 
 def get_t_minus() -> datetime:
     t0 = datetime(year, month, 1)
@@ -60,10 +51,6 @@ def get_mapping_files(google_drive_root='C:/gdrive') -> tuple[pd.DataFrame, pd.D
     global ledger_mapping, account_mapping
     ledger_mapping = pd.read_csv(abn_files_path + '/ABN_ledger_mapping.csv')
     account_mapping = pd.read_csv(abn_files_path + '/ABN_account_mapping.csv')
-
-def grab_files(year, month) -> tuple[pd.DataFrame, pd.DataFrame]:
-    csv_cash, position = FileGrabber.get_data(year, month)
-    return (csv_cash, position)
 
 def get_archive_date_path(day=0):
     if day == 0:

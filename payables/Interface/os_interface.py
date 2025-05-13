@@ -5,8 +5,8 @@ import pandas as pd
 import sys
 
 # Package Imports
-from Payables.Interface.payables_wb import PayablesWorkbook
-from Payables.Interface.functions import *
+from payables.Interface.payables_wb import PayablesWorkbook
+from payables.Interface.functions import *
 
 def cursor_up():
     sys.stdout.flush()

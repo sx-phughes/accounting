@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 # Package imports
-from Payables.Interface.functions import *
+from payables.Interface.functions import *
 
 
 class PayablesWorkbook(pd.DataFrame):
