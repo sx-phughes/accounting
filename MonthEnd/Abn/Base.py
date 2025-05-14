@@ -25,7 +25,9 @@ def get_t_minus() -> datetime:
     t0 = datetime(year, month, 1)
     td = timedelta(days=20)
     t_minus = t0 - td
-    t_minus_eom = t_minus + timedelta(days=(last_biz_day(t_minus.year, t_minus.month).day - t_minus.day))
+    t_minus_eom = t_minus + timedelta(
+        days=(last_biz_day(t_minus.year, t_minus.month).day - t_minus.day)
+    )
     
     return t_minus_eom
 
@@ -33,12 +35,15 @@ def get_t_plus() -> datetime:
     t0 = datetime(year, month, 28)
     td = timedelta(days=20)
     t_plus = t0 + td
-    t_plus_eom = t_plus + timedelta(days=(last_biz_day(t_plus.year, t_plus.month).day - t_plus.day))
+    t_plus_eom = t_plus + timedelta(
+        days=(last_biz_day(t_plus.year, t_plus.month).day - t_plus.day)
+    )
     
     return t_plus_eom
 
 def get_trading_path() -> str:
-    return gdrive_root +  f'/Shared drives/accounting/Simplex Trading/{year}/ABN'
+    return gdrive_root +  \
+        f'/Shared drives/accounting/Simplex Trading/{year}/ABN'
 
 def get_archive_path() -> str:
     return gdrive_root + '/Shared drives/Clearing Archive/ABN_Archive'
@@ -46,8 +51,10 @@ def get_archive_path() -> str:
 def get_moyr():
     return datetime(year, month, 1).strftime('%Y%m')
 
-def get_mapping_files(google_drive_root='C:/gdrive') -> tuple[pd.DataFrame, pd.DataFrame]:
-    abn_files_path = google_drive_root + '/Shared drives/accounting/patrick_data_files/abn_month_end'
+def get_mapping_files(google_drive_root='C:/gdrive') -> None:
+    abn_files_path = google_drive_root \
+        + '/Shared drives/accounting/patrick_data_files/abn_month_end'
+
     global ledger_mapping, account_mapping
     ledger_mapping = pd.read_csv(abn_files_path + '/ABN_ledger_mapping.csv')
     account_mapping = pd.read_csv(abn_files_path + '/ABN_account_mapping.csv')
