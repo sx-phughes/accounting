@@ -27,7 +27,7 @@ def get_file_dir(date_str: str, pattern: str):
 
 def extract_file(path: str) -> str:
     csv_file_name = path.split('/')[-1].replace('.zip', '')
-    dest = Base.get_trading_path + '/' + Base.cm_moyr
+    dest = Base.get_trading_path() + '/' + Base.cm_moyr
     unzip(path, csv_file_name, dest)
     
     return '/'.join([dest, csv_file_name])
