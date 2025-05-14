@@ -13,7 +13,7 @@ import AbnCash
 from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
 from MonthEnd.ExchangeFees import ExchangeFeesDownload
-from MonthEnd.Abn import AbnMonthEnd
+from MonthEnd.Abn import MonthEnd
 from payables.nacha import NachaMain
 from payables.nacha import BlankBatch
 import UpdateVendors
@@ -227,9 +227,13 @@ class PatEngine:
                 'Split Baycrest invoice by IDB and IX',
                 BaycrestSplitter.splitter
             ],
-            'ABN Cash Files': [
-                'Run ABN Cash Blotter',
-                AbnCash.script_wrapper
+            'ABN EQT Cash File': [
+                'Run ABN EQT Cash Blotter',
+                AbnCash.get_eqt_cash_data
+            ],
+            'ABN MICS Cash File': [
+                'Run ABN MICS Cash Blotter',
+                AbnCash.get_mics_cash_data
             ],
             'BOFA Just Div Files': [
                 'Pull Full Dividend Summary from BofA Data',
@@ -284,7 +288,7 @@ class PatEngine:
             'ABN Month End': [
                 'Run ABN Month End Process - \
                 process data files and save to CM directory',
-                AbnMonthEnd.script_wrapper
+                MonthEnd.run_month_end_files
             ],
             'Organize BAML ME Files': [
                 'Move BofA ME Data Files and Process to Summary Files',
