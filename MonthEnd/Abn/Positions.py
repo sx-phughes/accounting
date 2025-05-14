@@ -65,22 +65,21 @@ def get_positions_pivot() -> pd.DataFrame:
     global positions_data_table
 
     data = positions_data_table
-    Debug.dprint(data.head(10))
     pivot = data.pivot_table(
-        values=['Mark to Market Value', 'OTE'],
+        values=['Mark To Market Value', 'OTE'],
         index='Unique Name',
         aggfunc='sum'
     )
     pivot = pivot.reset_index(drop=False)
-    pivot[['Mark to Market Value', 'OTE']] = pivot[
-        ['Mark to Market Value', 'OTE']
+    pivot[['Mark To Market Value', 'OTE']] = pivot[
+        ['Mark To Market Value', 'OTE']
     ].fillna(0)
-    pivot['Category']= pivot.apply(
+    pivot['Category'] = pivot.apply(
         lambda row: get_category(row),
-        axis=0,
+        axis=1,
         raw=False
     )
-    pivot['Total Category'] = pivot['Mark to Market Value'] + pivot['OTE']
+    pivot['Total Value'] = pivot['Mark To Market Value'] + pivot['OTE']
     
     global positions_pivot
     positions_pivot = pivot
@@ -88,13 +87,13 @@ def get_positions_pivot() -> pd.DataFrame:
     return pivot
 
 def get_category(row: pd.Series) -> str:
-    if row['ote'] != 0:
+    if row['OTE'] != 0:
         return 'OTE'
 
     asset = get_asset_class(row["Unique Name"])
-    if row['Mark to Market Value'] > 0:
+    if row['Mark To Market Value'] > 0:
         return "Long " + asset
-    elif row['Mark to Market Value'] < 0:
+    elif row['Mark To Market Value'] < 0:
         return "Short " + asset
         
 def get_asset_class(unique_name: str) -> str:
