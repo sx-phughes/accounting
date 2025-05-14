@@ -23,51 +23,11 @@ from MonthEnd.Transfers import MeTransfers
 def cls():
     """Shortcut to clear screen"""
     os.system('cls')
-    
-
-# Settings Class for controlling directory variables    
-class Settings:
-    """Settings class for use in PatEngine class"""
-    def __init__(self):
-        # Check for settings file, otw create
-        if os.path.exists('C:/gdrive/My Drive/settings.csv'):
-            df = pd.read_csv('C:/gdrive/My Drive/settings.csv')
-            data = df.to_dict()
-        else:
-            data = {
-                'ID': [
-                    'userroot',
-                    'googledriveroot'
-                ],
-                'Value': [
-                    'C:/Users/' + os.environ['HOMEPATH'].split('\\')[-1],
-                    'C:/gdrive/My Drive'
-                ]
-            }
-        
-        self._data = data
-        self.save_settings()
-    
-    def __getitem__(self, setting):
-        return self._data['Value'][self._data['ID'].index(setting)]
-    
-    def __setitem__(self, setting, value):
-        self._data['Value'][self._data['ID'].index(setting)] = value
-    
-    # Save to disk
-    def save_settings(self):
-        pd.DataFrame(self._data).to_csv('C:/gdrive/My Drive/settings.csv', index=False)
-    
-    # Return a series of the settings keys
-    @property        
-    def vals(self):
-        return self._data['ID']
-
 
 class PatEngine:
     def __init__(self):
-        self.settings = Settings()
-    
+        self.main_menu()
+        
     def menu(
         self,
         menu_title: str, 
@@ -106,8 +66,8 @@ class PatEngine:
 
             if option == len(options.keys()) or option == '':
                 break
-            elif do_settings:
-                self.update_settings()            
+            # elif do_settings:
+            #     self.update_settings()            
             else:
                 self.do_option(option, options)
                 input()
@@ -159,11 +119,11 @@ class PatEngine:
                 return integer_selection
         print('Bad option!')
 
-    def update_settings(self):
-        new_val = input('Please input new value for setting:\n>\t')
-        # self.settings[self.settings.vals[option]] = new_val
-        print('Settings updated')
-        print('Press enter to return to main menu')
+    # def update_settings(self):
+    #     new_val = input('Please input new value for setting:\n>\t')
+    #     # self.settings[self.settings.vals[option]] = new_val
+    #     print('Settings updated')
+    #     print('Press enter to return to main menu')
 
     def print_options(self, options: dict):
         """Print menu options to screen"""
@@ -259,23 +219,23 @@ class PatEngine:
                 'Process custom NACHA batch',
                 BlankBatch.process_file
             ],
-            'Settings':
-                self.settings_menu
+            # 'Settings':
+            #     self.settings_menu
         }
         
         self.menu('Main Menu', options, 'Exit Program')
     
-    def settings_menu(self):
-        """Settings options"""
-        options = {
-            f'{val}: {data}': '' for val, data in 
-                zip(
-                    self.settings.vals,
-                    [self.settings[name] for name in self.settings.vals]
-                )
-        }
+    # def settings_menu(self):
+    #     """Settings options"""
+    #     options = {
+    #         f'{val}: {data}': '' for val, data in 
+    #             zip(
+    #                 self.settings.vals,
+    #                 [self.settings[name] for name in self.settings.vals]
+    #             )
+    #     }
         
-        self.menu('Settings', options, 'Main Menu', True)
+    #     self.menu('Settings', options, 'Main Menu', True)
         
     
     def me_menu(self):
