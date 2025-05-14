@@ -1,4 +1,4 @@
-from Payables.nacha.NachaLine import *
+from payables.nacha.NachaLine import *
 import math
 
 class TransactionEntry():

@@ -1,5 +1,5 @@
-from Payables.nacha.NachaConstructor import *
-from Payables.nacha.CheckDuplicates import check_duplicates
+from payables.nacha.NachaConstructor import *
+from payables.nacha.CheckDuplicates import check_duplicates
 from datetime import datetime
 import pandas as pd
 import os

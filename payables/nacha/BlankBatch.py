@@ -1,5 +1,5 @@
-from Payables.nacha.NachaConstructor import *
-from Payables.nacha.NachaFile import *
+from payables.nacha.NachaConstructor import *
+from payables.nacha.NachaFile import *
 from datetime import datetime
 
 relevant_cols = ('name on account', 'beneficiary bank', 'aba', 'account number', 'amount')
