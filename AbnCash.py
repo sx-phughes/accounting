@@ -19,7 +19,7 @@ def get_mics_cash_data(year: int, month: int) -> pd.DataFrame:
     return mics_data
 
 def get_cash_data(year: int, month: int, file_pattern: str) -> pd.DataFrame:
-    month_year = datetime(year, month, 1).strftime("%Y%b")
+    month_year = datetime(year, month, 1).strftime("%Y%m")
     filtered_folders = get_folders(month_year)
     concatted_data = concat_tables(file_pattern, filtered_folders)
     return concatted_data
