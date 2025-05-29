@@ -82,8 +82,8 @@ class PayablesWorkbook(pd.DataFrame):
 
     def initialize_new_col(self, data: pd.DataFrame, col_index: int):
         """Initialize a new column using a default value"""
-        default_val = Payables.column_defaults[col_index]
-        col_name = Payables.column_headers[col_index]
+        default_val = PayablesWorkbook.column_defaults[col_index]
+        col_name = PayablesWorkbook.column_headers[col_index]
         data[col_name] = default_val
 
     def get_extant_cols_index(self, original: pd.DataFrame):

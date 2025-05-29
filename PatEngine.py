@@ -3,7 +3,6 @@ import os
 import re
 import traceback
 import inspect
-import pandas as pd
 from typing import Any, Callable
 
 # Package Imports
@@ -72,7 +71,7 @@ class PatEngine:
             #     self.update_settings()
             else:
                 self.do_option(option, options)
-                input()
+                # input()
 
     def do_option(self, option: int, options: dict) -> None:
         """Run user input option"""
