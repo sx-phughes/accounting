@@ -16,7 +16,7 @@ class BAMLFileMover:
     save_path = 'C:/gdrive/Shared drives/accounting/Simplex Trading'
     search_path = 'C:/gdrive/Shared drives/Clearing Archive/BOFA_Archive'
     
-    def __init__(self, year, month):
+    def __init__(self, year: int, month: int):
         """Initializes BAMLFileMover object
 
         Creates path values for processing activity at BofA and creates
@@ -69,9 +69,9 @@ class BAMLFileMover:
            ['WSB863TW.CST478BK.CSV.{date}', '%Y%m%d', 'div']
         ]
         
-        self.hc_files = []
-        self.div_files = []
-        self.comb_files = []
+        self.hc_files: list[str] = []
+        self.div_files: list[str] = []
+        self.comb_files: list[str] = []
         
         for i in self.folders:
             for j in patterns:
@@ -91,7 +91,7 @@ class BAMLFileMover:
                     
     def copyFiles(self):
         """Copies data files to BofA working directories"""
-        files_list = [
+        files_list: list[list[list[str] | str]]= [
             [self.hc_files, 'HCFiles', ''],
             [self.div_files, 'DivFiles', '.csv'],
             [self.comb_files, 'Files', '.csv']
@@ -101,8 +101,8 @@ class BAMLFileMover:
         for i in files_list:
             old_paths = i[0]
             dest_folder = i[1]
-            suffix = i[2]
-            new_paths = []
+            suffix = str(i[2])
+            new_paths: list[str] = []
             
             for j in old_paths:
                 f_name = str(j).split('/')[-1]
@@ -339,10 +339,10 @@ class BAMLFileMover:
 
 # Wrapper functions for script manager
 
-def file_mover_wrapper(year, month):
+def file_mover_wrapper(year: int, month: int):
     mver = BAMLFileMover(year, month)
     mver.main()
     
-def div_file_wrapper(year, month):
+def div_file_wrapper(year: int, month: int) -> None:
     mver = BAMLFileMover(year, month)
     mver.div_files()
