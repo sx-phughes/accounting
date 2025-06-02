@@ -45,7 +45,7 @@ def get_trading_path() -> str:
     return gdrive_root +  \
         f'/Shared drives/accounting/Simplex Trading/{year}/ABN'
 
-def get_archive_path() -> str:
+def get_archive_path(gdrive_root: str="C:/gdrive") -> str:
     return gdrive_root + '/Shared drives/Clearing Archive/ABN_Archive'
 
 def get_moyr():

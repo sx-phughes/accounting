@@ -54,6 +54,7 @@ def update_ledger_mapping(cm_cash: pd.DataFrame) -> pd.DataFrame:
     new_mappings = get_new_ledger_mappings(diffs)
     ledger_mapping = pd.concat([Base.ledger_mapping, new_mappings])
     ledger_mapping.reset_index(drop=True, inplace=True)
+    Base.ledger_mapping = ledger_mapping
     save_ledger_to_disk()
 
 def get_new_ledger_mappings(diffs_df: pd.DataFrame) -> pd.DataFrame:

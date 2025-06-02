@@ -28,7 +28,7 @@ def clean_positions_data() -> pd.DataFrame:
 
 def vector_unique_name(data: pd.DataFrame) -> pd.Series:
     data["futures_temp"] = ""
-    mask = data["futures_temp"].isin(['BKDL', 'XMAR'])
+    mask = data["Account Type"].isin(['BKDL', 'XMAR'])
     data["futures_temp"] = data["futures_temp"].where(mask, "Futures")
 
     data["symbol_temp"] = data["Symbol"]
