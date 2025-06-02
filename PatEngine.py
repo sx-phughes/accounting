@@ -198,7 +198,7 @@ class PatEngine:
             ],
             "ABN EQT Cash File": [
                 "Run ABN EQT Cash Blotter",
-                AbnCash.get_eqt_cash_data,
+                AbnCash.save_eqt_to_disk,
             ],
             "ABN MICS Cash File": [
                 "Run ABN MICS Cash Blotter",
