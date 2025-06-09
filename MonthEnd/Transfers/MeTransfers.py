@@ -57,7 +57,10 @@ def run_baml_table(date: datetime, save_path = '.'):
 
     baml_table.add_final_row()
 
-    baml_table.to_csv(save_path + f'/{date.strftime('%Y%m%d')} BofA Transfers.csv')
+    baml_table.to_csv(
+        save_path + f'/{date.strftime('%Y%m%d')} BofA Transfers.csv',
+        index=False
+    )
     
     
 def run_abn_tables(date: datetime, save_path = '.'):
@@ -140,7 +143,7 @@ def run_abn_tables(date: datetime, save_path = '.'):
     for acct_group in table_dict.keys():
         table_dict[acct_group].to_csv(f'{save_path}/{date_str}{f_names[acct_group]}', index=False)
     
-    et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}')
+    et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}', index=False)
         
 def run_ME_Transfers(year, month, day, save_path=os.environ['HOMEPATH'] + '\\Downloads'):
     dt = datetime(int(year), int(month), int(day))
