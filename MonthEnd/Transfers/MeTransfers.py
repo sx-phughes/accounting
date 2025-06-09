@@ -46,7 +46,7 @@ def run_baml_table(date: datetime, save_path = '.'):
             ]
             row_data.append(i_row)
 
-    tfr_date = '3/3/2025'
+    tfr_date = date.strftime("%m/%d/%Y")
     baml_table = BamlTransferTable(transfer_date=tfr_date)
 
     for i in row_data:
