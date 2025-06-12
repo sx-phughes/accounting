@@ -4,6 +4,7 @@
 *.py[cod]
 *.pyc
 *$py.class
+*.cpython-313.pyc
 
 # C extensions
 *.so
