@@ -52,6 +52,17 @@ def fix_dates(data: pd.DataFrame) -> pd.DataFrame:
             data.loc[i, 'Date'] = last_date
     return data
 
+def remove_blank_col(table: pd.DataFrame) -> pd.DataFrame:
+    columns = table.columns.values.tolist()
+    drop_list = []
+    for col in columns:
+        if table[col].empty:
+            drop_list.append(col)
+        else:
+            continue
+    table = table.drop(columns=drop_list)
+    return table
+
 def clean_table() -> pd.DataFrame:
     """Cleans baycrest invoice 
     Removes junk rows, renames columns, fixes dates
@@ -64,8 +75,9 @@ def clean_table() -> pd.DataFrame:
     columns_renamed = rename_columns(top_rows_dropped)
     dates_fixed = fix_dates(columns_renamed)
     nulls_dropped = dates_fixed.loc[dates_fixed['Trader'].isna() == False]
+    blanks_removed = remove_blank_col(nulls_dropped)
 
-    return nulls_dropped
+    return blanks_removed
 
 def make_f_names() -> str:
     """Returns a new file name for modified invoice file
@@ -76,8 +88,8 @@ def export_tables() -> None:
     """Exports tables to file
     """
     with pd.ExcelWriter(make_f_names()) as writer:
-        split_tables[0].to_excel(writer, 'IDB Trades')
-        split_tables[1].to_excel(writer, 'IX Trades')
+        split_tables[0].to_excel(writer, 'IDB Trades', index=False)
+        split_tables[1].to_excel(writer, 'IX Trades', index=False)
 
 def split_table(df: pd. DataFrame, symbol_col: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Splits table based on criteria for IX trades
@@ -105,3 +117,4 @@ def splitter() -> None:
     split_tables = split_table(trades, 'Symbol')
 
     export_tables()
+    input()
