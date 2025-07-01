@@ -1,6 +1,6 @@
 from MonthEnd.Transfers.DataGathering import *
 from MonthEnd.Transfers.TransferTableSetup import *
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 def baml_path(date: datetime):
@@ -46,8 +46,9 @@ def run_baml_table(date: datetime, save_path = '.'):
             ]
             row_data.append(i_row)
 
-    tfr_date = date.strftime("%m/%d/%Y")
-    baml_table = BamlTransferTable(transfer_date=tfr_date)
+    tfr_date = date + timedelta(-1)
+    tfr_date_str = tfr_date.strftime("%m/%d/%Y")
+    baml_table = BamlTransferTable(transfer_date=tfr_date_str)
 
     for i in row_data:
         print(i)
