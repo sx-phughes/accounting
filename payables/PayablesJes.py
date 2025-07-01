@@ -69,8 +69,11 @@ class JECreator():
         company_bill_sheets = {co: '' for co in JECreator.companies}
 
         for co in JECreator.companies:
-            co_payables = self.filter_payables(co)
+            print("generating bills for %s" % co)
+            co_payables = self.get_company_invoices(co)
+            print("got company invoices")
             bill_tables = self.make_company_bills(co_payables)
+            print("made company bills")
 
             company_bill_sheets[co] = bill_tables
 
@@ -80,38 +83,53 @@ class JECreator():
         """Create bill sheets for one specific company"""
         bill_dfs = []
         num_invoices = len(invoices.index)
+        print("initial num invoices = %d" % num_invoices)
         while num_invoices > 0:
-            start = np.floor_divide(num_invoices, 140) * 140
+            print("loop iteration top")
+            print("num invoices %d" % num_invoices)
+            start = max(0, np.floor_divide(num_invoices, 140) - 1) * 140
+            print("start = %d" % start)
             end = start + 140
+            print("end = %d" % end)
             if start + 140 > num_invoices:
-                end = num_invoices - 1
+                end = num_invoices
+                print("adjusted end to %d" % end)
 
             bills = self.create_bills(invoices.iloc[start:end])
+            print("created bills table")
             num_invoices -= len(bills.index)
+            print("new num invoices = %d" % num_invoices)
             bill_dfs.append(bills)
+            print("appended bill table to list")
 
         return bill_dfs
         
     def clean_account_mapping(self, accounts: pd.DataFrame):
-        accounts['Account #'].fillna(0, inplace=True)
-        accounts.drop(accounts.iloc[-3:].index, inplace=True)
-        accounts['Account #'] = accounts['Account #'].astype(int)
+        clean_accounts = accounts.copy()
+        clean_accounts["Account #"] = accounts['Account #'].fillna(0)
+        dropped_bottom = clean_accounts.drop(clean_accounts.iloc[-3:].index)
+        dropped_bottom['Account #'] = dropped_bottom['Account #'].astype(int)
+        return dropped_bottom
 
     def get_company_invoices(self, company: str):
         payables = self.invoices[self.invoices['Simplex2'] == company].copy()
+        print("copied company subset of payables")
         payables = self.modify_invoice_table(company, payables)
+        print("modified the payables table")
         return payables
     
     def modify_invoice_table(self, company: str, 
                              raw_invoices: pd.DataFrame) -> pd.DataFrame:
         """Merge vendors and account mappings to company invoice table"""
-        raw_invoices = raw_invoices.merge(
+        invoices = raw_invoices.copy(deep=True).merge(
             right=self.vendors,
             how='left', 
             on='Vendor'
         )
-        raw_invoices['Account Mapping'].fillna(0, inplace=True)
-        raw_invoices = raw_invoices.merge(
+        print("Merged vendors to invoices")
+        invoices["Account Mapping"] = invoices['Account Mapping'].fillna(0)
+        print("filled na")
+        invoices_w_coas = invoices.merge(
             right=self.coas[company][
                 ['Account #', 'Full name', 'JE Account Name']
             ],
@@ -119,10 +137,12 @@ class JECreator():
             left_on = 'Account Mapping',
             right_on='Account #'
         )
-        raw_invoices = raw_invoices.rename(
-            columns={'JE Account Name': 'Expense Account JE'},
-            inplace=True
+        print("merged chart of accounts to invoices")
+        invoices_renamed = invoices_w_coas.rename(
+            columns={'JE Account Name': 'Expense Account JE'}
         )
+        print("renamed columns")
+        return invoices_renamed 
     
     def create_bills(self, invoices: pd.DataFrame) -> pd.DataFrame:
         """Convert invoice entries from payables data to a bill item for QB"""
@@ -131,21 +151,29 @@ class JECreator():
             print(f'Processing bill {row['Vendor']} - {row['Invoice #']}',
                     end = '\r')
             bill = self.bill_creator(row)
-            bills = pd.concat([bills, bill])
-            bills = bills.reset_index(drop=True)
-        self.clean_bill_dfs(bills)
-        return bills
 
-    def clean_bill_dfs(self, company_data: pd.DataFrame):
+            if len(bills.index) > 0:
+                bills = pd.concat([bills, bill])
+            else:
+                bills = bill
+                
+            bills = bills.reset_index(drop=True)
+
+        clean_bills = self.clean_bill_df(bills)
+        return clean_bills
+
+    def clean_bill_df(self, company_data: pd.DataFrame):
         """Adjust column types and fix duplicate invoice names"""
-        company_data['Bill No.'] = company_data['Bill No.'].astype(str)
-        company_data['Memo'] = company_data['Memo'].astype(str)
-        company_data['Description'] = company_data['Description'].astype(str)
-        company_data = self.fix_dupe_bill_nums(
-            company_data,
-            'Vendor',
-            'Bill No.'
-        )
+        new = company_data.copy(deep=True)
+        new['Bill No.'] = new['Bill No.'].astype(str)
+        new['Memo'] = new['Memo'].astype(str)
+        new['Description'] = new['Description'].astype(str)
+        # company_data = self.fix_dupe_bill_nums(
+        #     company_data,
+        #     'Vendor',
+        #     'Bill No.'
+        # )
+        return new
     
     def fix_dupe_bill_nums(self, df: pd.DataFrame,
                            vendor_col: str, bill_col: str) -> pd.DataFrame:
@@ -159,25 +187,29 @@ class JECreator():
             )
         ]
 
+        new = df.copy(deep=True)
         for i in range(len(bill_nos)):
             c1 = bill_nos.count(bill_nos[i])
+            print(c1)
             c2 = qb_mapping_and_bills.count(qb_mapping_and_bills[i])
+            print(c2)
             if c1 > 1 and c2 == 1:
                 new_no = vendors[i][0:4] + bill_nos[i]
-                bill_nos[i] = new_no
+                new.loc[i, bill_col] = new_no
             else:
                 continue
 
-        df[bill_col] = bill_nos
-        return df
+        return new
 
     def bill_creator(self, df_row: pd.Series) -> pd.DataFrame:
         """Create a bill from an invoice entry"""
         bill = pd.DataFrame(columns=self.je_headers)
         
-        bill.loc[0, 'Bill No.'] = df_row['Invoice #']
-        if len(df_row['Invoice #']) > 21:
-            bill.loc[0, 'Bill No.'] = df_row['Invoice #'][-21:]
+        print('\n')
+        if len(str(df_row['Invoice #'])) > 21:
+            bill.loc[0, 'Bill No.'] = str(df_row['Invoice #'])[-21:]
+        else:
+            bill.loc[0, 'Bill No.'] = str(df_row['Invoice #'])
             
         bill.loc[0, 'Vendor'] = df_row['QB Mapping']
         bill.loc[0, 'Bill Date'] = self.date.strftime('%m/%d/%Y')
@@ -187,7 +219,6 @@ class JECreator():
         bill.loc[0, 'Description'] = df_row['Invoice #']
         bill.loc[0, 'Amount'] = df_row['Amount']
         bill.loc[0, 'Payment Type'] = df_row['Payment Type']
-        
         return bill
     
 def run_payables():
@@ -198,16 +229,26 @@ def run_payables():
 
     batch_date = datetime(year, month, day)
     payables = JECreator(batch_date)
-    bill_dfs = payables.generate_bills()
+    bill_dfs = payables.generate_all_bills()
 
+    print(list(bill_dfs.keys()))
     for i in bill_dfs.keys():
-        for j in range(len(i)):
+        print(i)
+        for j in range(len(bill_dfs[i])):
             company_name = i
-            if j > 1:
+            if j >= 1:
                 company_name += str(j)
             
-            bill_dfs[i][j].to_csv('/'.join(
-                f'{os.environ['HOMEPATH'].replace('\\','/')}',
-                f'Downloads',
-                f'{company_name} {batch_date.strftime('%Y-%m-%d')} Bills.csv',
-            ), index=False)
+            while True:
+                try:
+                    bill_dfs[i][j].to_csv('/'.join([
+                        f'{os.environ['HOMEPATH'].replace('\\','/')}',
+                        f'Downloads',
+                        f'{company_name} {batch_date.strftime('%Y-%m-%d')} Bills.csv',
+                    ]), index=False)
+                    break
+                except PermissionError as e:
+                    print(e)
+                    print("Close invoices csv file")
+                    input()
+                
