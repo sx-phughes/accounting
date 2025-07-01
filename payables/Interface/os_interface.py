@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import sys
+from typing import Any
 
 # Package Imports
 from payables.Interface.payables_wb import PayablesWorkbook
@@ -31,7 +32,9 @@ class OsInterface():
         'Credit card (y/n):\t'
     ]
 
-    # initialization
+    ##################
+    # initialization #
+    ##################
     def __init__(self):
         self.payables = PayablesWorkbook(date=self.ui_workbook_date())
         self.vendors = pd.read_excel('C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx', 'Vendors')
@@ -48,8 +51,10 @@ class OsInterface():
             else:
                 print('Invalid date, try again')
         return payables_date
-    
-    # properties
+
+    ##############
+    # properties #
+    ##############
     @property
     def payables(self):
         return self._payables
@@ -58,12 +63,14 @@ class OsInterface():
     def payables(self, payables_wb: PayablesWorkbook):
         self._payables = payables_wb
 
-    # class methods
+    #######################
+    # interface mechanics #
+    #######################
     def main(self):
         """Main user interface menu function"""
         options = {
             1: ['Add Invoices', self.add_invoices],
-            2: ['View Invoices', self.view_invoices],
+            2: ['View All Invoices', self.view_all_invoices],
             3: ['Remove Invoices', self.remove_invoice],
             4: ['Exit']
         }
@@ -130,7 +137,7 @@ class OsInterface():
         else:
             return False
 
-    def make_blank_row(self):
+    def make_blank_row(self) -> list[str]:
         """Make a blank row with n entries for n PayablesWorkbook columns"""
         cols = PayablesWorkbook.column_headers
         blank_row = ['' for col in cols]
@@ -142,30 +149,64 @@ class OsInterface():
         for i in range(len(inputs)):
             new_row[i] = inputs[i]
 
-    def get_inputs(self, prompts: list[str]):
+    def get_inputs(self, prompts: list[str], **kwargs) -> list[str|int]:
         """UI for receiving user input for a new invoice"""
         inputs = [0 for i in range(len(prompts))]
         i = 0
         while 0 in inputs:
             i = self.get_user_input(prompts, inputs, i)
             
+        
+        self.standardize_cc_response(inputs)
+
+        check_result = self.check_vendor(inputs)
+
+        if isinstance(check_result, bool):
+            return inputs
+        elif isinstance(check_result, list):
+            return check_result
+        else:
+            return self.make_blank_row()
+    
+    def standardize_cc_response(self, inputs: list[str|int]) -> None:
         try:
-            cc_index = prompts.index('Credit card (y/n):\t')
-            if inputs[cc_index] == 'y':
-                inputs[cc_index] = True
-            else:
-                inputs[cc_index] = False
+            cc_index = self.invoice_prompts.index('Credit card (y/n):\t')
+            str_response = inputs[cc_index]
+            inputs[cc_index] = self.convert_cc_response_to_bool(str_response)
         except:
             inputs = inputs
         
-        return inputs
+    def convert_cc_response_to_bool(self, cc_response: str) -> bool:
+        if cc_response == 'y':
+            return True
+        else:
+            return False
 
-    def get_user_input(self, prompts: list[str], input_list: list, curr_index: int):
+    def str_list_to_int(self, n: list[str]) -> list[int]:
+        n_copy = n.copy()
+        list_len = len(n)
+        for i in range(list_len):
+            if isinstance(n[i], int):
+                continue
+            int_as_str = ascii(n[i])
+            int_as_int = int(int_as_str)
+            n_copy[i] = int_as_int
+        
+        return n_copy
+            
+    def get_user_input(self, prompts: list[str], input_list: list, 
+                       curr_index: int) -> int:
+
         index = curr_index 
-        collected = 0
         end = len(prompts) - 1
 
         print(prompts[index], end='')
+        response = input_list[index]
+
+        if response != 0:
+            sys.stdout.write(input_list[index])
+            sys.stdout.flush()
+
         data = input()
         if data == 'k':
             index = self.up_arrow(index)
@@ -178,28 +219,39 @@ class OsInterface():
             index += 1
 
         return index 
+    
+    def check_vendor(self, inputs: list[str|int]) -> bool|list[str]:
+        if inputs[0] in self.vendors.Vendor.values.tolist():
+            return True
+        else:
+            zero_sum = sum(self.str_list_to_int(inputs)) == 0
+            if not zero_sum:
+                print("Vendor name does not match any known vendor")
+                inputs = self.get_inputs(self.invoice_prompts)
+                return inputs
+            else:
+                return True
 
-    def up_arrow(self, index: int):
+    def up_arrow(self, index: int) -> int:
         if index > 0:
             index -= 1
             cursor_up()
         return index
 
-    def down_arrow(self, index: int, end_index: int):
+    def down_arrow(self, index: int, end_index: int) -> int:
         if index >= end_index:
            index += 1
            cursor_down()
            # print('', end='\r', flush=True)
         return index
 
-
-    def add_cc_user(self, invoice_data):
+    def add_cc_user(self, invoice_data) -> None:
         """Add credit card user to invoice data for credit card invoices"""
         cc_user_index = PayablesWorkbook.column_headers.index('CC User')
         cc_user = input('Enter initials of CC user:\t')
         invoice_data[cc_user_index] = cc_user
 
-    def is_blank_list(self, data: list):
+    def is_blank_list(self, data: list) -> bool:
         no_data = True
         i = 0
         while no_data and i in range(len(data)):
@@ -209,17 +261,30 @@ class OsInterface():
             i += 1
 
         return no_data
-    def print_invoices(self):
+    
+    ######################
+    # Invoice management #
+    ######################
+    def view_all_invoices(self) -> None:
+        self.view_invoices(self.payables)
+    
+    def view_idb_invoices(self) -> None:
+        # get table after merge with vendors
+        # filter on idb brokers
+        # print table
+        pass
+    
+    def print_invoices(self, data: pd.DataFrame) -> None:
         pd.set_option('display.max_rows', None)
-        print(self.payables)
+        print(data)
 
-    def view_invoices(self):
+    def view_invoices(self, data: pd.DataFrame) -> None:
         """Prints invoices to screen"""
-        self.print_invoices()
+        self.print_invoices(data)
 
         input('\n\nPress enter to return to main menu\n')
 
-    def remove_invoice(self):
+    def remove_invoice(self) -> None:
         """UI for removing one or multiple invoices from the workbook"""
         self.print_invoices()
 
@@ -232,7 +297,7 @@ class OsInterface():
             print('No index provided, so no invoice removed.')
         input('Enter to return to main menu')
         
-    def get_index_input(self):
+    def get_index_input(self) -> int:
         """Get index(es) selection from user"""
         prompts = [
             'Input index in the following formats:\n',
@@ -248,7 +313,7 @@ class OsInterface():
             parsed_index = 0
         return parsed_index
 
-    def parse_remove_index_input(self, index_str: str):
+    def parse_remove_index_input(self, index_str: str) -> list[int]:
         """Parse user input of index(es) to a list"""
         if ',' not in index_str:
             index_list = [int(index_str)]
@@ -258,63 +323,42 @@ class OsInterface():
             index_list = self.split_comma_sep_input(index_str)
         return index_list
 
-    def index_range_to_list(self, s: str):
+    def index_range_to_list(self, s: str) -> list[int]:
         split = s.split('-')
         range_start = int(split[0])
         range_end = int(split[1] + 1)
         index_list = list(range(range_start, range_end))
         return index_list
 
-    def split_comma_sep_input(self, s: str):
+    def split_comma_sep_input(self, s: str) -> list[int]:
         split = s.split(',')
         trimmed_inputs = [str.strip(index) for index in split]
         int_indexes = [int(index) for index in trimmed_inputs]
         return int_indexes
 
-    def view_idb(self):
-        pd.set_option('display.max_rows', None)
-        print(self.get_idb_table())
-
-        input('\n\nPress enter to return to main menu\n')
-
-    def get_idb_table(self):
-        payables = self.payables.copy()
-        idb = payables.loc[self.idb_mask()]
-        return idb.sort_values(by='Vendor')
-
-    def idb_mask(self):
-        payables_with_idb = self.payables.copy()
-        idb_mask = payables_with_idb['Vendor'].isin(self.get_idb_brokers())
-        return idb_mask
-
-    def get_idb_brokers(self):
-        idb = pd.read_csv(OsInterface.data_path + 'idb.csv')['IDB Brokers']
-        idb_to_list = idb.values.to_list()
-        return idb_to_list
-
-    def edit_invoice(self):
+    def edit_invoice(self) -> None:
         cls()
         self.print_invoices()
         print('\n\n Input invoices to edit\n')
          
-    def do_edits(self):
+    def do_edits(self) -> None:
         indexes = self.get_index_input()
         for index in indexes:
             self.perform_edit(index)
 
-    def perform_edit(self, index: int):
+    def perform_edit(self, index: int) -> None:
         data = self.payables.loc[index].copy()
         edit_prompts = self.make_edit_prompts(data)
         inputs = self.get_input(edit_prompts)
         self.payables.loc[index] = inputs
 
-    def make_edit_prompts(self, new_data):
+    def make_edit_prompts(self, new_data) -> None:
         table_cols = self.payables.columns.to_list()
         no_nans = self.remove_nans(new_data)
         prompts = [col + ': ' + no_nans[col] for col in table_cols]
         return prompts
 
-    def remove_nans(self, new_data):
+    def remove_nans(self, new_data) -> dict[str, str]:
         no_nans = {}
         for col in self.payables.columns.to_list():
             val = self.substitue_nan(new_data[col], '')
@@ -322,7 +366,7 @@ class OsInterface():
             no_nans.update(updater)
         return no_nans
 
-    def substitue_nan(self, value, sub):
+    def substitue_nan(self, value: Any, sub: Any) -> Any:
         if isinstance(value, float) and np.isnan(value):
             value = sub
         return value
