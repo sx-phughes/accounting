@@ -10,7 +10,6 @@ import Debug
 def get_data() -> None|pd.DataFrame:
     t_plus_eqt = AbnCash.get_eqt_cash_data(Base.t_plus.year, Base.t_plus.month)
     Debug.dprint(t_plus_eqt.columns)
-    input()
     t_plus_mics = AbnCash.get_mics_cash_data(
         Base.t_plus.year,
         Base.t_plus.month
