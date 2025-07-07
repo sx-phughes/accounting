@@ -81,8 +81,9 @@ class JECreator():
 
     def make_company_bills(self, invoices: pd.DataFrame) -> list[pd.DataFrame]:
         """Create bill sheets for one specific company"""
+        invoices_copy = invoices.copy(deep=True)
         bill_dfs = []
-        num_invoices = len(invoices.index)
+        num_invoices = len(invoices_copy.index)
         print("initial num invoices = %d" % num_invoices)
         while num_invoices > 0:
             print("loop iteration top")
@@ -91,11 +92,13 @@ class JECreator():
             print("start = %d" % start)
             end = start + 140
             print("end = %d" % end)
-            if start + 140 > num_invoices:
+            if end > num_invoices:
                 end = num_invoices
                 print("adjusted end to %d" % end)
 
-            bills = self.create_bills(invoices.iloc[start:end])
+            subset = invoices_copy.iloc[start:end]
+            bills = self.create_bills(subset)
+            invoices_copy = invoices_copy.drop(index=subset.index)
             print("created bills table")
             num_invoices -= len(bills.index)
             print("new num invoices = %d" % num_invoices)
@@ -168,11 +171,11 @@ class JECreator():
         new['Bill No.'] = new['Bill No.'].astype(str)
         new['Memo'] = new['Memo'].astype(str)
         new['Description'] = new['Description'].astype(str)
-        # company_data = self.fix_dupe_bill_nums(
-        #     company_data,
-        #     'Vendor',
-        #     'Bill No.'
-        # )
+        new = self.fix_dupe_bill_nums(
+            new,
+            'Vendor',
+            'Bill No.'
+        )
         return new
     
     def fix_dupe_bill_nums(self, df: pd.DataFrame,
