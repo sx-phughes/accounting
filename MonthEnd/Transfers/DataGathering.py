@@ -91,6 +91,12 @@ def AbnMonthEndStatements(date: str):
         pd.read_csv(abn_root + eqt_account_path),
         pd.read_csv(abn_root + fut_file_path)
     ]
+    
+    # print("Equities")
+    # print(files[0])
+    # print("\n\n Futures")
+    # print(files[1])
+    # input()
 
     return files
 

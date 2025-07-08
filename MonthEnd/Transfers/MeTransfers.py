@@ -1,6 +1,6 @@
 from MonthEnd.Transfers.DataGathering import *
 from MonthEnd.Transfers.TransferTableSetup import *
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 def baml_path(date: datetime):
@@ -46,8 +46,9 @@ def run_baml_table(date: datetime, save_path = '.'):
             ]
             row_data.append(i_row)
 
-    tfr_date = '3/3/2025'
-    baml_table = BamlTransferTable(transfer_date=tfr_date)
+    tfr_date = date + timedelta(-1)
+    tfr_date_str = tfr_date.strftime("%m/%d/%Y")
+    baml_table = BamlTransferTable(transfer_date=tfr_date_str)
 
     for i in row_data:
         print(i)
@@ -57,7 +58,10 @@ def run_baml_table(date: datetime, save_path = '.'):
 
     baml_table.add_final_row()
 
-    baml_table.to_csv(save_path + f'/{date.strftime('%Y%m%d')} BofA Transfers.csv')
+    baml_table.to_csv(
+        save_path + f'/{date.strftime('%Y%m%d')} BofA Transfers.csv',
+        index=False
+    )
     
     
 def run_abn_tables(date: datetime, save_path = '.'):
@@ -68,6 +72,7 @@ def run_abn_tables(date: datetime, save_path = '.'):
         '695M526',      # MM    NXM SPY Stock and ETFs
         '695M622',      # MM    Main MM Account
         '695M679',      # MM    NXM IWM, QQQ stock and ETFs
+        '695M904',      # Desk  Tom O'Donnell
         '695MMXZ',      # MM    NXM SPX Boxes
         '813M473',      # MM    XM IWM, QQQ Options
         '813M758'       # XM    SPY and SPX Options
@@ -76,6 +81,7 @@ def run_abn_tables(date: datetime, save_path = '.'):
     abn_fut_accounts = (
         '6901SIMP3',    # Prop  Futures (Elliot)
         '6901SIMP4',    # Prop  Euro/SOFR
+        '6901SIMP8',    # Desk  Tom O'Donnell
 #       '6901SIMP9',    # Prop  JJ Futures
         '8131SIMP1',    # MM    XM VIX Futures
         '8131SIMP2',    # MM    XM EMini Futures
@@ -90,9 +96,33 @@ def run_abn_tables(date: datetime, save_path = '.'):
     eqt_me_stmt, fut_me_stmt = AbnMonthEndStatements(date.strftime('%Y%m%d'))
     et_table = EtMonthEnd(date.year, date.month)
     
-    eqt_data = {acct: eqt_me_stmt.loc[eqt_me_stmt['ACCOUNT'] == acct, 'EQUITY'].values[0] for acct in abn_eqt_accounts}
-    fut_data = {acct: fut_me_stmt.loc[fut_me_stmt['Account'] == acct, 'NetLiq'].values[0] for acct in abn_fut_accounts}
+    # eqt_data = {acct: eqt_me_stmt.loc[eqt_me_stmt['ACCOUNT'] == acct,
+    # 'EQUITY'].values[0] for acct in abn_eqt_accounts}
+    # fut_data = {acct: fut_me_stmt.loc[fut_me_stmt['Account'] == acct,
+    # 'NetLiq'].values[0] for acct in abn_fut_accounts}
     
+    eqt_data = {}
+    fut_data = {}
+    groups = [
+        [eqt_me_stmt, abn_eqt_accounts, eqt_data, "ACCOUNT", "EQUITY"],
+        [fut_me_stmt, abn_fut_accounts, fut_data, "Account", "NetLiq"]
+    ]
+
+    for cat in groups:
+        stmt: pd.DataFrame = cat[0]
+        account_list = cat[1]
+        data: dict = cat[2]
+        account_col = cat[3]
+        value_col = cat[4]
+
+        for account in account_list:
+            try:
+                mask = stmt[account_col] == account
+                value = stmt.loc[mask, value_col].values[0]
+                data.update({account: value})
+            except:
+                continue
+        
     
     table_dict = {
         '695': sixnine_tfr_table,
@@ -121,8 +151,21 @@ def run_abn_tables(date: datetime, save_path = '.'):
     
     for acct_group in table_dict.keys():
         for i in acct_mapping[acct_group]:
-            if i[0:3] == acct_group or (i[0:3] == '008' and acct_group == '813') or acct_group == 'Fut':
-                table_dict[acct_group].add_data_row(i, data_ref[acct_group][i])
+            cond1 = i[0:3] == acct_group
+
+            cond2a = i[0:3] == "008"
+            cond2b = acct_group == "813"
+            cond2 = cond2a and cond2b
+
+            cond3 = acct_group == "Fut"
+
+            if cond1 or cond2 or cond3:
+                try:
+                    table_dict[acct_group].add_data_row(
+                        i, data_ref[acct_group][i]
+                    )
+                except:
+                    continue
             else:
                 continue
             
@@ -140,7 +183,7 @@ def run_abn_tables(date: datetime, save_path = '.'):
     for acct_group in table_dict.keys():
         table_dict[acct_group].to_csv(f'{save_path}/{date_str}{f_names[acct_group]}', index=False)
     
-    et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}')
+    et_tfr_table.to_csv(f'{save_path}/{date_str}{f_names['ET']}', index=False)
         
 def run_ME_Transfers(year, month, day, save_path=os.environ['HOMEPATH'] + '\\Downloads'):
     dt = datetime(int(year), int(month), int(day))
