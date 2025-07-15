@@ -13,8 +13,8 @@ from payables.Interface.functions import *
 class PayablesWorkbook(pd.DataFrame):
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"
-    column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User"]
-    column_defaults = ["", "", np.float64(0), False, ""]
+    column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
+    column_defaults = ["", "", np.float64(0), False, "", False]
 
     # for DataFrame constructor
     _metadata = [
@@ -31,7 +31,9 @@ class PayablesWorkbook(pd.DataFrame):
     def _constructor(self):
         return PayablesWorkbook
 
-    # initializer - handles reconstruction from pandas methods
+    ############################################################
+    # initializer - handles reconstruction from pandas methods #
+    ############################################################
     def __init__(
         self,
         data: pd.DataFrame | None = None,
@@ -71,7 +73,6 @@ class PayablesWorkbook(pd.DataFrame):
     def validate_data(self, data: pd.DataFrame):
         """Validate workbook columns and add missing ones"""
         good_cols_index = self.get_extant_cols_index(data)
-        new_cols = PayablesWorkbook.column_headers[good_cols_index:]
         self.add_new_cols(data, good_cols_index)
 
     def add_new_cols(self, data: pd.DataFrame, add_from: int):
@@ -86,24 +87,25 @@ class PayablesWorkbook(pd.DataFrame):
         col_name = PayablesWorkbook.column_headers[col_index]
         data[col_name] = default_val
 
-    def get_extant_cols_index(self, original: pd.DataFrame):
+    def get_extant_cols_index(self, original: pd.DataFrame) -> int:
         """Determine which columns exist in the DataFrame.
 
         Given a raw payables workbook, determine which columns are already in
         the workbook and return the index after which columns need to be added.
+
+        Params:
+            original (pd.DataFrame): The original dataframe being scanned for
+            columns
+
+        Returns:
+            int: number of columns in dataframe
         """
-        cols = PayablesWorkbook.column_headers
-        n = len(cols)
-        data = 0
-        while not data:
-            try:
-                data = original[cols[0:n]]
-                break
-            except KeyError:
-                n -= 1
+        n = len(original.columns.values.tolist())
         return n
 
-    # class properties
+    ####################
+    # class properties #
+    ####################
     @property
     def wb_path(self):
         """Path to payables workbook"""
@@ -119,7 +121,7 @@ class PayablesWorkbook(pd.DataFrame):
         return self._payables_date
 
     @payables_date.setter
-    def payables_date(self, date: str | datetime):
+    def payables_date(self, date: str | datetime) -> None:
         if isinstance(date, str):
             self.payables_date_from_str(date)
         elif isinstance(date, datetime):
@@ -129,7 +131,7 @@ class PayablesWorkbook(pd.DataFrame):
 
             raise TypeError
 
-    def payables_date_from_str(self, date: str):
+    def payables_date_from_str(self, date: str) -> None:
         if check_date(date):
             self._payables_date = datetime.strptime(date, "%Y-%m-%d")
         else:
@@ -171,7 +173,9 @@ class PayablesWorkbook(pd.DataFrame):
     def f_name(self, f_name: str):
         self._f_name = f_name
 
-    # class methods
+    #################
+    # class methods #
+    #################
     def formatted_date(self, format_str: str):
         """Return a formatted date string"""
         return self.payables_date.strftime(format_str)
