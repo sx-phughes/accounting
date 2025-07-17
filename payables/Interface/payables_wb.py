@@ -10,6 +10,15 @@ import numpy as np
 from payables.Interface.functions import *
 
 
+def get_col_index(col_name: str) -> int:
+    headers = PayablesWorkbook.column_headers
+    try:
+        i = headers.index(col_name)
+    except ValueError:
+        i = -1
+    return i
+
+
 class PayablesWorkbook(pd.DataFrame):
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"

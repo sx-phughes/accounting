@@ -5,9 +5,10 @@ import pandas as pd
 import re
 import sys
 from typing import Any
+import shutil
 
 # Package Imports
-from payables.Interface.payables_wb import PayablesWorkbook
+from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
 from payables.Interface.functions import *
 
 
@@ -40,13 +41,17 @@ class OsInterface:
     ##################
     # initialization #
     ##################
-    def __init__(self):
-        self.payables = PayablesWorkbook(date=self.ui_workbook_date())
+    def __init__(self, payables_date: str = None):
         self.vendors = pd.read_excel(
             "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx",
             "Vendors",
         )
-        self.main()
+
+        if payables_date is None:
+            self.payables = PayablesWorkbook(date=self.ui_workbook_date())
+            self.main()
+        else:
+            self.payables = PayablesWorkbook(date=payables_date)
 
     def ui_workbook_date(self):
         """User interface for getting payables date"""
@@ -111,19 +116,25 @@ class OsInterface:
 
     def add_invoices(self):
         """Loop for adding invoices to the payables table"""
-        self.warn_clear_downloads()
+        self.preserve_downloads()
         try:
             while True:
                 cls()
 
                 try:
                     invoice_data = self.get_invoice_data()
+                    print("exiting self.get_invoice_data")
                 except EOFError:
                     invoice_data = False
+
                 if invoice_data == False:
                     break
                 elif invoice_data[3] == True:
                     self.add_cc_user(invoice_data)
+
+                paid_status_index = get_col_index("Paid")
+                invoice_data[paid_status_index] = False
+
                 self.payables.insert_invoice(invoice_data)
 
                 add_more = input("Add another invoice (y/n)\n>\t")
@@ -132,9 +143,25 @@ class OsInterface:
         except ValueError:
             self.payables.save_workbook()
 
-    def warn_clear_downloads(self):
-        print("CLEAR DOWNLOADS FOLDER BEFORE BEGINNING")
+        self.restore_downloads()
         input()
+
+    def preserve_downloads(self) -> None:
+        try:
+            os.mkdir("./.tempdownloads")
+        except FileExistsError:
+            pass
+
+        self.move_all_files("./Downloads", "./.tempdownloads/")
+
+    def restore_downloads(self) -> None:
+        self.move_all_files("./.tempdownloads", "./Downloads/")
+        shutil.rmtree("./.tempdownloads")
+
+    def move_all_files(self, source: str, dest: str) -> None:
+        files = os.listdir(source)
+        for file in files:
+            shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
 
     def get_invoice_data(self):
         new_row = self.make_blank_row()
@@ -166,8 +193,9 @@ class OsInterface:
 
         self.standardize_cc_response(inputs)
 
+        print("checking vendor")
         check_result = self.check_vendor(inputs)
-
+        print("checked result")
         if isinstance(check_result, bool):
             return inputs
         elif isinstance(check_result, list):
@@ -195,11 +223,17 @@ class OsInterface:
         for i in range(list_len):
             if isinstance(n[i], int):
                 continue
-            int_as_str = ascii(n[i])
-            int_as_int = int(int_as_str)
-            n_copy[i] = int_as_int
+
+            str_as_int = self.string_to_int(n[i])
+            n_copy[i] = str_as_int
 
         return n_copy
+
+    def string_to_int(self, string: str) -> int:
+        sum = 0
+        for char in string:
+            sum += ord(char)
+        return sum
 
     def get_user_input(
         self, prompts: list[str], input_list: list, curr_index: int
@@ -229,13 +263,14 @@ class OsInterface:
         return index
 
     def check_vendor(self, inputs: list[str | int]) -> bool | list[str]:
-        if inputs[0] in self.vendors.Vendor.values.tolist():
+        vendors = self.vendors.Vendor.values.tolist()
+        found_vendor = inputs[0] in vendors
+        if found_vendor:
             return True
         else:
             zero_sum = sum(self.str_list_to_int(inputs)) == 0
             if not zero_sum:
-                print("Vendor name does not match any known vendor")
-                inputs = self.get_inputs(self.invoice_prompts)
+                inputs = self.get_inputs(OsInterface.invoice_prompts)
                 return inputs
             else:
                 return True
@@ -304,15 +339,19 @@ class OsInterface:
 
     def invoice_details(self, data: pd.Series) -> None:
         """Prints invoice details to screen"""
+        cls()
         lines = self.make_invoice_lines(data)
         for line in lines:
             print(line)
+
         print("To update a value, type [field]: [new value]")
         print("For multiple fields, separate field-value pairs with a comma")
         print("To return to invoice view, hit enter on a blank line")
+
         update = input(">\t")
         pattern = r"(\w+: \w+),?\s?(\w+: \w+(?: ,?\s?))+"
         matched_phrase = re.match(pattern, update)
+
         if matched_phrase:
             groups = matched_phrase.groups()
             self.update_values(groups)
@@ -335,18 +374,19 @@ class OsInterface:
         """
         fields = self.payables.columns.values.tolist()
 
-        def field_pad(string: str):
+        def pad_field(string: str):
             pad_len = 20
             return self.pad_string(string, pad_len, ".")
 
-        padded_fields = [field_pad(field) for field in fields]
+        padded_fields = [pad_field(field) for field in fields]
         field_vals_arr = list(zip(padded_fields, data.values.tolist()))
         lines = [self.get_field_line(pair) for pair in field_vals_arr]
         return lines
 
     def get_field_line(self, field_val_pair: list[str | Any]) -> str:
         """Make a single invoice details line for a field and value pair"""
-        line = "".join(field_val_pair)
+        pair = [str(field_val_pair[0]), str(field_val_pair[1])]
+        line = "".join(pair)
         return line
 
     def pad_string(self, string: str, pad_len: int, char: str = " ") -> str:
@@ -360,7 +400,7 @@ class OsInterface:
         Returns:
             str: padded string
         """
-        pad_len = pad_len - len(str)
+        pad_len = pad_len - len(string)
         if pad_len < 0:
             return string[0 : (pad_len - 1)]
         elif pad_len > 0:
