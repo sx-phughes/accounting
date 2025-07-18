@@ -52,17 +52,17 @@ class PayablesWorkbook:
     def __repr__(self):
         return self.data
 
-    def initialize_from_date(self):
-        """Initialize Payables Workbook from a given date string
+        # def initialize_from_date(self):
+        #     """Initialize Payables Workbook from a given date string
 
-        Checks for a pre-existing payables workbook or uses a new one, then
-        validates columns
-        """
-        # check to see if date folder exists--implies existence of payables
-        # workbook
-        path = self.wb_path.replace(self.f_name, "")
-        if not self.path_exists(path):
-            self.new_workbook()
+        #     Checks for a pre-existing payables workbook or uses a new one, then
+        #     validates columns
+        #     """
+        #     # check to see if date folder exists--implies existence of payables
+        #     # workbook
+        #     path = self.wb_path.replace(self.f_name, "")
+        #     if not self.path_exists(path):
+        #         self.new_workbook()
 
         try:
             data = pd.read_excel(self.wb_path, "Invoices")
