@@ -52,30 +52,40 @@ class PayablesWorkbook(pd.DataFrame):
         dtype=None,
         copy=None,
     ):
-        if date:
-            self.payables_date = date
-            self.stem = self.payables_date
-
         if data is not None:
             input_data = data
         else:
-            input_data = self.initialize_from_date()
+            input_data = self.open_main_payables_workbook()
 
         super().__init__(input_data, index, columns, dtype, copy)
 
-    def initialize_from_date(self):
-        """Initialize Payables Workbook from a given date string
+    # def initialize_from_date(self):
+    #     """Initialize Payables Workbook from a given date string
 
-        Checks for a pre-existing payables workbook or uses a new one, then
-        validates columns
-        """
-        # check to see if date folder exists--implies existence of payables
-        # workbook
-        path = self.wb_path.replace(self.f_name, "")
-        if not self.path_exists(path):
-            self.new_workbook()
+    #     Checks for a pre-existing payables workbook or uses a new one, then
+    #     validates columns
+    #     """
+    #     # check to see if date folder exists--implies existence of payables
+    #     # workbook
+    #     path = self.wb_path.replace(self.f_name, "")
+    #     if not self.path_exists(path):
+    #         self.new_workbook()
 
-        data = pd.read_excel(self.wb_path, "Invoices")
+    #     data = pd.read_excel(self.wb_path, "Invoices")
+    #     self.validate_data(data)
+    #     return data
+
+    def open_main_payables_workbook(self) -> pd.DataFrame:
+        path = self.payables_path
+        f_name = "payables_main.xlsx"
+        f_path_full = path + f_name
+        if not os.path.exists(f_path_full):
+            data = pd.DataFrame(columns=self.column_headers)
+            with pd.ExcelWriter(f_path_full) as writer:
+                data.to_excel(writer, "invoices")
+        else:
+            data = pd.read_excel(f_path_full, "invoices")
+            data = data.fillna("")
         self.validate_data(data)
         return data
 

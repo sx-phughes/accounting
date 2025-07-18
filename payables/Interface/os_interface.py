@@ -41,17 +41,17 @@ class OsInterface:
     ##################
     # initialization #
     ##################
-    def __init__(self, payables_date: str = None):
+    def __init__(self, debug: str = None):
         self.vendors = pd.read_excel(
             "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx",
             "Vendors",
         )
 
-        if payables_date is None:
-            self.payables = PayablesWorkbook(date=self.ui_workbook_date())
+        if debug is None:
+            self.payables = PayablesWorkbook()
             self.main()
         else:
-            self.payables = PayablesWorkbook(date=payables_date)
+            self.payables = PayablesWorkbook()
 
     def ui_workbook_date(self):
         """User interface for getting payables date"""
@@ -123,7 +123,6 @@ class OsInterface:
 
                 try:
                     invoice_data = self.get_invoice_data()
-                    print("exiting self.get_invoice_data")
                 except EOFError:
                     invoice_data = False
 
