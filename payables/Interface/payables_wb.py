@@ -66,7 +66,13 @@ class PayablesWorkbook(pd.DataFrame):
         if not self.path_exists(path):
             self.new_workbook()
 
-        data = pd.read_excel(self.wb_path, "Invoices")
+        try:
+            data = pd.read_excel(self.wb_path, "Invoices")
+        except:
+            data = pd.read_excel(
+                self.wb_path.replace("xlsx", "xlsm"),
+                "Invoices"
+            )
         self.validate_data(data)
         return data
 
