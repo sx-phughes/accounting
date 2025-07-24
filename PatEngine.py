@@ -55,17 +55,18 @@ class PatEngine:
         Returns:
             None
         """
-        os.system("cls")
+        cls()
         options[return_to] = [""]
 
         while True:
-            os.system("cls")
+            cls()
             print(menu_title)
             self.print_options(options)
             print("Please select an option by number:")
             option = self.get_option_selection(options)
 
             if option == len(options.keys()) or option == "":
+                cls()
                 break
             # elif do_settings:
             #     self.update_settings()
