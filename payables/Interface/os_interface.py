@@ -98,6 +98,7 @@ class OsInterface:
                 selected = self.main_menu_input()
 
             if selected == list(options.keys())[-1]:
+                cls()
                 break
             else:
                 options[selected][1]()
@@ -123,7 +124,6 @@ class OsInterface:
 
                 try:
                     invoice_data = self.get_invoice_data()
-                    print("exiting self.get_invoice_data")
                 except EOFError:
                     invoice_data = False
 
@@ -193,9 +193,7 @@ class OsInterface:
 
         self.standardize_cc_response(inputs)
 
-        print("checking vendor")
         check_result = self.check_vendor(inputs)
-        print("checked result")
         if isinstance(check_result, bool):
             return inputs
         elif isinstance(check_result, list):
