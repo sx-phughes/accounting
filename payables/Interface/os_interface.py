@@ -46,12 +46,14 @@ class OsInterface:
             "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx",
             "Vendors",
         )
+        self.preserved_downloads = 0
 
         if payables_date is None:
             self.payables = PayablesWorkbook(date=self.ui_workbook_date())
             self.main()
         else:
             self.payables = PayablesWorkbook(date=payables_date)
+        
 
     def ui_workbook_date(self):
         """User interface for getting payables date"""
@@ -117,7 +119,12 @@ class OsInterface:
 
     def add_invoices(self):
         """Loop for adding invoices to the payables table"""
-        self.preserve_downloads()
+        print("Move downloads to temp folder? (y/n)")
+        resp = input(">\t")
+        if resp == "y":
+            self.preserve_downloads()
+            self.preserved_downloads = 1
+    
         try:
             while True:
                 cls()
@@ -143,8 +150,9 @@ class OsInterface:
         except ValueError:
             self.payables.save_workbook()
 
-        self.restore_downloads()
-        input()
+        if self.preserved_downloads:
+            self.restore_downloads()
+            self.preserved_downloads = 0
 
     def preserve_downloads(self) -> None:
         try:
@@ -410,7 +418,7 @@ class OsInterface:
 
     def remove_invoice(self) -> None:
         """UI for removing one or multiple invoices from the workbook"""
-        self.print_invoices()
+        self.print_invoices(self.payables)
 
         index = self.get_index_input()
         if index:
