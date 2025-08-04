@@ -78,10 +78,7 @@ class PayablesWorkbook(pd.DataFrame):
         try:
             data = pd.read_excel(self.wb_path, "Invoices")
         except:
-            data = pd.read_excel(
-                self.wb_path.replace("xlsx", "xlsm"),
-                "Invoices"
-            )
+            data = pd.read_excel(self.wb_path.replace("xlsx", "xlsm"), "Invoices")
         self.validate_data(data)
         return data
 
@@ -221,12 +218,12 @@ class PayablesWorkbook(pd.DataFrame):
         """Create a new blank payables file for a given date"""
         cols = PayablesWorkbook.column_headers
         df = pd.DataFrame(columns=cols)
-        with pd.ExcelWriter(self.wb_path, "xlsxwriter") as writer:
-            df.to_excel(writer, "Invoices", index=False)
+        # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
+        df.to_excel(self.wb_path, sheet_name="Invoices", index=False)
 
     def save_workbook(self):
-        with pd.ExcelWriter(self.wb_path, "xlsxwriter") as writer:
-            self.to_excel(writer, sheet_name="Invoices", index=False)
+        # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
+        self.to_excel(self.wb_path, sheet_name="Invoices", index=False)
 
     def move_files(self):
         """Move invoice files from Downloads to relevant payables folder with

@@ -2,6 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python Debugger: testing curses",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/vendors/curses_test.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/vendors"
+    },
+    {
       "name": "Python Debugger: testing OS Interface",
       "type": "debugpy",
       "request": "launch",
