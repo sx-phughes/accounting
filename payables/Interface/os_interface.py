@@ -54,7 +54,6 @@ class OsInterface:
         else:
             self.payables = PayablesWorkbook(date=payables_date)
         
-
     def ui_workbook_date(self):
         """User interface for getting payables date"""
         cls()
@@ -85,8 +84,7 @@ class OsInterface:
         """Main user interface menu function"""
         options = {
             1: ["Add Invoices", self.add_invoices],
-            2: ["View All Invoices", self.view_all_invoices],
-            3: ["Remove Invoices", self.remove_invoice],
+            2: ["View/Edit Invoices", self.view_all_invoices],
             4: ["Exit"],
         }
         while True:
@@ -201,7 +199,7 @@ class OsInterface:
 
         self.standardize_cc_response(inputs)
 
-        check_result = self.check_vendor(inputs)
+        check_result = self.add_invoice_vendor_check(inputs)
         if isinstance(check_result, bool):
             return inputs
         elif isinstance(check_result, list):
@@ -268,9 +266,10 @@ class OsInterface:
 
         return index
 
-    def check_vendor(self, inputs: list[str | int]) -> bool | list[str]:
-        vendors = self.vendors.Vendor.values.tolist()
-        found_vendor = inputs[0] in vendors
+    def add_invoice_vendor_check(
+        self, inputs: list[str | int]) -> bool | list[str]:
+        found_vendor = self.validate_vendor(inputs)
+
         if found_vendor:
             return True
         else:
@@ -280,6 +279,15 @@ class OsInterface:
                 return inputs
             else:
                 return True
+    
+    def validate_vendor(self, inputs: list[str | int] | str) -> bool:
+        vendors = self.vendors.Vendor.values.tolist()
+        if isinstance(inputs, list):
+            found_vendor = inputs[0] in vendors
+        else:
+            found_vendor = inputs in vendors
+
+        return found_vendor
 
     def up_arrow(self, index: int) -> int:
         if index > 0:
@@ -315,6 +323,7 @@ class OsInterface:
     # Invoice management #
     ######################
     def view_all_invoices(self) -> None:
+        cls()
         self.view_invoices(self.payables)
 
     def view_idb_invoices(self) -> None:
@@ -330,6 +339,7 @@ class OsInterface:
     def view_invoices(self, data: pd.DataFrame) -> None:
         """Prints invoices to screen"""
         while True:
+            cls()
             self.print_invoices(data)
 
             print("\n\nEnter an index to view invoice details,")
@@ -337,37 +347,75 @@ class OsInterface:
             response = input(">\t")
 
             if re.match(r"\d+", response):
-                self.invoice_details(data.iloc[int(response)])
+                self.invoice_details(int(response))
             elif response == "":
                 break
             else:
                 print("Invalid input")
 
-    def invoice_details(self, data: pd.Series) -> None:
+    def invoice_details(self, index: int) -> None:
         """Prints invoice details to screen"""
-        cls()
-        lines = self.make_invoice_lines(data)
-        for line in lines:
-            print(line)
+        while True:
+            cls()
+            invoice_data = self.payables.iloc[index]
+            lines = self.make_invoice_lines(invoice_data)
+            for line in lines:
+                print(line)
 
-        print("To update a value, type [field]: [new value]")
-        print("For multiple fields, separate field-value pairs with a comma")
-        print("To return to invoice view, hit enter on a blank line")
+            print("To update a value, type [field]: [new value]")
+            print(
+                "For multiple fields, separate field-value pairs with a comma"
+            )
+            print("To return to invoice view, hit enter on a blank line")
 
-        update = input(">\t")
-        pattern = r"(\w+: \w+),?\s?(\w+: \w+(?: ,?\s?))+"
-        matched_phrase = re.match(pattern, update)
+            update = input(">\t")
+            pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.-]+)+"
+            matched_phrase = re.match(pattern, update)
 
-        if matched_phrase:
-            groups = matched_phrase.groups()
-            self.update_values(groups)
-        elif update == "":
-            pass
-        else:
-            print("Invalid inputs!")
+            if matched_phrase:
+                groups = matched_phrase.groups()
+                self.update_values(index, groups)
+            elif update == "":
+                break
+            elif update == "delete":
+                self.payables.remove_invoice()
+            else:
+                print("Invalid inputs!")
+                break
+            self.payables.save_workbook()
 
-    def update_values(self, groups: tuple[str]):
-        pass
+    def update_values(self, index: int, groups: tuple[str]):
+        for group in groups:
+            if group is None:
+                continue
+
+            split_text = group.split(":")
+            col = split_text[0].replace(", ", "")
+            val = split_text[1].strip()
+
+            if not self.validate_updates(col, val):
+                input()
+                break
+
+            self.payables.loc[index, col] = val
+
+        self.payables.save_workbook()
+    
+    def validate_updates(self, col: str, val: str):
+        inputs_valid = True
+
+        if not self.check_col(col):
+            print(f"Invalid column name: {col}")
+            inputs_valid = False
+        
+        if col == "Vendor" and not self.check_vendor(val):
+            print(f"Bad vendor {val}")
+            inputs_valid = False
+
+        return inputs_valid
+
+    def check_col(self, col: str) -> bool:
+        return (col in self.payables.columns)
 
     def make_invoice_lines(self, data: pd.Series) -> list[str]:
         """Creates a list of formatted lines to print as invoice details
@@ -416,18 +464,18 @@ class OsInterface:
         else:
             return string
 
-    def remove_invoice(self) -> None:
-        """UI for removing one or multiple invoices from the workbook"""
-        self.print_invoices(self.payables)
+    # def remove_invoice(self) -> None:
+        # """UI for removing one or multiple invoices from the workbook"""
+        # self.print_invoices(self.payables)
 
-        index = self.get_index_input()
-        if index:
-            self.payables.remove_invoice(index)
-            self.payables.save_workbook()
-            print("Invoice removed.")
-        else:
-            print("No index provided, so no invoice removed.")
-        input("Enter to return to main menu")
+        # index = self.get_index_input()
+        # if index:
+        #     self.payables.remove_invoice(index)
+        #     self.payables.save_workbook()
+        #     print("Invoice removed.")
+        # else:
+        #     print("No index provided, so no invoice removed.")
+        # input("Enter to return to main menu")
 
     def get_index_input(self) -> int:
         """Get index(es) selection from user"""
