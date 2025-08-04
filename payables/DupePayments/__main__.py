@@ -111,12 +111,9 @@ def search_for_dupe_payments(curr_payables_batch_date: str, n_months: int, save_
     return dupe_df
 
 
-def __main__():
+def main():
     date = input('Input date of payables batch to check for dupes (yyyy-mm-dd):\n>\t')
     n_months = input('Input number of months to check back:\n>\t')
     save_path = input('Input save path for dupe invoice check (optional, defaults to pwd):\n>\t')
 
     search_for_dupe_payments(date, int(n_months), save_path)
-
-
-__main__()
