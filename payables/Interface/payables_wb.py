@@ -199,10 +199,13 @@ class PayablesWorkbook(pd.DataFrame):
         self.move_files()
         self.save_workbook()
 
-    def remove_invoice(self, index: list[int]):
+    def remove_invoice(self, index: list[int] | str):
         """Removed invoices at given indexes"""
-        for ind in index:
-            self.drop(index=ind, inplace=True)
+        if isinstance(index, list):
+            for ind in index:
+                self.drop(index=ind, inplace=True)
+        else:
+            self.drop(index=index, inplace=True)
 
         self.reset_index(drop=True, inplace=True)
         self.save_workbook()
