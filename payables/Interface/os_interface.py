@@ -49,11 +49,15 @@ class OsInterface:
         self.preserved_downloads = 0
 
         if payables_date is None:
-            self.payables = PayablesWorkbook(date=self.ui_workbook_date())
+            self.date = self.ui_workbook_date()
+            self.payables = PayablesWorkbook(date=self.date)
             self.main()
         else:
             self.payables = PayablesWorkbook(date=payables_date)
         
+    ##################
+    # date functions #
+    ##################
     def ui_workbook_date(self):
         """User interface for getting payables date"""
         cls()
@@ -61,10 +65,22 @@ class OsInterface:
         while True:
             payables_date = input("Input Payables Workbook Date (yyyy-mm-dd)\n>\t")
             if check_date(payables_date):
+                self.parse_date(payables_date)
                 break
             else:
                 print("Invalid date, try again")
+            
+            
         return payables_date
+    
+    def parse_date(self, date: str) -> None:
+        """Parses date pieces from yyyy-mm-dd string and assigns pieces to properties"""
+        pattern = r"(\d{4})-(\d{2})-(\d{2})"
+        re_match = re.match(pattern, date)
+        if re_match is None:
+            raise ValueError(f"Date string '{date}' improperly formatted; must be yyyy-mm-dd")
+        date_pieces = re_match.groups()
+        self.year, self.month, self.day = date_pieces[0:3]
 
     ##############
     # properties #
@@ -362,6 +378,8 @@ class OsInterface:
             for line in lines:
                 print(line)
 
+            print("To remove an invoice, type delete, then enter")
+            print("To open an invoice, type open, then enter")
             print("To update a value, type [field]: [new value]")
             print(
                 "For multiple fields, separate field-value pairs with a comma"
@@ -379,11 +397,74 @@ class OsInterface:
                 break
             elif update == "delete":
                 self.payables.remove_invoice(index)
+            elif update == "open":
+                self.open_invoice(index)
             else:
                 print("Invalid inputs!")
                 break
             self.payables.save_workbook()
+    
+    def open_invoice(self, index: int) -> None:
+        vendor = self.payables.loc[index, "Vendor"]
+        invoice_no = self.payables.loc[index, "Invoice #"]
+        file_info = self.get_invoice_paths(vendor, invoice_no)
 
+        print("Select file to open:")
+        count = 0
+        for i in file_info:
+            list_no = count + 1
+            print(f"{list_no}:\t{i[1]} file")
+            count += 1
+        
+        file_selection = self.convert_str_to_int_input(input("\n>\t"))
+        file_selection -= 1
+
+        os.system(f"\"{file_info[file_selection][0]}\"")
+
+    def invoice_search_path_constructor(self) -> str:
+        pieces = [
+                  self.payables_path,
+                  self.year,
+                  self.year + self.month,
+                #   self.date
+        ]
+        path = '/'.join(pieces)
+        return path
+        
+    def get_invoice_paths(
+        self, vendor: str, inv_no: str
+    ) -> list[list[str]]:
+        test_var = 0
+        path = self.invoice_search_path_constructor()
+        pattern = f"{vendor} - {inv_no}"
+        files = self.find_files(path, pattern)
+        return files
+        
+
+    def find_files(self, path: str, pattern: str) -> list[list[str]]:
+        """find files in a dir matching pattern
+        Returns: list of lists with file and extensions
+        """
+        found_files = []
+        # print(f"Using pattern: {pattern}")
+        for dirpath, dirnames, filenames in os.walk(path):
+            # print(f"searching dirpath: {dirpath}")
+            for f_name in filenames:
+                if re.match(pattern, f_name):
+                    # print(f"matched: {f_name}")
+                    joined = '/'.join([dirpath, f_name])
+                    found_files.append(joined)
+        extensions = self.get_file_extensions(found_files)
+        files_w_exts = list(zip(found_files, extensions))
+        return files_w_exts
+    
+    def get_file_extensions(self, file_list: list[str]) -> list[str]:
+        exts = []
+        for file in file_list:
+            extension = file.split('.')[-1]
+            exts.append(extension)
+        return exts
+        
     def update_values(self, index: int, groups: tuple[str]):
         for group in groups:
             if group is None:
@@ -464,19 +545,6 @@ class OsInterface:
         else:
             return string
 
-    # def remove_invoice(self) -> None:
-        # """UI for removing one or multiple invoices from the workbook"""
-        # self.print_invoices(self.payables)
-
-        # index = self.get_index_input()
-        # if index:
-        #     self.payables.remove_invoice(index)
-        #     self.payables.save_workbook()
-        #     print("Invoice removed.")
-        # else:
-        #     print("No index provided, so no invoice removed.")
-        # input("Enter to return to main menu")
-
     def get_index_input(self) -> int:
         """Get index(es) selection from user"""
         prompts = [
@@ -550,6 +618,13 @@ class OsInterface:
         if isinstance(value, float) and np.isnan(value):
             value = sub
         return value
+    
+    def convert_str_to_int_input(self, input: str) -> int:
+        """Checks if a string is int-able and returns the int"""
+        if re.match(r"\d+", input):
+            return int(input)
+        else:
+            raise TypeError(f"Input was not a number: {input}")
 
 
 def __main__():
