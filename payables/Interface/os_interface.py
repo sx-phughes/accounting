@@ -85,7 +85,7 @@ class OsInterface:
         options = {
             1: ["Add Invoices", self.add_invoices],
             2: ["View/Edit Invoices", self.view_all_invoices],
-            4: ["Exit"],
+            3: ["Exit"],
         }
         while True:
             cls()
@@ -378,7 +378,7 @@ class OsInterface:
             elif update == "":
                 break
             elif update == "delete":
-                self.payables.remove_invoice()
+                self.payables.remove_invoice(index)
             else:
                 print("Invalid inputs!")
                 break
