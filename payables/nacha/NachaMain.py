@@ -1,5 +1,6 @@
 from payables.nacha.NachaConstructor import *
 from payables.nacha.CheckDuplicates import check_duplicates
+from payables.DupePayments.__main__ import search_for_dupe_payments
 from datetime import datetime
 import pandas as pd
 import os
@@ -39,6 +40,19 @@ def nacha_main():
     valuedate = datetime(vd_year,vd_month,vd_day).strftime('%y%m%d')
 
     payables_path = f'C:/gdrive/Shared drives/accounting/Payables/{payables_date.strftime('%Y')}/{payables_date.strftime('%Y%m')}/{payables_date.strftime('%Y-%m-%d')}/{payables_date.strftime('%Y-%m-%d')} Payables.xlsm'
+
+    pb_date_string = payables_date.strftime("%Y-%m-%d")
+
+    dupes = search_for_dupe_payments(
+        pb_date_string,
+        4, 
+        "C:\gdrive\My Drive\dupe_pmts"
+    )
+    if len(dupes.index) > 0:
+        print("Dupe payments present; please correct and rerun payables.")
+        input()
+        quit()
+
     payables = pd.read_excel(payables_path, 'Invoices', dtype=data_types)
     payables = payables.loc[payables['Payment Type'] == 'ACH'].copy()
     payables = check_duplicates(payables)
