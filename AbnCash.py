@@ -19,6 +19,15 @@ def save_eqt_to_disk(year: int, month: int) -> None:
     ]), index=False)
     input("File generated, enter to continue")
 
+def save_mics_to_disk(year: int, month: int) -> None:
+    data = get_mics_cash_data(year, month)
+    moyr = datetime(year, month, 1).strftime("%Y%m")
+    data.to_csv('/'.join([
+        "C:/gdrive/Shared drives/accounting/patrick_data_files/abn_cash_files",
+        f"{moyr} mics cash.csv"
+    ]), index=False)
+    input("File generated, enter to continue")   
+
 def get_eqt_cash_data(year: int, month: int) -> pd.DataFrame:
     eqt_data = get_cash_data(year, month, eqt_pattern)
     return eqt_data
