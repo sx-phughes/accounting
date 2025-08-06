@@ -127,12 +127,6 @@ class PatEngine:
                 return integer_selection
         print("Bad option!")
 
-    # def update_settings(self):
-    #     new_val = input('Please input new value for setting:\n>\t')
-    #     # self.settings[self.settings.vals[option]] = new_val
-    #     print('Settings updated')
-    #     print('Press enter to return to main menu')
-
     def print_options(self, options: dict[str, list[str | None]]) -> None:
         """Print menu options to screen"""
         for i in range(len(options.keys())):
@@ -203,7 +197,7 @@ class PatEngine:
             ],
             "ABN MICS Cash File": [
                 "Run ABN MICS Cash Blotter",
-                AbnCash.get_mics_cash_data,
+                AbnCash.save_mics_to_disk,
             ],
             "BOFA Just Div Files": [
                 "Pull Full Dividend Summary from BofA Data",
@@ -229,18 +223,6 @@ class PatEngine:
         }
 
         self.menu("Main Menu", options, "Exit Program")
-
-    # def settings_menu(self):
-    #     """Settings options"""
-    #     options = {
-    #         f'{val}: {data}': '' for val, data in
-    #             zip(
-    #                 self.settings.vals,
-    #                 [self.settings[name] for name in self.settings.vals]
-    #             )
-    #     }
-
-    #     self.menu('Settings', options, 'Main Menu', True)
 
     def me_menu(self):
         """Sub-menu options for month-end-specific functions"""
