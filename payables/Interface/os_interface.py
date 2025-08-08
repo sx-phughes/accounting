@@ -397,6 +397,7 @@ class OsInterface:
                 break
             elif update == "delete":
                 self.payables.remove_invoice(index)
+                break
             elif update == "open":
                 self.open_invoice(index)
             else:
