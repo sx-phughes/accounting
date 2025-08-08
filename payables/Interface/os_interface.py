@@ -373,37 +373,53 @@ class OsInterface:
         """Prints invoice details to screen"""
         while True:
             cls()
-            invoice_data = self.payables.iloc[index]
-            lines = self.make_invoice_lines(invoice_data)
-            for line in lines:
-                print(line)
-
-            print("To remove an invoice, type delete, then enter")
-            print("To open an invoice, type open, then enter")
-            print("To update a value, type [field]: [new value]")
-            print(
-                "For multiple fields, separate field-value pairs with a comma"
-            )
-            print("To return to invoice view, hit enter on a blank line")
+            self.print_invoice_details(index)
+            self.print_details_directions()
 
             update = input(">\t")
             pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.-]+)+"
             matched_phrase = re.match(pattern, update)
 
-            if matched_phrase:
-                groups = matched_phrase.groups()
-                self.update_values(index, groups)
-            elif update == "":
+            ret = self.handle_invoice_details_input(
+                index, matched_phrase, update
+            )
+            if ret == 0:
                 break
-            elif update == "delete":
-                self.payables.remove_invoice(index)
-                break
-            elif update == "open":
-                self.open_invoice(index)
-            else:
-                print("Invalid inputs!")
-                break
+
             self.payables.save_workbook()
+    
+    def handle_invoice_details_input(
+        self, index: int, match: re.Match| None, update: str) -> int:
+        if match:
+            groups = match.groups()
+            self.update_values(index, groups)
+        elif update == "":
+            return 0
+        elif update == "delete":
+            self.payables.remove_invoice(index)
+            return 0
+        elif update == "open":
+            self.open_invoice(index)
+        else:
+            print("Invalid inputs!")
+            return 0
+
+    def print_invoice_details(self, index: int) -> None:
+        invoice_data = self.payables.iloc[index]
+        lines = self.make_invoice_lines(invoice_data)
+        for line in lines:
+            print(line)
+    
+    def print_details_directions(self) -> None:
+        print("\n\n")
+
+        print("To remove an invoice, type delete, then enter\n")
+        print("To open an invoice, type open, then enter\n")
+        print("To update a value, type [field]: [new value]")
+        print(
+            "For multiple fields, separate field-value pairs with a comma\n"
+        )
+        print("To return to invoice view, hit enter on a blank line")
     
     def open_invoice(self, index: int) -> None:
         vendor = self.payables.loc[index, "Vendor"]
@@ -440,7 +456,6 @@ class OsInterface:
         pattern = f"{vendor} - {inv_no}"
         files = self.find_files(path, pattern)
         return files
-        
 
     def find_files(self, path: str, pattern: str) -> list[list[str]]:
         """find files in a dir matching pattern
