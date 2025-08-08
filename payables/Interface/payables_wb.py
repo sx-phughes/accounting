@@ -1,7 +1,6 @@
 # Standard packages
 from datetime import datetime
 import os
-import re
 import shutil
 import pandas as pd
 import numpy as np
@@ -234,7 +233,20 @@ class PayablesWorkbook(pd.DataFrame):
         zipped_paths = self.create_new_paths()
 
         for old, new in zipped_paths:
-            shutil.move(old, new)
+            self.move_a_file(old, new)
+        
+    def move_a_file(self, old_path: str, new_path: str) -> None:
+        while True:
+            try:
+                shutil.move(old_path, new_path)
+                break
+            except PermissionError:
+                print("Close the file!")
+                input()
+            except FileNotFoundError:
+                print("Files missing!")
+                input()
+                break
 
     def create_new_paths(self):
         """Create a zipped list of an old path and a new path for invoice files"""
