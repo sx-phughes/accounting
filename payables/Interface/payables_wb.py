@@ -245,6 +245,7 @@ class PayablesWorkbook(pd.DataFrame):
                 input()
             except FileNotFoundError:
                 print("Files missing!")
+                print(f"\tcannot find file {old_path}")
                 input()
                 break
 
