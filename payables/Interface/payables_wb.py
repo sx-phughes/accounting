@@ -21,6 +21,8 @@ def get_col_index(col_name: str) -> int:
 class PayablesWorkbook(pd.DataFrame):
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"
+    vendors_path = \
+        "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx"
     column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
     column_defaults = ["", "", np.float64(0), False, "", False]
 
@@ -316,5 +318,18 @@ class PayablesWorkbook(pd.DataFrame):
 
         return old_paths
 
-    def merge_vendors(self, vendors_df):
-        pass
+    def merge_vendors(self) -> pd.DataFrame:
+        vendors = pd.read_excel(self.vendors_path, "Vendors")
+        vendors_small = vendors[[
+            "Vendor",
+            "Company",
+            "Expense Category",
+            "Approver",
+            "Payment Type",
+            "QB Mapping",
+            "Account Mapping",
+            "ACH ABA",
+            "ACH Account Number",
+            "ACH Vendor Name",
+        ]].copy(deep=True)
+        return self.merge(right=vendors_small, how="left", on="Vendor")
