@@ -101,12 +101,14 @@ class OsInterface:
         options = {
             1: ["Add Invoices", self.add_invoices],
             2: ["View/Edit Invoices", self.view_all_invoices],
-            3: ["Exit"],
+            3: ["Switch Payables Workbook", self.switch_books],
+            4: ["Exit"],
         }
         while True:
             cls()
 
-            print("Invoice Input Main Menu\n")
+            print("Payables Main Menu\n")
+            self.print_main_menu_status()
             self.print_main_menu(options)
 
             selected = 0
@@ -118,6 +120,27 @@ class OsInterface:
                 break
             else:
                 options[selected][1]()
+    
+    def switch_books(self) -> None:
+        self.payables.save_workbook()
+        self.date = self.ui_workbook_date()
+        self.payables = PayablesWorkbook(date=self.date)
+        
+    def print_main_menu_status(self) -> None:
+        print_list = [
+            f"Current Workbook {self.date}",
+            f"Total # of invoices: {len(self.payables.index)!s}",
+            "Company Totals:"
+        ]
+        with_vendors = self.payables.merge_vendors()
+        for co in with_vendors['Company'].unique():
+            co_total_invoiced = with_vendors.loc[with_vendors["Company"] == co, 'Amount'].sum()
+            co_string = f"\t{co:15}: ${co_total_invoiced:,.2f}"
+            print_list.append(co_string)
+        
+        for line in print_list:
+            print(line)
+        print("\n")
 
     def main_menu_input(self):
         """Receive user input for main menu selection"""
