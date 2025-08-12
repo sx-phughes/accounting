@@ -6,7 +6,13 @@ import pandas as pd
 import numpy as np
 
 # Package imports
-from payables.Interface.functions import *
+try:
+    from payables.Interface.functions import *
+except ModuleNotFoundError:
+    try:
+        from Interface.functions import *
+    except ModuleNotFoundError:
+        from functions import *
 
 
 def get_col_index(col_name: str) -> int:
