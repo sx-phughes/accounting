@@ -174,7 +174,7 @@ class PatEngine:
         """
         # Inputs to be formatted in 2D array - [[val_name, default], etc.]
 
-        print(screen_header)
+        # print(screen_header)
         if type(functions) == list:
             for f in functions:
                 self.run_f(f)
