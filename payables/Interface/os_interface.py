@@ -8,9 +8,23 @@ from typing import Any
 import shutil
 
 # Package Imports
-from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
-from payables.Interface.functions import *
-
+os.chdir("\\".join(
+    [
+        os.environ["HOMEDRIVE"],
+        os.environ["HOMEPATH"],
+        "\\accounting"
+    ]
+))
+try:
+    from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
+    from payables.Interface.functions import *
+except ModuleNotFoundError:
+    try:
+        from Interface.payables_wb import PayablesWorkbook, get_col_index
+        from Interface.functions import *
+    except ModuleNotFoundError:
+        from payables_wb import PayablesWorkbook, get_col_index
+        from functions import *
 
 def cursor_up():
     sys.stdout.flush()
@@ -35,13 +49,19 @@ class OsInterface:
         "Vendor:\t",
         "Invoice Number:\t",
         "Invoice Amount:\t",
-        "Credit card (y/n):\t",
+        "Credit card:\t",
+    ]
+    prompt_types = [
+        "str",
+        "str",
+        "float64",
+        "bool"
     ]
 
     ##################
     # initialization #
     ##################
-    def __init__(self, payables_date: str = None):
+    def __init__(self, payables_date: str = None, debug: bool=False):
         self.vendors = pd.read_excel(
             "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx",
             "Vendors",
@@ -54,6 +74,12 @@ class OsInterface:
             self.main()
         else:
             self.payables = PayablesWorkbook(date=payables_date)
+        
+        if debug:
+            self.date = payables_date
+            self.parse_date(payables_date)
+            self.main()
+            
         
     ##################
     # date functions #
@@ -236,29 +262,57 @@ class OsInterface:
         while 0 in inputs:
             i = self.get_user_input(prompts, inputs, i)
 
-        self.standardize_cc_response(inputs)
+        self.set_input_types(inputs)
 
         check_result = self.add_invoice_vendor_check(inputs)
-        if isinstance(check_result, bool):
+        if isinstance(check_result, bool) and check_result:
             return inputs
         elif isinstance(check_result, list):
             return check_result
         else:
             return self.make_blank_row()
+        
+    def set_input_types(
+        self, inputs: list[str | int]) -> list[str | int | bool]:
 
-    def standardize_cc_response(self, inputs: list[str | int]) -> None:
-        try:
-            cc_index = self.invoice_prompts.index("Credit card (y/n):\t")
-            str_response = inputs[cc_index]
-            inputs[cc_index] = self.convert_cc_response_to_bool(str_response)
-        except:
-            inputs = inputs
+        zipped_inputs_and_types = zip(
+            inputs, OsInterface.prompt_types
+        )
+        self.fix_cc_input(inputs)
 
-    def convert_cc_response_to_bool(self, cc_response: str) -> bool:
-        if cc_response == "y":
-            return True
-        else:
-            return False
+        index = 0
+        for val, val_type in zipped_inputs_and_types:
+            inputs[index] = set_type(val, val_type)
+            index += 1
+            
+    def fix_cc_input(self, inputs: list[str | int]) -> list[str | int]:
+        cc_index = self.get_input_index("Credit card")
+        cc_input = inputs[cc_index]
+        inputs[cc_index] = self.swap_cc_input(cc_input)
+        
+    def swap_cc_input(self, cc_val: str) -> str:
+        new_val = '' 
+        if cc_val == "y":
+            new_val = cc_val
+        return new_val
+    
+    def get_input_index(self, col: str) -> int:
+        with_stub = col + ":\t"
+        return OsInterface.invoice_prompts.index(with_stub)
+
+    # def standardize_cc_response(self, inputs: list[str | int]) -> None:
+    #     try:
+    #         cc_index = self.invoice_prompts.index("Credit card:\t")
+    #         str_response = inputs[cc_index]
+    #         inputs[cc_index] = self.convert_cc_response_to_bool(str_response)
+    #     except:
+    #         inputs = inputs
+
+    # def convert_cc_response_to_bool(self, cc_response: str) -> bool:
+    #     if cc_response == "y":
+    #         return True
+    #     else:
+    #         return False
 
     def str_list_to_int(self, n: list[str]) -> list[int]:
         n_copy = n.copy()
@@ -668,3 +722,6 @@ class OsInterface:
 
 def __main__():
     OsInterface()
+
+def debug():
+    OsInterface("2025-08-31", True)
