@@ -86,7 +86,16 @@ class PayablesWorkbook(pd.DataFrame):
             data = pd.read_excel(self.wb_path, "Invoices")
         except:
             data = pd.read_excel(self.wb_path.replace("xlsx", "xlsm"), "Invoices")
+
         self.validate_data(data)
+        data = self.set_types(data)
+        return data
+
+    def set_types(self, data: pd.DataFrame):
+        for col_i in range(len(data.columns)):
+            col = data.columns[col_i]
+            dtype = type(self.column_defaults[col_i])
+            data[col] = data[col].astype(dtype)
         return data
 
     def validate_data(self, data: pd.DataFrame):
