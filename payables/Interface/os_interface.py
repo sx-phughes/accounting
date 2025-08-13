@@ -8,13 +8,7 @@ from typing import Any
 import shutil
 
 # Package Imports
-os.chdir("\\".join(
-    [
-        os.environ["HOMEDRIVE"],
-        os.environ["HOMEPATH"],
-        "\\accounting"
-    ]
-))
+
 try:
     from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
     from payables.Interface.functions import *
@@ -300,25 +294,12 @@ class OsInterface:
         with_stub = col + ":\t"
         return OsInterface.invoice_prompts.index(with_stub)
 
-    # def standardize_cc_response(self, inputs: list[str | int]) -> None:
-    #     try:
-    #         cc_index = self.invoice_prompts.index("Credit card:\t")
-    #         str_response = inputs[cc_index]
-    #         inputs[cc_index] = self.convert_cc_response_to_bool(str_response)
-    #     except:
-    #         inputs = inputs
-
-    # def convert_cc_response_to_bool(self, cc_response: str) -> bool:
-    #     if cc_response == "y":
-    #         return True
-    #     else:
-    #         return False
-
     def str_list_to_int(self, n: list[str]) -> list[int]:
         n_copy = n.copy()
         list_len = len(n)
         for i in range(list_len):
-            if isinstance(n[i], int):
+            val = n[i]
+            if isinstance(val, int) or isinstance(val, np.float64):
                 continue
 
             str_as_int = self.string_to_int(n[i])
