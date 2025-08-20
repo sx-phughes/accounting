@@ -253,7 +253,7 @@ class PatEngine:
         options = {
             "Input Payables": [
                 "Manage Payables Workbook: view/input/remove",
-                os_interface.__main__,
+                os_interface.run_interface,
             ],
             "Create Payables Payment Files": [
                 "Create NACHA files for a Payables Batch",
