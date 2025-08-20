@@ -39,7 +39,13 @@ def nacha_main():
     payables_date = datetime(pb_year,pb_month,pb_day)
     valuedate = datetime(vd_year,vd_month,vd_day).strftime('%y%m%d')
 
-    payables_path = f'C:/gdrive/Shared drives/accounting/Payables/{payables_date.strftime('%Y')}/{payables_date.strftime('%Y%m')}/{payables_date.strftime('%Y-%m-%d')}/{payables_date.strftime('%Y-%m-%d')} Payables.xlsm'
+    payables_path = "/".join([
+        f'C:/gdrive/Shared drives/accounting/Payables/',
+        f"{payables_date.strftime('%Y')}",
+        f"{payables_date.strftime('%Y%m')}",
+        f"{payables_date.strftime('%Y-%m-%d')}",
+        f"{payables_date.strftime('%Y-%m-%d')} Payables.xlsm"
+    ])
 
     pb_date_string = payables_date.strftime("%Y-%m-%d")
 
@@ -62,7 +68,15 @@ def nacha_main():
     files = nacha_file.main()
     counter = 0
     for i in files:
-        
-        with open(f'{os.environ['HOMEPATH'].replace('\\','/')}/Downloads/{valuedate}_ACHS_{list(NachaConstructor.company_names.keys())[counter]}.txt', 'w') as file:
+        with open(
+            file="/".join([
+                f"{os.environ['HOMEPATH'].replace('\\','/')}",
+                "Downloads",
+                f"{valuedate}_ACHS_{
+                    list(NachaConstructor.company_names.keys())[counter]
+                }.txt"
+            ]),
+            mode='w'
+        ) as file:
             file.write(i.__str__())
         counter += 1
