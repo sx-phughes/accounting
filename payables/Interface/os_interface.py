@@ -8,17 +8,23 @@ from typing import Any
 import shutil
 
 # Package Imports
-
 try:
+    # if importing from ./accounting
     from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
     from payables.Interface.functions import *
+    from payables.nacha import NachaMain
 except ModuleNotFoundError:
     try:
+        # if importing from ./payables
         from Interface.payables_wb import PayablesWorkbook, get_col_index
         from Interface.functions import *
+        from nacha import NachaMain
     except ModuleNotFoundError:
+        # if importing from ./Interface
         from payables_wb import PayablesWorkbook, get_col_index
         from functions import *
+        os.chdir("..")
+        from nacha import NachaMain
 
 def cursor_up():
     sys.stdout.flush()
@@ -422,6 +428,8 @@ class OsInterface:
 
             if re.match(r"\d+", response):
                 self.invoice_details(int(response))
+            elif re.search(r"vendor:", response, re.IGNORECASE):
+                self.filter_df(data, "Vendor", response)
             elif response == "":
                 break
             else:
@@ -495,6 +503,16 @@ class OsInterface:
         file_selection -= 1
 
         os.system(f"\"{file_info[file_selection][0]}\"")
+    
+    def filter_df(self, data: pd.DataFrame, column: str, response: str) -> None:
+        parsed_response = response[response.index(":")+1:].strip()
+        debug(f"\nparsed_reponse: {parsed_response}")
+        filtered = data.loc[
+            data[column].str.match(parsed_response, case=False)
+        ].copy()
+        if filtered.empty:
+            return
+        self.view_invoices(filtered)
 
     def invoice_search_path_constructor(self) -> str:
         pieces = [
@@ -703,9 +721,11 @@ class OsInterface:
         else:
             raise TypeError(f"Input was not a number: {input}")
 
+def debug_script():
+    OsInterface("2025-08-31", True)
 
-def __main__():
+def run_interface():
     OsInterface()
 
-def debug():
-    OsInterface("2025-08-31", True)
+if __name__ == "__main__":
+    debug_script()
