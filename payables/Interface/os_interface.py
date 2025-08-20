@@ -552,7 +552,10 @@ class OsInterface:
                 input()
                 break
 
-            self.payables.loc[index, col] = val
+            col_index = self.payables.columns.tolist().index(col)
+            val_type = self.prompt_types[col_index]
+            typed_val = set_type(val, val_type)
+            self.payables.loc[index, col] = typed_val
 
         self.payables.save_workbook()
     
