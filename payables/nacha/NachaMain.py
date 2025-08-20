@@ -1,6 +1,6 @@
 from payables.nacha.NachaConstructor import *
 from payables.nacha.CheckDuplicates import check_duplicates
-from payables.DupePayments.__main__ import search_for_dupe_payments
+from payables.DupePayments import search_for_dupe_payments
 from datetime import datetime
 import pandas as pd
 import os
