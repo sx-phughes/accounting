@@ -6,25 +6,29 @@ import re
 import sys
 from typing import Any
 import shutil
+from datetime import datetime
 
 # Package Imports
 try:
     # if importing from ./accounting
     from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
     from payables.Interface.functions import *
-    from payables.nacha import NachaMain
+    import payables.nacha as nacha
+    import payables.DupePayments as DupePayments
 except ModuleNotFoundError:
     try:
         # if importing from ./payables
         from Interface.payables_wb import PayablesWorkbook, get_col_index
         from Interface.functions import *
-        from nacha import NachaMain
+        import nacha
+        import DupePayments
     except ModuleNotFoundError:
         # if importing from ./Interface
         from payables_wb import PayablesWorkbook, get_col_index
         from functions import *
         os.chdir("..")
-        from nacha import NachaMain
+        import nacha
+        import DupePayments
 
 def cursor_up():
     sys.stdout.flush()
@@ -87,7 +91,6 @@ class OsInterface:
     def ui_workbook_date(self):
         """User interface for getting payables date"""
         cls()
-
         while True:
             payables_date = input("Input Payables Workbook Date (yyyy-mm-dd)\n>\t")
             if check_date(payables_date):
@@ -95,8 +98,7 @@ class OsInterface:
                 break
             else:
                 print("Invalid date, try again")
-            
-            
+        self.dt_date = datetime.strptime(payables_date, "%Y-%m-%d")
         return payables_date
     
     def parse_date(self, date: str) -> None:
@@ -107,6 +109,7 @@ class OsInterface:
             raise ValueError(f"Date string '{date}' improperly formatted; must be yyyy-mm-dd")
         date_pieces = re_match.groups()
         self.year, self.month, self.day = date_pieces[0:3]
+
 
     ##############
     # properties #
@@ -119,6 +122,7 @@ class OsInterface:
     def payables(self, payables_wb: PayablesWorkbook):
         self._payables = payables_wb
 
+
     #######################
     # interface mechanics #
     #######################
@@ -128,7 +132,8 @@ class OsInterface:
             1: ["Add Invoices", self.add_invoices],
             2: ["View/Edit Invoices", self.view_all_invoices],
             3: ["Switch Payables Workbook", self.switch_books],
-            4: ["Exit"],
+            4: ["Create Payment Files", self.make_payment_files],
+            5: ["Exit"],
         }
         while True:
             cls()
@@ -398,6 +403,46 @@ class OsInterface:
             i += 1
 
         return no_data
+    
+    def make_payment_files(self):
+        dupes = DupePayments.search_for_dupe_payments(
+            self.date,
+            4, 
+            "C:\gdrive\My Drive\dupe_pmts"
+        )
+        if len(dupes.index) > 0:
+            print("Dupe payments present; please correct and rerun payables.")
+            print("Hit enter to return")
+            input()
+            return
+        
+        with_vendors_cols = self.payables.merge_vendors()
+        ach_payments = with_vendors_cols.loc[
+            with_vendors_cols["Payment Type"] == "ACH"
+        ].copy()
+        vd = self.dt_date.strftime("%y%m%d")
+
+        debug_yn = input("\nPrint debug information? (y/n)\n>\t")
+        debug_bool = False
+        if debug_yn == "y":
+            debug_bool = True
+        nacha_file = nacha.NachaConstructor(ach_payments, vd, debug_bool)
+        files = nacha_file.main()
+        counter = 0
+        co_names = nacha.NachaConstructor.NachaConstructor.company_names
+        list_of_co_names = list(co_names.keys())
+        for i in files:
+            with open(
+                file="/".join([
+                    f"{os.environ['HOMEPATH'].replace('\\','/')}",
+                    "Downloads",
+                    f"{vd}_ACHS_{list_of_co_names}.txt"
+                ]),
+                mode='w'
+            ) as file:
+                file.write(i.__str__())
+            counter += 1
+
 
     ######################
     # Invoice management #
