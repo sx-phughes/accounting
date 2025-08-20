@@ -27,3 +27,7 @@ def set_type(obj: Any, dest_type: str) -> Any:
         return bool(obj)
     else:
         raise TypeError(f"Unprogrammed type: {dest_type}")
+
+def debug(text: str) -> None:
+    with open("debug.log", "+a") as file:
+        file.write(text)
