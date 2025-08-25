@@ -1,0 +1,27 @@
+SummaryPanel {
+    display: block;
+    background: white;
+    height: 100%;
+    width: 50%;
+    align: center middle;
+}
+
+OptionsPanel {
+    display: block;
+    background: blue;
+    height: 100%;
+    width: 50%;
+    align: center middle;
+}
+
+SummaryPanel > Button {
+    background: lightblue;
+    width: 100%
+}
+
+SummaryPanel > Label {
+    background: lightblue;
+    margin: 5;
+    padding: 5;
+
+}
