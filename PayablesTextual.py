@@ -37,11 +37,14 @@ class SummaryPanel(VerticalGroup):
             self.company_amounts[co] = 0
 
     def compose(self) -> ComposeResult:
+        total_widgets = []
+        for co in self.company_amounts.keys():
+            amt = self.company_amounts[co]
+            new_widget = CompanyTotal(co, amt)
+            total_widgets.append(new_widget)
         yield Button("2025-08-31", "default")
-        yield VerticalGroup(
-            
-        )
-        yield Label(self.construct_content(), id="cototals")
+        yield VerticalGroup(*total_widgets)
+        # yield Label(self.construct_content(), id="cototals")
     
     def watch_company_amounts(self) -> None:
         self.query_one("#cototals").renderable = self.construct_content()
