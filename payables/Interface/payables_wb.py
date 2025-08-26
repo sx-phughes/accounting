@@ -34,13 +34,14 @@ class PayablesWorkbook(pd.DataFrame):
 
     # for DataFrame constructor
     _metadata = [
-        "wb_path",
+        # "wb_path",
         "payables_date",
         "stem",
         "f_name",
         "_payables_date",
         "_stem",
         "_f_name",
+        # "_wb_path"
     ]
 
     @property
@@ -78,14 +79,14 @@ class PayablesWorkbook(pd.DataFrame):
         """
         # check to see if date folder exists--implies existence of payables
         # workbook
-        path = self.wb_path.replace(self.f_name, "")
+        path = self.wb_path().replace(self.f_name, "")
         if not self.path_exists(path):
             self.new_workbook()
 
         try:
-            data = pd.read_excel(self.wb_path, "Invoices")
+            data = pd.read_excel(self.wb_path(), "Invoices")
         except:
-            data = pd.read_excel(self.wb_path.replace("xlsx", "xlsm"), "Invoices")
+            data = pd.read_excel(self.wb_path().replace("xlsx", "xlsm"), "Invoices")
 
         self.validate_data(data)
         data = self.set_types(data)
@@ -134,15 +135,15 @@ class PayablesWorkbook(pd.DataFrame):
     ####################
     # class properties #
     ####################
-    @property
+    # @property
     def wb_path(self):
         """Path to payables workbook"""
         return PayablesWorkbook.payables_path + self.stem + self.f_name
 
-    @wb_path.setter
-    def wb_path(self, wb_path):
-        """Needed for class reconstruction via pandas built-in methods"""
-        pass
+    # @wb_path.setter
+    # def wb_path(self, wb_path):
+    #     """Needed for class reconstruction via pandas built-in methods"""
+    #     pass
 
     @property
     def payables_date(self):
@@ -156,8 +157,7 @@ class PayablesWorkbook(pd.DataFrame):
             self.payables_date_from_dt(date)
         elif date is None:
             pass
-
-            raise TypeError
+            # raise TypeError
 
     def payables_date_from_str(self, date: str) -> None:
         if check_date(date):
@@ -238,11 +238,11 @@ class PayablesWorkbook(pd.DataFrame):
         cols = PayablesWorkbook.column_headers
         df = pd.DataFrame(columns=cols)
         # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
-        df.to_excel(self.wb_path, sheet_name="Invoices", index=False)
+        df.to_excel(self.wb_path(), sheet_name="Invoices", index=False)
 
     def save_workbook(self):
         # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
-        self.to_excel(self.wb_path, sheet_name="Invoices", index=False)
+        self.to_excel(self.wb_path(), sheet_name="Invoices", index=False)
 
     def move_files(self):
         """Move invoice files from Downloads to relevant payables folder with
