@@ -475,6 +475,14 @@ class OsInterface:
                 self.invoice_details(int(response))
             elif re.search(r"vendor:", response, re.IGNORECASE):
                 self.filter_df(data, "Vendor", response)
+            elif re.search(r"Approver:", response, re.IGNORECASE):
+                w_approvers = self.payables.merge_vendors()
+                self.filter_df(w_approvers, "Approver", response)
+            elif "export" in response or "Export" in response:
+                match = re.search(r"export ([\d\w\s_-]+\.csv)", 
+                                  response, re.IGNORECASE)
+                f_name = match.groups()[0]
+                data.to_csv(f_name)
             elif response == "":
                 break
             else:
@@ -552,9 +560,9 @@ class OsInterface:
     def filter_df(self, data: pd.DataFrame, column: str, response: str) -> None:
         parsed_response = response[response.index(":")+1:].strip()
         debug(f"\nparsed_reponse: {parsed_response}")
-        filtered = data.loc[
-            data[column].str.match(parsed_response, case=False)
-        ].copy()
+        debug("\n\t".join(data.columns.tolist()))
+        mask = data[column].str.match(parsed_response, case=False)
+        filtered = data.loc[mask.fillna(False)].copy()
         if filtered.empty:
             return
         self.view_invoices(filtered)
