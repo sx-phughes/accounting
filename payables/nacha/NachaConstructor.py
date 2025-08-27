@@ -39,12 +39,27 @@ class NachaConstructor:
             # Debug
             # print(f'Vendor: {row['Vendor']} // Mapped Vendor: {row['Vendor Name']} // ABA: {row['Vendor ABA']} // Type: {type(row['Vendor ABA'])}')
 
+            try:
+                vendor = row["Vendor Name"]
+            except KeyError:
+                vendor = row["Vendor"]
+
+            try:
+                aba = row["Vendor ABA"]
+            except KeyError:
+                aba = row["ACH ABA"]
+
+            try:
+                account = row["Vendor Account"]
+            except KeyError:
+                account = row["ACH Account Number"]
+
             transaction = TransactionEntry(
-                row["Vendor Name"],
+                vendor,
                 row["Amount"],
                 row["Invoice #"],
-                row["Vendor ABA"],
-                row["Vendor Account"],
+                aba,
+                account,
                 "0" * (7 - len(str(sequence_no))) + str(sequence_no),
                 debug=self.debug,
             )
@@ -87,7 +102,11 @@ class NachaConstructor:
         id_modifiers = ["A", "B", "C", "D"]
         counter = 0
         for i in NachaConstructor.company_names.keys():
-            trxs = self.trx_table.loc[self.trx_table["Simplex2"] == i]
+            try:
+                trxs = self.trx_table.loc[self.trx_table["Simplex2"] == i]
+            except KeyError:
+                trxs = self.trx_table.loc[self.trx_table["Company"] == i]
+                
 
             transactions = self.construct_transactions(trxs)
 
