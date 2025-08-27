@@ -67,7 +67,7 @@ def find_dupe_invoices(
     payables_file_stems: list[str],
     payables_root: str,
     save_to_path: str = './'
-):
+) -> pd.DataFrame:
 
     curr_payables_stem = '/'.join([
         f'{payables_dt.year}',
