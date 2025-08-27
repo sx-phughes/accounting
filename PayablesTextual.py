@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Button, Label
+from textual.widgets import Header, Footer, Button, Label, Digits
 from textual.containers import Container, Horizontal, VerticalGroup, HorizontalGroup
 
 def pad_text(text: str, pad_len: int, pad_char: str) -> str:
@@ -10,19 +10,16 @@ def pad_text(text: str, pad_len: int, pad_char: str) -> str:
 
     return new_text
 
-
-class CompanyTotal(HorizontalGroup):
-    def __init__(self, company_name: str, total_amount: int=0) -> None:
-        self.co_name = company_name
-        self.amount = total_amount
+class CompanyInfo(Container):
+    """Container for holding Company invoice totals"""
+    def __init__(self, company: str="no-name"):
+        self.company = company;
 
     def compose(self) -> ComposeResult:
-        yield Label(self.co_name, id=self.co_name)
-        yield Label(f"${self.amount:,.2f}", id=self.co_name + "total")
-
-    def watch_amount(self) -> None:
-        self.query_one(f"#{self.co_name}total").label = self.amount
+        yield Label(self.company, classes="coinfoname")
+        yield Digits("")
         
+
 class SummaryPanel(VerticalGroup):
     "A summary panel of the current payables workbook."
 
@@ -37,14 +34,11 @@ class SummaryPanel(VerticalGroup):
             self.company_amounts[co] = 0
 
     def compose(self) -> ComposeResult:
-        total_widgets = []
-        for co in self.company_amounts.keys():
-            amt = self.company_amounts[co]
-            new_widget = CompanyTotal(co, amt)
-            total_widgets.append(new_widget)
-        yield Button("2025-08-31", "default")
-        yield VerticalGroup(*total_widgets)
-        # yield Label(self.construct_content(), id="cototals")
+        yield Button("Date button", id="DateButton")
+        yield Container("Trading Info", classes="co-info")
+        yield Container("Tech Info", classes="co-info")
+        yield Container("Investments Info", classes="co-info")
+        yield Container("Holdco Info", classes="co-info")
     
     def watch_company_amounts(self) -> None:
         self.query_one("#cototals").renderable = self.construct_content()
@@ -66,9 +60,18 @@ class OptionsPanel(VerticalGroup):
     """A panel for accounts payable options."""
 
     def compose(self) -> ComposeResult:
-        yield Button("Add Invoices", variant="warning", id="add")
-        yield Button("View Invoices", variant="warning", id="view")
-        yield Button("Export Data", variant="warning", id="export")
+        yield Button("Add Invoices", 
+                     variant="warning",
+                     classes="option", 
+                     id="add")
+        yield Button("View Invoices",
+                     variant="warning",
+                     classes="option",
+                     id="view")
+        yield Button("Export Data",
+                     variant="warning", 
+                     classes="option",
+                     id="export")
 
 class PayablesApp(App):
     "An app to manage accounts payable accross all OpCos."
@@ -77,7 +80,7 @@ class PayablesApp(App):
     BINDINGS = [
         ("d", "toggle_dark", "Toggle appearance")
     ]
-    CSS_PATH = "payables.tcss"
+    CSS_PATH = "testpayables.tcss"
 
     def compose(self) -> ComposeResult:
         yield Header()
