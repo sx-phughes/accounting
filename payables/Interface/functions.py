@@ -1,7 +1,26 @@
 # Standard imports
 import numpy as np
 import re
+import sys
+import os
 from typing import Any
+
+def cursor_up():
+    sys.stdout.flush()
+    # undo \n from entering input
+    print("\033[A", end='', flush=True)
+    # move up a line and to beginning
+    print("\033[1F", end='', flush=True)
+    # clear line
+    # print("\033[2K", end='', flush=True)
+
+def cursor_down():
+    sys.stdout.flush()
+    sys.stdout.flush()
+
+
+def cls():
+    os.system("cls")
 
 def check_date(date: str):
     """Check that date matches YYYY-MM-DD format"""
