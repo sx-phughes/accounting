@@ -8,9 +8,7 @@ class TransactionEntry():
             print('----------Begin Transaction Entry----------------')
             vars = ['vendor', 'amount', 'invoice_number', 'vendor_aba', 'vendor_account', 'sequence_no']
             for var_name, var_val in zip(vars, [vendor, amount, invoice_number, vendor_aba, vendor_account, sequence_no]):
-                print(f'{var_name} = ')
-                print(var_val)
-                
+                print(f'{var_name} = {var_val}, type \'{type(var_val)}\'')
             print('------------End Transaction Entry----------------\n\n')
         
         self.transaction_line = TransactionLine(
