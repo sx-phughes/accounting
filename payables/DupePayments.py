@@ -146,9 +146,10 @@ def find_dupe_invoices(
 
 
 def search_for_dupe_payments(
-    date: str, months_back: int, save_dir: str) -> None:
+    date: str, months_back: int, save_dir: str) -> pd.DataFrame:
     paths = get_n_months_payble_paths(date, months_back)
-    find_dupe_invoices(paths, payables_root, save_dir)
+    df = find_dupe_invoices(paths, payables_root, save_dir)
+    return df
     
 
 def main():
