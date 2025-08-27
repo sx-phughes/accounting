@@ -32,10 +32,12 @@ except ModuleNotFoundError:
 
 def cursor_up():
     sys.stdout.flush()
-    sys.stdout.write("\033[A")
-    sys.stdout.write("\033[A")
-    sys.stdout.flush()
-
+    # undo \n from entering input
+    print("\033[A", end='', flush=True)
+    # move up a line and to beginning
+    print("\033[1F", end='', flush=True)
+    # clear line
+    # print("\033[2K", end='', flush=True)
 
 def cursor_down():
     sys.stdout.flush()
@@ -50,10 +52,10 @@ class OsInterface:
     payables_path = "C:/gdrive/Shared drives/Accounting/Payables"
     data_path = "C:/gdrive/Shared drives/accounting/patrick_data_files/ap"
     invoice_prompts = [
-        "Vendor:\t",
-        "Invoice Number:\t",
-        "Invoice Amount:\t",
-        "Credit card:\t",
+        "Vendor:",
+        "Invoice Number:",
+        "Invoice Amount:",
+        "Credit card:",
     ]
     prompt_types = [
         "str",
@@ -185,6 +187,11 @@ class OsInterface:
         for i in range(len(options.keys())):
             print(f"{str(i + 1)}: {options[list(options.keys())[i]][0]}")
 
+
+    ################
+    # Add invoices #
+    ################
+
     def add_invoices(self):
         """Loop for adding invoices to the payables table"""
         print("Move downloads to temp folder? (y/n)")
@@ -302,7 +309,7 @@ class OsInterface:
         return new_val
     
     def get_input_index(self, col: str) -> int:
-        with_stub = col + ":\t"
+        with_stub = col + ":"
         return OsInterface.invoice_prompts.index(with_stub)
 
     def str_list_to_int(self, n: list[str]) -> list[int]:
@@ -331,20 +338,24 @@ class OsInterface:
         index = curr_index
         end = len(prompts) - 1
 
-        print(prompts[index], end="")
+        padded = self.pad_string(prompts[index], 20)
+        print(padded, end="")
         response = input_list[index]
 
         if response != 0:
-            sys.stdout.write(input_list[index])
-            sys.stdout.flush()
+            input_len = len(input_list[index])
+            print(input_list[index], end='', flush=True)
+            print(f"\033[{input_len}D", end='', flush=True)
 
         data = input()
         if data == "k":
             index = self.up_arrow(index)
-            print("", end="\r")
+            print("", end="\r", flush=True)
         elif data == "j":
             index = self.down_arrow(index, end)
             print("", end="\r")
+        elif index != 3 and data == '':
+            index += 1
         else:
             input_list[index] = data
             index += 1
@@ -374,19 +385,6 @@ class OsInterface:
 
         return found_vendor
 
-    def up_arrow(self, index: int) -> int:
-        if index > 0:
-            index -= 1
-            cursor_up()
-        return index
-
-    def down_arrow(self, index: int, end_index: int) -> int:
-        if index >= end_index:
-            index += 1
-            cursor_down()
-            # print('', end='\r', flush=True)
-        return index
-
     def add_cc_user(self, invoice_data) -> None:
         """Add credit card user to invoice data for credit card invoices"""
         cc_user_index = PayablesWorkbook.column_headers.index("CC User")
@@ -403,8 +401,46 @@ class OsInterface:
             i += 1
 
         return no_data
+
+
+    ####################
+    # Input Navigation #
+    ####################
+
+    def up_arrow(self, index: int) -> int:
+        if index > 0:
+            index -= 1
+            cursor_up()
+        return index
+
+    def down_arrow(self, index: int, end_index: int) -> int:
+        if index <= end_index:
+            index += 1
+            cursor_down()
+            # print('', end='\r', flush=True)
+        return index
     
+
+    ######################
+    # Create NACHA files #
+    ######################
+
     def make_payment_files(self):
+        self.check_for_duplicate_payments()
+
+        vd = self.dt_date.strftime("%y%m%d")
+        nacha_file = self.get_nacha_constructor(value_date=vd)
+
+        files = nacha_file.main()
+        co_names = nacha.NachaConstructor.NachaConstructor.company_names
+        list_of_co_names = list(co_names.keys())
+
+        for i in range(len(files)):
+            current = files[i]
+            company_name = list_of_co_names[i]
+            self.write_payment_file(current, vd, company_name)
+
+    def check_for_duplicate_payments(self):
         dupes = DupePayments.search_for_dupe_payments(
             self.date,
             4, 
@@ -414,39 +450,58 @@ class OsInterface:
             print("Dupe payments present; please correct and rerun payables.")
             print("Hit enter to return")
             input()
-            return
+            raise ValueError("Duplicate invoices present")
         
-        with_vendors_cols = self.payables.merge_vendors()
-        ach_payments = with_vendors_cols.loc[
-            with_vendors_cols["Payment Type"] == "ACH"
-        ].copy()
-        vd = self.dt_date.strftime("%y%m%d")
+    def get_nacha_constructor(self, 
+        value_date: str):
+        """Create nacha file constructor object."""
+        
+        ach_payments = self.get_only_ach_payments()
+        debug_bool = self.ask_for_debug()
+        nacha_file = nacha.NachaConstructor.NachaConstructor(
+            ach_payments,
+            value_date,
+            debug_bool)
+        
+        return nacha_file
+    
+    def get_only_ach_payments(self) -> pd.DataFrame:
+        """Returns a table of only invoices paid via ACH."""
 
+        payables_with_deets = self.payables.merge_vendors()
+        ach_payments = payables_with_deets.loc[
+            payables_with_deets["Payment Type"] == "ACH"
+        ].copy(deep=True)
+        return ach_payments
+    
+    def ask_for_debug(self) -> bool:
         debug_yn = input("\nPrint debug information? (y/n)\n>\t")
         debug_bool = False
         if debug_yn == "y":
             debug_bool = True
-        nacha_file = nacha.NachaConstructor(ach_payments, vd, debug_bool)
-        files = nacha_file.main()
-        counter = 0
-        co_names = nacha.NachaConstructor.NachaConstructor.company_names
-        list_of_co_names = list(co_names.keys())
-        for i in files:
-            with open(
-                file="/".join([
-                    f"{os.environ['HOMEPATH'].replace('\\','/')}",
-                    "Downloads",
-                    f"{vd}_ACHS_{list_of_co_names}.txt"
-                ]),
-                mode='w'
-            ) as file:
-                file.write(i.__str__())
-            counter += 1
+        return debug_bool
+    
+    def write_payment_file(self, 
+                           company_data,
+                           value_date: str, 
+                           company_name: str) -> None:
+        """Writes NACHA files to Downloads on disk"""
 
+        with open(
+            file="/".join([
+                os.environ["HOMEPATH"].replace("\\","/"),
+                "Downloads",
+                f"{value_date}_ACHS_{company_name}.txt"
+            ]),
+            mode="w"
+        ) as file:
+            file.write(company_data.__str__())
+        
 
     ######################
     # Invoice management #
     ######################
+
     def view_all_invoices(self) -> None:
         cls()
         self.view_invoices(self.payables)
