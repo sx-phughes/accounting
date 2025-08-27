@@ -7,48 +7,21 @@ import sys
 from typing import Any
 import shutil
 from datetime import datetime
+import importlib
 
 # Package Imports
-try:
-    # if importing from ./accounting
-    from payables.Interface.payables_wb import PayablesWorkbook, get_col_index
-    from payables.Interface.functions import *
-    import payables.nacha as nacha
-    import payables.DupePayments as DupePayments
-except ModuleNotFoundError:
-    try:
-        # if importing from ./payables
-        from Interface.payables_wb import PayablesWorkbook, get_col_index
-        from Interface.functions import *
-        import nacha
-        import DupePayments
-    except ModuleNotFoundError:
-        # if importing from ./Interface
-        from payables_wb import PayablesWorkbook, get_col_index
-        from functions import *
-        os.chdir("..")
-        import nacha
-        import DupePayments
-
-def cursor_up():
-    sys.stdout.flush()
-    # undo \n from entering input
-    print("\033[A", end='', flush=True)
-    # move up a line and to beginning
-    print("\033[1F", end='', flush=True)
-    # clear line
-    # print("\033[2K", end='', flush=True)
-
-def cursor_down():
-    sys.stdout.flush()
-    sys.stdout.flush()
-
-
-def cls():
-    os.system("cls")
+sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
+from Interface.payables_wb import PayablesWorkbook, get_col_index
+from Interface.functions import *
+import nacha as nacha
+import DupePayments as DupePayments
 
 
 class OsInterface:
+
+    ###################
+    # Class variables #
+    ###################
     payables_path = "C:/gdrive/Shared drives/Accounting/Payables"
     data_path = "C:/gdrive/Shared drives/accounting/patrick_data_files/ap"
     invoice_prompts = [
@@ -63,6 +36,7 @@ class OsInterface:
         "float64",
         "bool"
     ]
+
 
     ##################
     # initialization #
@@ -84,7 +58,7 @@ class OsInterface:
         if debug:
             self.date = payables_date
             self.parse_date(payables_date)
-            self.main()
+            # self.main()
             
         
     ##################
@@ -191,7 +165,6 @@ class OsInterface:
     ################
     # Add invoices #
     ################
-
     def add_invoices(self):
         """Loop for adding invoices to the payables table"""
         print("Move downloads to temp folder? (y/n)")
@@ -219,7 +192,7 @@ class OsInterface:
 
                 self.payables.insert_invoice(invoice_data)
 
-                add_more = input("Add another invoice (y/n)\n>\t")
+                add_more = input("\nAdd another invoice (y/n)\n>\t")
                 if add_more == "n":
                     break
         except ValueError:
@@ -406,7 +379,6 @@ class OsInterface:
     ####################
     # Input Navigation #
     ####################
-
     def up_arrow(self, index: int) -> int:
         if index > 0:
             index -= 1
@@ -424,7 +396,6 @@ class OsInterface:
     ######################
     # Create NACHA files #
     ######################
-
     def make_payment_files(self):
         self.check_for_duplicate_payments()
 
@@ -444,7 +415,7 @@ class OsInterface:
         dupes = DupePayments.search_for_dupe_payments(
             self.date,
             4, 
-            "C:\gdrive\My Drive\dupe_pmts"
+            "C:/gdrive/My Drive/dupe_pmts"
         )
         if len(dupes.index) > 0:
             print("Dupe payments present; please correct and rerun payables.")
@@ -496,12 +467,74 @@ class OsInterface:
             mode="w"
         ) as file:
             file.write(company_data.__str__())
-        
+    
+
+    ####################################
+    # Create Summary Workbook for Joan #   
+    ####################################
+    def make_summary_workbook(self) -> None:
+        # Summary tables
+        #   1. By Vendor
+        #   2. By Approver
+        #   3. By Category
+        # Payment Setup - this is for me, so I can do what I want here
+        #   1. Summarize wires by vendor with invoice values concatted by string
+        #      to make wires easier to input
+        merged_vendors = self.payables.merge_vendors()
+        by_vendor = merged_vendors.pivot_table(
+            values="Amount", 
+            index="QB Mapping",
+            aggfunc="sum",
+        ).sort_values("Amount", ascending=False)
+        by_approver = merged_vendors.pivot_table(
+            values="Amount",
+            index="Approver",
+            aggfunc="sum"
+        )
+        by_expense_cat = merged_vendors.pivot_table(
+            values="Amount",
+            index="Expense Category",
+            aggfunc="sum"
+        )
+        by_company = merged_vendors.pivot_table(
+            values="Amount",
+            index="Company",
+            aggfunc="sum"
+        )
+        summary_tables = [by_vendor, by_approver, by_expense_cat, by_company]
+
+        for table in summary_tables:
+            table.loc["Total", "Amount"] = table["Amount"].sum()
+
+        with pd.ExcelWriter(
+            os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx", 
+            "xlsxwriter", 
+            date_format="%Y-%m-%d"
+        ) as writer:
+            workbook = writer.book
+            money = workbook.add_format({"num_format": "$#,##0.00"})
+
+            summary_sheet = workbook.add_worksheet("Main Summary")
+            summary_sheet.write(0,0,f"Payables Summary: {self.date}")
+            write_col = 0
+            for table in summary_tables:
+                table.to_excel(writer, 
+                               sheet_name="Main Summary", 
+                               startcol=write_col, 
+                               startrow=2)
+                summary_sheet.set_column(first_col=write_col,
+                                         last_col=write_col,
+                                         width=30)
+                summary_sheet.set_column(first_col=write_col+1,
+                                         last_col=write_col+1,
+                                         width=20,
+                                         cell_format=money)
+                write_col += 3
+
 
     ######################
     # Invoice management #
     ######################
-
     def view_all_invoices(self) -> None:
         cls()
         self.view_invoices(self.payables)
@@ -822,7 +855,8 @@ class OsInterface:
             raise TypeError(f"Input was not a number: {input}")
 
 def debug_script():
-    OsInterface("2025-08-31", True)
+    instance = OsInterface("2025-08-31", True)
+    instance.make_summary_workbook()
 
 def run_interface():
     OsInterface()
