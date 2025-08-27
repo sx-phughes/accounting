@@ -5,13 +5,13 @@ from datetime import datetime
 
 class NachaConstructor:
     company_ids = {
-        "Holdings": "9620118001",
+        "Holdings": "9542988001",
         "Investments": "9684771001",
         "Technologies": "9711101001",
         "Trading": "9007310001",
     }
     company_names = {
-        "Holdings": "SIMPLEX HOLDINGS LLC",
+        "Holdings": "SIMPLEX HOLDCO",
         "Investments": "SIMPLEX INVESTMENTS LLC",
         "Technologies": "SIMPLEX TECHNOLOGIES",
         "Trading": "SIMPLEX TRADING, LLC",
