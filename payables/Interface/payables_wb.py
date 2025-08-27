@@ -334,7 +334,11 @@ class PayablesWorkbook(pd.DataFrame):
         return old_paths
 
     def merge_vendors(self) -> pd.DataFrame:
-        vendors = pd.read_excel(self.vendors_path, "Vendors")
+        vendors = pd.read_excel(self.vendors_path, "Vendors",
+                                dtype={
+                                    "ACH ABA": str, 
+                                    "ACH Account Number": str
+                                })
         vendors_small = vendors[[
             "Vendor",
             "Company",
