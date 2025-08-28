@@ -7,7 +7,7 @@ import sys
 from typing import Any
 import shutil
 from datetime import datetime
-import importlib
+import xlsxwriter
 
 # Package Imports
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
@@ -473,6 +473,7 @@ class OsInterface:
     # Create Summary Workbook for Joan #   
     ####################################
     def make_summary_workbook(self) -> None:
+        """Write invoice summary workbook to disk"""
         # Summary tables
         #   1. By Vendor
         #   2. By Approver
@@ -480,6 +481,103 @@ class OsInterface:
         # Payment Setup - this is for me, so I can do what I want here
         #   1. Summarize wires by vendor with invoice values concatted by string
         #      to make wires easier to input
+
+        with pd.ExcelWriter(
+            os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx", 
+            "xlsxwriter", 
+            date_format="%Y-%m-%d"
+        ) as writer:
+            workbook: xlsxwriter.workbook.Workbook = writer.book
+
+            # Cell formats
+            global money, bold_with_border, decimal
+            money = workbook.add_format({"num_format": "$#,##0.00"})
+            bold_with_border = workbook.add_format({"bold": True})
+            bold_with_border.set_border(1)
+            decimal = workbook.add_format({"num_format": "#,##0.00"})
+            
+            self.write_summary_sheet(writer, workbook)
+            self.write_wire_setup_sheet(writer, workbook)
+            self.write_invoice_sheet(writer, workbook)
+
+    def write_summary_sheet(self,
+                            writer: pd.ExcelWriter,
+                            workbook: xlsxwriter.Workbook) -> None:
+        """Write the summary sheet to file."""
+
+        summary_tables = self.get_summary_tables()
+        summary_sheet = self.create_summarypage(workbook)
+        write_col = 0
+        for table in summary_tables:
+            table.to_excel(excel_writer=writer, 
+                           sheet_name="Main Summary", 
+                           startcol=write_col, 
+                           startrow=2)
+            # Set table first column width to 30
+            summary_sheet.set_column(first_col=write_col,
+                                     last_col=write_col,
+                                     width=30)
+            # Set table second col width 20, num format with $
+            summary_sheet.set_column(first_col=write_col+1,
+                                     last_col=write_col+1,
+                                     width=20,
+                                     cell_format=money)
+            write_col += 3
+        
+    def write_invoice_sheet(self,
+                            writer: pd.DataFrame,
+                            workbook: xlsxwriter.Workbook) -> None:
+        invoice_sheet = workbook.add_worksheet("Invoices")
+        invoices = self.get_invoice_table()
+        invoices.to_excel(excel_writer=writer, sheet_name="Invoices")
+
+        invoice_sheet.set_row(row=0, cell_format=bold_with_border)
+        num_cols = len(invoices.columns)
+        invoice_sheet.set_column(first_col=1, last_col=num_cols-1, width=30)
+        invoice_sheet.set_column(first_col=num_cols,
+                                 last_col=num_cols,
+                                 width=20,
+                                 cell_format=money)
+            
+    def write_wire_setup_sheet(self, 
+                               writer: pd.ExcelWriter,
+                               workbook: xlsxwriter.Workbook) -> None:
+        wire_sheet = workbook.add_worksheet("Wire Setup")
+        wires = self.get_wire_table()
+        wires.to_excel(excel_writer=writer, sheet_name="Wire Setup")
+        wire_sheet.set_column(first_col=0,
+                              last_col=0,
+                              width=30)
+        wire_sheet.set_column(first_col=1,
+                              last_col=1,
+                              width=20,
+                              cell_format=decimal)
+        
+    def get_invoice_table(self) -> pd.DataFrame:
+        data = self.payables.merge_vendors()
+        cols = [
+            'Vendor',
+            'Invoice #',
+            'Company',
+            'Expense Category',
+            'Approver',
+            'Payment Type',
+            'Amount'
+        ]
+        selected_cols = data[cols].copy(deep=True)
+        return selected_cols
+        
+    def create_summarypage(
+        self,
+        workbook: xlsxwriter.workbook.Workbook
+    ) -> xlsxwriter.workbook.Worksheet:
+        summary_sheet = workbook.add_worksheet("Main Summary")
+        summary_sheet.write(0,0,f"Payables Summary: {self.date}")
+        return summary_sheet
+        
+    def get_summary_tables(self) -> tuple[pd.DataFrame]:
+        """Get summary tables for the main summary page of the workbook."""
+
         merged_vendors = self.payables.merge_vendors()
         by_vendor = merged_vendors.pivot_table(
             values="Amount", 
@@ -501,35 +599,45 @@ class OsInterface:
             index="Company",
             aggfunc="sum"
         )
-        summary_tables = [by_vendor, by_approver, by_expense_cat, by_company]
+        summary_tables = (by_vendor, by_approver, by_expense_cat, by_company)
 
         for table in summary_tables:
             table.loc["Total", "Amount"] = table["Amount"].sum()
 
-        with pd.ExcelWriter(
-            os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx", 
-            "xlsxwriter", 
-            date_format="%Y-%m-%d"
-        ) as writer:
-            workbook = writer.book
-            money = workbook.add_format({"num_format": "$#,##0.00"})
+        return summary_tables
+        
+    def get_wire_table(self) -> pd.DataFrame:
+        with_deets = self.payables.merge_vendors()
+        wire_mask = with_deets["Payment Type"] == "Wire"
+        wires = with_deets.loc[wire_mask].copy(deep=True)
+        by_vendor_wires = wires.pivot_table(
+            values="Amount",
+            index="Vendor",
+            aggfunc="sum"
+        )
 
-            summary_sheet = workbook.add_worksheet("Main Summary")
-            summary_sheet.write(0,0,f"Payables Summary: {self.date}")
-            write_col = 0
-            for table in summary_tables:
-                table.to_excel(writer, 
-                               sheet_name="Main Summary", 
-                               startcol=write_col, 
-                               startrow=2)
-                summary_sheet.set_column(first_col=write_col,
-                                         last_col=write_col,
-                                         width=30)
-                summary_sheet.set_column(first_col=write_col+1,
-                                         last_col=write_col+1,
-                                         width=20,
-                                         cell_format=money)
-                write_col += 3
+        invoices_by_vendor_wires = self.get_wire_invoices_by_vendor(wires)
+        by_vendor_wires_merged = by_vendor_wires.merge(
+            right=invoices_by_vendor_wires,
+            how="left",
+            on="Vendor"
+        )
+        return by_vendor_wires_merged
+    
+    def get_wire_invoices_by_vendor(self, wires: pd.DataFrame) -> pd.DataFrame:
+        unique_vendors = wires["Vendor"].unique()
+        unique_vendors.sort()
+        wire_invoices_by_vendor = pd.DataFrame(index=unique_vendors,
+                                               columns=["Invoices"])
+        wire_invoices_by_vendor = wire_invoices_by_vendor.rename_axis("Vendor")
+        # print(wire_invoices_by_vendor)
+        for vendor in unique_vendors:
+            vendor_invoices = wires.loc[wires.index == vendor, "Invoice #"]
+            str_vendor_invoices = ", ".join(vendor_invoices)
+            mask = wire_invoices_by_vendor.index == vendor
+            wire_invoices_by_vendor.loc[mask, "Invoices"] = \
+                                                            str_vendor_invoices
+        return wire_invoices_by_vendor
 
 
     ######################
