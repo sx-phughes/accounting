@@ -100,8 +100,11 @@ def find_dupe_invoices(
                 'Invoices'
             )
 
-        vendor_invoice_df = df[['Vendor', 'Invoice #']].copy()
-        vendor_invoice_df['Concat'] = vendor_invoice_df['Vendor'] + ',' + vendor_invoice_df['Invoice #'].astype(str)
+        vendor_invoice_df = df[['Vendor', 'Invoice #']].copy(deep=True)
+        vendor_invoice_df.dropna(axis=0, how="all")
+        vendor_invoice_df['Concat'] = vendor_invoice_df['Vendor'] \
+                        + ',' \
+                        + vendor_invoice_df['Invoice #'].astype(str)
 
         old_invoices.append([stem, list(vendor_invoice_df['Concat'].values)])
 
