@@ -13,7 +13,8 @@ import xlsxwriter
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
 from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
-import nacha as nacha
+import nacha
+from nacha import NachaConstructor, NachaFile, NachaLine, NachaMain
 import DupePayments as DupePayments
 
 
@@ -221,9 +222,12 @@ class OsInterface:
 
     def get_invoice_data(self):
         new_row = self.make_blank_row()
-        self.add_to_row(new_row)
 
-        if not self.is_blank_list(new_row):
+        inputs = self.get_inputs(OsInterface.invoice_prompts)
+        for i in range(len(inputs)):
+            new_row[i] = inputs[i]
+
+        if not is_blank_list(new_row):
             return new_row
         else:
             return False
@@ -234,18 +238,12 @@ class OsInterface:
         blank_row = ["" for col in cols]
         return blank_row
 
-    def add_to_row(self, new_row: list):
-        """Get new invoice data and copy into a blank row"""
-        inputs = self.get_inputs(OsInterface.invoice_prompts)
-        for i in range(len(inputs)):
-            new_row[i] = inputs[i]
-
     def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
         """UI for receiving user input for a new invoice"""
         inputs = [0 for i in range(len(prompts))]
         i = 0
         while 0 in inputs:
-            i = self.get_user_input(prompts, inputs, i)
+            i = self.get_single_user_input(prompts, inputs, i)
 
         self.set_input_types(inputs)
 
@@ -285,26 +283,7 @@ class OsInterface:
         with_stub = col + ":"
         return OsInterface.invoice_prompts.index(with_stub)
 
-    def str_list_to_int(self, n: list[str]) -> list[int]:
-        n_copy = n.copy()
-        list_len = len(n)
-        for i in range(list_len):
-            val = n[i]
-            if isinstance(val, int) or isinstance(val, np.float64):
-                continue
-
-            str_as_int = self.string_to_int(n[i])
-            n_copy[i] = str_as_int
-
-        return n_copy
-
-    def string_to_int(self, string: str) -> int:
-        sum = 0
-        for char in string:
-            sum += ord(char)
-        return sum
-
-    def get_user_input(
+    def get_single_user_input(
         self, prompts: list[str], input_list: list, curr_index: int
     ) -> int:
 
@@ -321,16 +300,20 @@ class OsInterface:
             print(f"\033[{input_len}D", end='', flush=True)
 
         data = input()
+
+        # Overwrite input_list[i] only if it's 0 or you're putting in a new val
+        if input_list[index] == 0:
+            input_list[index] = data
+        elif input_list[index] != 0 and data != '':
+            input_list[index] == data
+
         if data == "k":
             index = self.up_arrow(index)
             print("", end="\r", flush=True)
         elif data == "j":
             index = self.down_arrow(index, end)
             print("", end="\r")
-        elif index != 3 and data == '':
-            index += 1
         else:
-            input_list[index] = data
             index += 1
 
         return index
@@ -342,7 +325,7 @@ class OsInterface:
         if found_vendor:
             return True
         else:
-            zero_sum = sum(self.str_list_to_int(inputs)) == 0
+            zero_sum = sum(str_list_to_int(inputs)) == 0
             if not zero_sum:
                 inputs = self.get_inputs(OsInterface.invoice_prompts)
                 return inputs
@@ -363,17 +346,6 @@ class OsInterface:
         cc_user_index = PayablesWorkbook.column_headers.index("CC User")
         cc_user = input("Enter initials of CC user:\t")
         invoice_data[cc_user_index] = cc_user
-
-    def is_blank_list(self, data: list) -> bool:
-        no_data = True
-        i = 0
-        while no_data and i in range(len(data)):
-            if data[i]:
-                no_data = False
-
-            i += 1
-
-        return no_data
 
 
     ####################
@@ -429,7 +401,7 @@ class OsInterface:
         
         ach_payments = self.get_only_ach_payments()
         debug_bool = self.ask_for_debug()
-        nacha_file = nacha.NachaConstructor.NachaConstructor(
+        nacha_file = NachaConstructor.NachaConstructor(
             ach_payments,
             value_date,
             debug_bool)
@@ -439,7 +411,8 @@ class OsInterface:
     def get_only_ach_payments(self) -> pd.DataFrame:
         """Returns a table of only invoices paid via ACH."""
 
-        payables_with_deets = self.payables.merge_vendors()
+        no_cc_pmts = self.payables.loc[~(self.payables["CC"])]
+        payables_with_deets = no_cc_pmts.merge_vendors()
         ach_payments = payables_with_deets.loc[
             payables_with_deets["Payment Type"] == "ACH"
         ].copy(deep=True)
