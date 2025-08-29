@@ -5,13 +5,13 @@ from Fields import fields
 from TemplateFields import template_fields
 
 company_ids = {
-        'Holdings': '816680961',
-        'Investments': '644684771',
-        'Technologies': '559711101',
-        'Trading': '885007310'
+        'Holdings': '000000424542988',
+        'Investments': '000000644684771',
+        'Technologies': '000000559711101',
+        'Trading': '000000885007310'
     }
 company_names = {
-        'Holdings': 'SIMPLEX HOLDINGS LLC',
+        'Holdings': 'SIMPLEX HOLDCO, LLC',
         'Investments': 'SIMPLEX INVESTMENTS LLC',
         'Technologies': 'SIMPLEX TECHNOLOGIES',
         'Trading': 'SIMPLEX TRADING, LLC'
@@ -53,6 +53,9 @@ class Vendor:
     def __init__(self, vendor):
         self.vendor = vendor
         self.get_vendor_info(vendor)
+    
+    def __repr__(self):
+        return f"Vendor object for '{self.vendor}'"
     
     def get_vendor_info(self, vendor):
         vendor_row = Vendor.vendor_info.loc[Vendor.vendor_info['Vendor'] == vendor]
@@ -119,7 +122,9 @@ class WirePayment:
     fields = field_objs
     template_fields = template_field_objs
     
-    def __init__(self, orig_bank_id, orig_account, amount, value_date: datetime, vendor: Vendor, details: str, template: bool = False):
+    def __init__(self, orig_bank_id, orig_account, amount, 
+                 value_date: datetime, vendor: Vendor, details: str, 
+                 template: bool = False):
         self.orig_bank_id = orig_bank_id
         self.orig_account = orig_account
         self.amount = amount
