@@ -42,7 +42,7 @@ class NachaConstructor:
             try:
                 vendor = row["Vendor Name"]
             except KeyError:
-                vendor = row["Vendor"]
+                vendor = row["ACH Vendor Name"]
 
             try:
                 aba = row["Vendor ABA"]
