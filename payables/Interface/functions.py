@@ -50,3 +50,31 @@ def set_type(obj: Any, dest_type: str) -> Any:
 def debug(text: str) -> None:
     with open("debug.log", "+a") as file:
         file.write(text)
+
+def string_to_int(string: str) -> int:
+    sum = 0
+    for char in string:
+        sum += ord(char)
+    return sum
+
+def is_blank_list(data: list) -> bool:
+    no_data = True
+    i = 0
+    while no_data and i in range(len(data)):
+        if data[i]:
+            no_data = False
+        i += 1
+    return no_data
+
+def str_list_to_int(n: list[str]) -> list[int]:
+    n_copy = n.copy()
+    list_len = len(n)
+    for i in range(list_len):
+        val = n[i]
+        if isinstance(val, int) or isinstance(val, np.float64):
+            continue
+
+        str_as_int = string_to_int(n[i])
+        n_copy[i] = str_as_int
+
+    return n_copy
