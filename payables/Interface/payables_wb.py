@@ -30,6 +30,7 @@ class PayablesWorkbook(pd.DataFrame):
     vendors_path = \
         "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx"
     column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
+    column_types = ["str", "str", "float64", "bool", "str", "bool"]
     column_defaults = ["", "", np.float64(0), False, "", False]
 
     # for DataFrame constructor
