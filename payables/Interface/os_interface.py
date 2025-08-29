@@ -11,11 +11,14 @@ import xlsxwriter
 
 # Package Imports
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
+sys.path.append(os.environ["HOMEPATH"] + "/accounting")
+sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
 from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
 import nacha
 from nacha import NachaConstructor, NachaFile, NachaLine, NachaMain
 import DupePayments as DupePayments
+from Wires import WireFile, WirePayment
 
 
 class OsInterface:
@@ -399,7 +402,7 @@ class OsInterface:
         value_date: str):
         """Create nacha file constructor object."""
         
-        ach_payments = self.get_only_ach_payments()
+        ach_payments = self.filter_payments_on_type("ACH")
         debug_bool = self.ask_for_debug()
         nacha_file = NachaConstructor.NachaConstructor(
             ach_payments,
@@ -407,16 +410,6 @@ class OsInterface:
             debug_bool)
         
         return nacha_file
-    
-    def get_only_ach_payments(self) -> pd.DataFrame:
-        """Returns a table of only invoices paid via ACH."""
-
-        no_cc_pmts = self.payables.loc[~(self.payables["CC"])]
-        payables_with_deets = no_cc_pmts.merge_vendors()
-        ach_payments = payables_with_deets.loc[
-            payables_with_deets["Payment Type"] == "ACH"
-        ].copy(deep=True)
-        return ach_payments
     
     def ask_for_debug(self) -> bool:
         debug_yn = input("\nPrint debug information? (y/n)\n>\t")
@@ -441,6 +434,70 @@ class OsInterface:
         ) as file:
             file.write(company_data.__str__())
     
+
+    #############################
+    # Create Wire Payment Files #
+    #############################
+    def make_wire_files(self) -> None:
+        """Makes a wire payment file for upload to JPM Access"""
+        vd = self.get_vd()
+        self.wire_vd = vd
+
+        wire_payments = self.filter_payments_on_type("Wire")
+        vendor_dict = self.get_vendor_objs(wire_payments)
+        payments = self.make_payment_objs(wire_payments, vendor_dict)
+
+        file = WireFile.WireFile(payments)
+        f_name = " ".join([self.date, "Wire Payments"])
+        file.write_file("/".join([os.environ["HOMEPATH"], "Downloads"]), f_name)
+        
+    def get_vendor_objs(self, wires: pd.DataFrame) -> dict[str, WirePayment.Vendor]:
+        """Returns a dict mapping vendor names to their corresponding vendor 
+        object."""
+
+        unique_vendors = wires["Vendor"].unique()
+        vendor_dict = {}
+        for vendor in unique_vendors:
+            vendor_obj = WirePayment.Vendor(vendor)
+            vendor_dict.update({vendor: vendor_obj})
+        return vendor_dict
+    
+    def make_payment_objs(self,
+                          wires: pd.DataFrame,
+                          vendors: dict[str, WirePayment.Vendor]) -> list[WirePayment.WirePayment]:
+        """Returns a tuple of wire payment objects for use in a WireFile 
+        object"""
+        payments = []
+        dt_wire_vd = datetime.strptime(self.wire_vd, "%y%m%d")
+        for i, row in wires.iterrows():
+            company_account = WirePayment.company_ids[row["Company"]]
+            vendor_ob = vendors[row["Vendor"]]
+
+            new_payment = WirePayment.WirePayment(
+                orig_bank_id="071000013",
+                orig_account=company_account,
+                amount=row["Amount"],
+                value_date=dt_wire_vd,
+                vendor=vendor_ob,
+                details=row["Invoice #"],
+                template=True
+            )
+            payments.append(new_payment)
+        return payments
+
+    #################################
+    # Payment File Common Functions #
+    #################################
+    def filter_payments_on_type(self, type: str) -> pd.DataFrame:
+        """Returns a table of only invoices paid via ACH."""
+
+        no_cc_pmts = self.payables.loc[~(self.payables["CC"])]
+        payables_with_deets = no_cc_pmts.merge_vendors()
+        filtered_payments = payables_with_deets.loc[
+            payables_with_deets["Payment Type"] == type
+        ].copy(deep=True)
+        return filtered_payments
+
     def get_vd(self) -> str:
         year = int(get_valid_input("VD Year:  ", r"\d{4}"))
         month = int(get_valid_input("VD Month: ", r"\d{1,2}"))
@@ -944,7 +1001,7 @@ class OsInterface:
 
 def debug_script():
     instance = OsInterface("2025-08-31", True)
-    instance.make_summary_workbook()
+    instance.make_wire_files()
 
 def run_interface():
     OsInterface()
