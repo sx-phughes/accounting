@@ -371,11 +371,11 @@ class OsInterface:
     def make_payment_files(self):
         self.check_for_duplicate_payments()
 
-        vd = self.dt_date.strftime("%y%m%d")
+        vd = self.get_vd()
         nacha_file = self.get_nacha_constructor(value_date=vd)
 
         files = nacha_file.main()
-        co_names = nacha.NachaConstructor.NachaConstructor.company_names
+        co_names = NachaConstructor.NachaConstructor.company_names
         list_of_co_names = list(co_names.keys())
 
         for i in range(len(files)):
@@ -441,6 +441,13 @@ class OsInterface:
         ) as file:
             file.write(company_data.__str__())
     
+    def get_vd(self) -> str:
+        year = int(get_valid_input("VD Year:  ", r"\d{4}"))
+        month = int(get_valid_input("VD Month: ", r"\d{1,2}"))
+        day = int(get_valid_input("VD Day:   ", r"\d{1,2}"))
+        vd_dt = datetime(year, month, day)
+        vd_str = vd_dt.strftime("%y%m%d")
+        return vd_str
 
     ####################################
     # Create Summary Workbook for Joan #   
@@ -785,7 +792,7 @@ class OsInterface:
                 break
 
             col_index = self.payables.columns.tolist().index(col)
-            val_type = self.prompt_types[col_index]
+            val_type = self.payables.column_types[col_index]
             typed_val = set_type(val, val_type)
             self.payables.loc[index, col] = typed_val
 
