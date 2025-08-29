@@ -6,6 +6,8 @@ import os
 from typing import Any
 
 def cursor_up():
+    """Moves the cursor up one row after input."""
+
     sys.stdout.flush()
     # undo \n from entering input
     print("\033[A", end='', flush=True)
@@ -15,15 +17,20 @@ def cursor_up():
     # print("\033[2K", end='', flush=True)
 
 def cursor_down():
+    """Moves the cursor down one row after input."""
+
     sys.stdout.flush()
     sys.stdout.flush()
 
 
 def cls():
+    """Clears the terminal screen."""
+
     os.system("cls")
 
 def check_date(date: str):
     """Check that date matches YYYY-MM-DD format"""
+
     match = re.match(r'(\d{4})-(\d{2})-(\d{2})', date)
     
     if match:
@@ -34,6 +41,8 @@ def check_date(date: str):
     return False
 
 def set_type(obj: Any, dest_type: str) -> Any:
+    """Allows for programmatic type setting."""
+
     if dest_type == "str":
         return str(obj)
     elif dest_type == "int":
@@ -48,16 +57,22 @@ def set_type(obj: Any, dest_type: str) -> Any:
         raise TypeError(f"Unprogrammed type: {dest_type}")
 
 def debug(text: str) -> None:
+    """Outputs text to a log file."""
+
     with open("debug.log", "+a") as file:
         file.write(text)
 
 def string_to_int(string: str) -> int:
+    """Converts a string to an integer based on its unicode value."""
+
     sum = 0
     for char in string:
         sum += ord(char)
     return sum
 
 def is_blank_list(data: list) -> bool:
+    """Checks if a list is blank or not."""
+
     no_data = True
     i = 0
     while no_data and i in range(len(data)):
@@ -67,6 +82,8 @@ def is_blank_list(data: list) -> bool:
     return no_data
 
 def str_list_to_int(n: list[str]) -> list[int]:
+    """Converts a list of strings to a list of integers"""
+
     n_copy = n.copy()
     list_len = len(n)
     for i in range(list_len):
@@ -76,5 +93,14 @@ def str_list_to_int(n: list[str]) -> list[int]:
 
         str_as_int = string_to_int(n[i])
         n_copy[i] = str_as_int
-
     return n_copy
+
+def get_valid_input(prompt: str, pattern: str) -> str:
+    """Returns a user input string fitting the pattern given."""
+
+    while True:
+        val = input(prompt)
+        if re.match(pattern, val):
+            return val
+        else:
+            print(f"Bad input! Must match pattern '{pattern}'")
