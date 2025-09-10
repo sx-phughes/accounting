@@ -1,6 +1,7 @@
 from payables.nacha.NachaFile import *
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 
 class NachaConstructor:
@@ -28,49 +29,41 @@ class NachaConstructor:
         self.trx_table = trx_table
         self.value_date = value_date
         self.debug = debug
+        self.get_col_names()
 
     def construct_transactions(self, trx_table):
         transactions_list = []
         sequence_no = 101
-        # Debug
-        # print(trx_table)
-
         for i, row in trx_table.iterrows():
-            # Debug
-            # print(f'Vendor: {row['Vendor']} // Mapped Vendor: {row['Vendor Name']} // ABA: {row['Vendor ABA']} // Type: {type(row['Vendor ABA'])}')
-
-            try:
-                vendor = row["Vendor Name"]
-            except KeyError:
-                vendor = row["ACH Vendor Name"]
-
-            try:
-                aba = row["Vendor ABA"]
-            except KeyError:
-                aba = row["ACH ABA"]
-
-            try:
-                account = row["Vendor Account"]
-            except KeyError:
-                account = row["ACH Account Number"]
-
             transaction = TransactionEntry(
-                vendor,
+                row[self.vendor_col],
                 row["Amount"],
                 row["Invoice #"],
-                aba,
-                account,
+                row[self.aba_col],
+                row[self.account_col],
                 "0" * (7 - len(str(sequence_no))) + str(sequence_no),
                 debug=self.debug,
             )
-            # Debug
-            # if row['Simplex2'] == 'Investments':
-            #     print(f'Input amount = {row['Amount']}')
-
             transactions_list.append(transaction)
             sequence_no += 1
 
         return transactions_list
+    
+    def get_col_names(self) -> None:
+        """Gets needed columns, allowing for different source tables"""
+        cols = [
+            ["Vendor Name", "ACH Vendor Name"],
+            ["Vendor ABA", "ACH ABA"],
+            ["Vendor Account", "ACH Account Number"]
+        ]
+        name_index = 0
+        try:
+            column_data = self.trx_table[cols[0][0]]
+        except KeyError:
+            name_index = 1
+        self.vendor_col = cols[0][name_index]
+        self.aba_col = cols[1][name_index]
+        self.account_col = cols[2][name_index]
 
     def construct_batch(self, transactions, company_name, batch_number):
         batch = Batch(
@@ -109,12 +102,6 @@ class NachaConstructor:
                 
 
             transactions = self.construct_transactions(trxs)
-
-            # Debug
-            # if i == 'Investments':
-            #     for j in transactions:
-            #         print(f'Output amount = {j.no_decimal_amount}')
-
             batch = self.construct_batch(transactions, i, "0000001")
             file = self.file_constructor([batch], i, id_modifiers[counter])
 
@@ -123,3 +110,29 @@ class NachaConstructor:
             files.append(file)
 
         return files
+    
+    def group_trx_by_company(self, data: pd.DataFrame) -> pd.DataFrame:
+        vendors = data[self.vendor_col].unique()
+        for vendor in vendors:
+            vendor_mask = data[self.vendor_col] == vendor
+            vendor_invoice_data = data.loc[vendor_mask].copy(deep=True)
+            
+    def group_vendor_data(self, 
+                          vendor_data: pd.DataFrame) -> tuple[np.float64 | str]:
+        total_amount = vendor_data["Amount"].sum(skipna=True)
+        invoice_str = " ".join(vendor_data["Invoice #"])
+    
+    def get_invoice_str(self, invoice_nums: pd.Series) -> str:
+        invoice_data = pd.DataFrame(invoice_nums)
+        invoice_data["str_len"] = invoice_data["Invoice #"].apply(len)
+        total_len = invoice_data["str_len"].sum() + len(invoice_data.index) - 1
+        
+        if total_len > 80:
+            num_invoices = len(invoice_data.index)
+            len_per_num = np.floor_divide(80, num_invoices)
+            invoice_data["start_index"] = invoice_data["str_len"] - len_per_num
+            replace_mask = invoice_data["start_index"] < 0
+            invoice_data["start_index"] = invoice_data["start_index"].mask(
+                replace_mask, 0
+            )
+            # invoice_data["sliced_inv_num"] = invoice_data["Invoice #"].str.slice

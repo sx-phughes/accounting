@@ -701,6 +701,8 @@ class OsInterface:
             self.print_invoices(data)
 
             print("\n\nEnter an index to view invoice details,")
+            print("type 'Vendor: [vendor]' to filter by vendor,")
+            print("or export: [file_name] to save file to downloads")
             print("or hit enter to return to the main menu.")
             response = input(">\t")
 
@@ -708,6 +710,21 @@ class OsInterface:
                 self.invoice_details(int(response))
             elif re.search(r"vendor:", response, re.IGNORECASE):
                 self.filter_df(data, "Vendor", response)
+            elif re.search(r"export", response, re.IGNORECASE):
+                match = re.search(r"export:?", response, re.IGNORECASE)
+                f_name = '.'.join([
+                    response.replace(match.group(), "").strip(),
+                    'xlsx'
+                ])
+                print(f_name)
+                path = '/'.join([os.environ["HOMEPATH"], "Downloads", f_name])
+                data.to_excel(excel_writer=path,
+                              sheet_name="Export",
+                              index=False,
+                              na_rep="")
+                print("Data export success. File in downloads.")
+                print("Enter to continue.")
+                input()
             elif response == "":
                 break
             else:
