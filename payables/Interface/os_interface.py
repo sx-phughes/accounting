@@ -170,7 +170,7 @@ class OsInterface:
     # Add invoices #
     ################
     def add_invoices(self):
-        """Loop for adding invoices to the payables table"""
+        """Main loop for adding invoices to the payables table"""
         print("Move downloads to temp folder? (y/n)")
         resp = input(">\t")
         if resp == "y":
@@ -207,6 +207,8 @@ class OsInterface:
             self.preserved_downloads = 0
 
     def preserve_downloads(self) -> None:
+        """Preserves downloads contents by moving to temp folder"""
+
         try:
             os.mkdir("./.tempdownloads")
         except FileExistsError:
@@ -215,23 +217,29 @@ class OsInterface:
         self.move_all_files("./Downloads", "./.tempdownloads/")
 
     def restore_downloads(self) -> None:
+        """Restores downloads from temp folder"""
+
         self.move_all_files("./.tempdownloads", "./Downloads/")
         shutil.rmtree("./.tempdownloads")
 
     def move_all_files(self, source: str, dest: str) -> None:
+        """Moves all files from a source folder to a destination folder."""
+
         files = os.listdir(source)
         for file in files:
             shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
 
     def get_invoice_data(self):
-        new_row = self.make_blank_row()
+        """Retrieves invoice data from user.
+        
+        Returns False for a blank list, otherwise, returns user
+        inputs.
+        """
 
         inputs = self.get_inputs(OsInterface.invoice_prompts)
-        for i in range(len(inputs)):
-            new_row[i] = inputs[i]
 
-        if not is_blank_list(new_row):
-            return new_row
+        if not is_blank_list(inputs):
+            return inputs
         else:
             return False
 
@@ -243,7 +251,10 @@ class OsInterface:
 
     def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
         """UI for receiving user input for a new invoice"""
-        inputs = [0 for i in range(len(prompts))]
+        inputs = ["" for i in range(len(PayablesWorkbook.column_headers))]
+        for i in range(len(prompts)):
+            inputs[i] = 0
+
         i = 0
         while 0 in inputs:
             i = self.get_single_user_input(prompts, inputs, i)
@@ -323,25 +334,24 @@ class OsInterface:
 
     def add_invoice_vendor_check(
         self, inputs: list[str | int]) -> bool | list[str]:
-        found_vendor = self.validate_vendor(inputs)
+        """Checks for valid vendor in user inputs. Recursively gets inputs if 
+        invalid."""
 
+        vendor_name = inputs[0]
+        found_vendor = self.validate_vendor(vendor_name)
         if found_vendor:
             return True
+        elif not is_blank_list(inputs):
+            inputs = self.get_inputs(OsInterface.invoice_prompts)
+            return inputs
         else:
-            zero_sum = sum(str_list_to_int(inputs)) == 0
-            if not zero_sum:
-                inputs = self.get_inputs(OsInterface.invoice_prompts)
-                return inputs
-            else:
-                return True
+            return True
     
-    def validate_vendor(self, inputs: list[str | int] | str) -> bool:
-        vendors = self.vendors.Vendor.values.tolist()
-        if isinstance(inputs, list):
-            found_vendor = inputs[0] in vendors
-        else:
-            found_vendor = inputs in vendors
+    def validate_vendor(self, input: str | int) -> bool:
+        """Validates presence of inputs in Vendor list"""
 
+        vendors = self.vendors.Vendor.values.tolist()
+        found_vendor = input in vendors
         return found_vendor
 
     def add_cc_user(self, invoice_data) -> None:
