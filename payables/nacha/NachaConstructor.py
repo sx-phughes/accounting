@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append('/'.join([os.environ["HOMEPATH"], 'accounting']))
 from payables.nacha.NachaFile import *
 import pandas as pd
 from datetime import datetime
@@ -112,6 +115,8 @@ class NachaConstructor:
         return files
     
     def group_trx_by_company(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Group payments by company for one payment per vendor."""
+
         vendors = data[self.vendor_col].unique()
         for vendor in vendors:
             vendor_mask = data[self.vendor_col] == vendor
@@ -119,11 +124,24 @@ class NachaConstructor:
             
     def group_vendor_data(self, 
                           vendor_data: pd.DataFrame) -> tuple[np.float64 | str]:
+        """Returns the vendor data as a tuple of sum and joined invoice nums."""
+
         total_amount = vendor_data["Amount"].sum(skipna=True)
         invoice_str = " ".join(vendor_data["Invoice #"])
     
     def get_invoice_str(self, invoice_nums: pd.Series) -> str:
+        """Creates the invoice string for the vendor row.
+        
+        The addenda to the ACH is limited to 80 chars. This function takes a 
+        series of strings and joins the whole strings or equal-length 
+        parts of each string."""
+
         invoice_data = pd.DataFrame(invoice_nums)
+        joined_invs = " ".join(invoice_data["Invoice #"].tolist())
+        if len(joined_invs) < 80:
+            return joined_invs
+
+        print("Over 80")
         invoice_data["str_len"] = invoice_data["Invoice #"].apply(len)
         total_len = invoice_data["str_len"].sum() + len(invoice_data.index) - 1
         
@@ -136,3 +154,26 @@ class NachaConstructor:
                 replace_mask, 0
             )
             # invoice_data["sliced_inv_num"] = invoice_data["Invoice #"].str.slice
+
+def get_test_data() -> pd.DataFrame:
+    path = '/'.join([
+        'C:/gdrive/Shared drives/accounting/Payables',
+        '2025/202508/2025-08-31/2025-08-31 Payables.xlsm'
+    ])
+    invoices = pd.read_excel(io=path, sheet_name="Invoices")
+    return invoices
+
+def debug() -> None:
+    data = get_test_data()
+    constructor = NachaConstructor(
+        trx_table=data,
+        value_date="20250930",
+        debug=False
+    )
+    bgc = data.loc[data["Vendor"] == "BGC"].copy(deep=True)
+    bgc_invoices = bgc["Invoice #"]
+    inv_str = constructor.get_invoice_str(bgc_invoices)
+    print(inv_str)
+
+if __name__ == "__main__":
+    debug()
