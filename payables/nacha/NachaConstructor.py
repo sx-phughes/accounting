@@ -35,6 +35,9 @@ class NachaConstructor:
         self.get_col_names()
 
     def construct_transactions(self, trx_table):
+        """Given a table of transactions, encodes each transaction as a
+        string in NACHA format and returns them as a list."""
+
         transactions_list = []
         sequence_no = 101
         for i, row in trx_table.iterrows():
@@ -53,7 +56,9 @@ class NachaConstructor:
         return transactions_list
     
     def get_col_names(self) -> None:
-        """Gets needed columns, allowing for different source tables"""
+        """Gets columns required for construct_transactions, allowing for
+        different source tables."""
+
         cols = [
             ["Vendor Name", "ACH Vendor Name"],
             ["Vendor ABA", "ACH ABA"],
@@ -69,6 +74,9 @@ class NachaConstructor:
         self.account_col = cols[2][name_index]
 
     def construct_batch(self, transactions, company_name, batch_number):
+        """Construct NACHA batch - joined transaction strings grouped with
+        header and footer information."""
+
         batch = Batch(
             company_name=NachaConstructor.company_names[company_name],
             company_id=NachaConstructor.company_ids[company_name],
@@ -81,6 +89,9 @@ class NachaConstructor:
         return batch
 
     def file_constructor(self, batches, company_name, file_id_modifier):
+        """Adds NACHA file header and footer information to existing batch
+        data."""
+
         file = NachaFile(
             bank_aba=NachaConstructor.company_abas[company_name],
             company_id=NachaConstructor.company_ids[company_name],
@@ -94,6 +105,13 @@ class NachaConstructor:
         return file
 
     def main(self):
+        """Creates and returns NACHA payment files ready to be written to disk.
+        
+        Returns a string for each operating company with each company's
+        transactions encoded and formatted such that when written to disk in a 
+        text file, the resulting file may be uploaded to JP Morgan for payment.
+        """
+
         files = []
         id_modifiers = ["A", "B", "C", "D"]
         counter = 0
@@ -103,6 +121,7 @@ class NachaConstructor:
             except KeyError:
                 trxs = self.trx_table.loc[self.trx_table["Company"] == i]
                 
+            # company_trxs_grouped = self.get_grouped_trx_table(data=trxs)
 
             transactions = self.construct_transactions(trxs)
             batch = self.construct_batch(transactions, i, "0000001")
@@ -114,20 +133,75 @@ class NachaConstructor:
 
         return files
     
-    def group_trx_by_company(self, data: pd.DataFrame) -> pd.DataFrame:
+    def get_grouped_trx_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Handler function for grouping transactions by vendor then merging
+        the vendors table to the resulting table."""
+
+        grouped = self.group_trx_by_vendor(data)
+        merged = self.join_vendor_table(grouped, col="ACH Vendor Name")
+        return merged
+
+    def join_vendor_table(self, left: pd.DataFrame, col: str) -> pd.DataFrame:
+        """Left-join vendors table to another table on the given column."""
+
+        vendors = self.get_vendor_table()
+        short_vendors = vendors[[
+            "ACH Vendor Name",
+            "ACH ABA",
+            "ACH Account Number"
+        ]].copy(deep=True)
+        merged = left.merge(right=short_vendors, how="left", on=col)
+        return merged
+    
+    def get_vendor_table(self) -> pd.DataFrame:
+        """Read vendors table into memory and return the table."""
+
+        path = '/'.join([
+            "C:/gdrive/Shared drives/accounting/patrick_data_files",
+            "ap/Vendors.xlsx"
+        ])
+        vendors = pd.read_excel(io=path, sheet_name="Vendors")
+        return vendors
+    
+    def group_trx_by_vendor(self, data: pd.DataFrame) -> pd.DataFrame:
         """Group payments by company for one payment per vendor."""
 
-        vendors = data[self.vendor_col].unique()
-        for vendor in vendors:
-            vendor_mask = data[self.vendor_col] == vendor
-            vendor_invoice_data = data.loc[vendor_mask].copy(deep=True)
-            
+        # Need to think about edge cases when current addendum algorithm won't 
+        # work
+        pre_sort_vendors = data[self.vendor_col].unique().tolist() 
+        vendors = sorted(pre_sort_vendors)
+        table = self.create_unique_payment_table(vendors)
+        for i, row in table.iterrows():
+            filtered_on_vendor = data.loc[
+                data[self.vendor_col] == row["ACH Vendor Name"]
+            ]
+            inv_total, addendum = self.group_vendor_data(filtered_on_vendor)
+            table.loc[i, "Amount"] = inv_total
+            table.loc[i, "Invoice #"] = addendum
+
+        return table
+    
+    def create_unique_payment_table(self, vendors: list[str]) -> pd.DataFrame:
+        """Returns a dataframe with columns for vendor, total invoiced amount
+        and the addendum string"""
+
+        zeroes = [np.float64(0) for i in vendors]
+        empty_strs = ["" for i in vendors]
+        data = {
+            "ACH Vendor Name": vendors,
+            "Amount": zeroes,
+            "Invoice #": empty_strs
+        }
+        df = pd.DataFrame(data=data)
+        return df
+
     def group_vendor_data(self, 
                           vendor_data: pd.DataFrame) -> tuple[np.float64 | str]:
         """Returns the vendor data as a tuple of sum and joined invoice nums."""
 
-        total_amount = vendor_data["Amount"].sum(skipna=True)
-        invoice_str = " ".join(vendor_data["Invoice #"])
+        total_amount = np.float64(vendor_data["Amount"].sum(skipna=True))
+        invoice_str = self.get_invoice_str(vendor_data["Invoice #"])
+        return (total_amount, invoice_str)
     
     def get_invoice_str(self, invoice_nums: pd.Series) -> str:
         """Creates the invoice string for the vendor row.
@@ -138,42 +212,15 @@ class NachaConstructor:
 
         invoice_data = pd.DataFrame(invoice_nums)
         joined_invs = " ".join(invoice_data["Invoice #"].tolist())
-        if len(joined_invs) < 80:
+        total_len = len(joined_invs)
+        if total_len < 80:
             return joined_invs
 
-        print("Over 80")
         invoice_data["str_len"] = invoice_data["Invoice #"].apply(len)
-        total_len = invoice_data["str_len"].sum() + len(invoice_data.index) - 1
-        
-        if total_len > 80:
-            num_invoices = len(invoice_data.index)
-            len_per_num = np.floor_divide(80, num_invoices)
-            invoice_data["start_index"] = invoice_data["str_len"] - len_per_num
-            replace_mask = invoice_data["start_index"] < 0
-            invoice_data["start_index"] = invoice_data["start_index"].mask(
-                replace_mask, 0
-            )
-            # invoice_data["sliced_inv_num"] = invoice_data["Invoice #"].str.slice
+        num_invoices = len(invoice_data.index)
+        len_per_num = np.floor_divide(80, num_invoices) - 1
+        invoice_data["sliced"] = invoice_data["Invoice #"].str. \
+            slice(-len_per_num)
+        sliced_joined = " ".join(invoice_data["sliced"].tolist())
+        return sliced_joined
 
-def get_test_data() -> pd.DataFrame:
-    path = '/'.join([
-        'C:/gdrive/Shared drives/accounting/Payables',
-        '2025/202508/2025-08-31/2025-08-31 Payables.xlsm'
-    ])
-    invoices = pd.read_excel(io=path, sheet_name="Invoices")
-    return invoices
-
-def debug() -> None:
-    data = get_test_data()
-    constructor = NachaConstructor(
-        trx_table=data,
-        value_date="20250930",
-        debug=False
-    )
-    bgc = data.loc[data["Vendor"] == "BGC"].copy(deep=True)
-    bgc_invoices = bgc["Invoice #"]
-    inv_str = constructor.get_invoice_str(bgc_invoices)
-    print(inv_str)
-
-if __name__ == "__main__":
-    debug()
