@@ -278,6 +278,7 @@ class OsInterface:
         
     def set_input_types(
         self, inputs: list[str | int]) -> list[str | int | bool]:
+        """Types str input values to table column d-types"""
 
         zipped_inputs_and_types = zip(
             inputs, OsInterface.prompt_types
@@ -290,23 +291,40 @@ class OsInterface:
             index += 1
             
     def fix_cc_input(self, inputs: list[str | int]) -> list[str | int]:
+        """Standardizes cc response to 'y' or ''."""
+
         cc_index = self.get_input_index("Credit card")
         cc_input = inputs[cc_index]
         inputs[cc_index] = self.swap_cc_input(cc_input)
         
     def swap_cc_input(self, cc_val: str) -> str:
+        """Returns 'y' if user response was 'y', else returns ''"""
+
         new_val = '' 
         if cc_val == "y":
             new_val = cc_val
         return new_val
     
     def get_input_index(self, col: str) -> int:
+        """Gets the index of the prompt corresponding to the desired column 
+        header."""
+
         with_stub = col + ":"
         return OsInterface.invoice_prompts.index(with_stub)
 
     def get_single_user_input(
         self, prompts: list[str], input_list: list, curr_index: int
     ) -> int:
+        """Gets a single user input for a given prompt in a list of prompts.
+
+        Args:
+            prompts (list[str]): list of prompts to work from
+            input_list (list): list of received user inputs
+            curr_index (int): current location in list of prompts
+
+        Returns:
+            int: next prompt location to go to
+        """
 
         index = curr_index
         end = len(prompts) - 1
@@ -394,23 +412,29 @@ class OsInterface:
     # Input Navigation #
     ####################
     def up_arrow(self, index: int) -> int:
+        """Navigates cursor up one line. Returns resulting value after nav."""
+
         if index > 0:
             index -= 1
             cursor_up()
         return index
 
     def down_arrow(self, index: int, end_index: int) -> int:
+        """Navigates cursor down one line to a max line end_index. Returns 
+        resulting value."""
+
         if index <= end_index:
             index += 1
             cursor_down()
             # print('', end='\r', flush=True)
         return index
     
-
     ######################
     # Create NACHA files #
     ######################
     def make_payment_files(self):
+        """Creates NACHA payment files for current payables batch."""
+
         self.check_for_duplicate_payments()
 
         vd = self.get_vd()
@@ -426,6 +450,8 @@ class OsInterface:
             self.write_payment_file(current, vd, company_name)
 
     def check_for_duplicate_payments(self):
+        """Checks for duplicate payments in current payables batch."""
+        
         dupes = DupePayments.search_for_dupe_payments(
             self.date,
             4, 
