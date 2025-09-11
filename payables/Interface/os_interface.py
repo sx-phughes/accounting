@@ -243,31 +243,38 @@ class OsInterface:
         else:
             return False
 
-    def make_blank_row(self) -> list[str]:
-        """Make a blank row with n entries for n PayablesWorkbook columns"""
-        cols = PayablesWorkbook.column_headers
-        blank_row = ["" for col in cols]
-        return blank_row
-
     def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
-        """UI for receiving user input for a new invoice"""
+        """Management of receiving user input for a new invoice"""
         inputs = ["" for i in range(len(PayablesWorkbook.column_headers))]
         for i in range(len(prompts)):
             inputs[i] = 0
+        
+        if kwargs:
+            keys = list(kwargs.keys())
+            for i in range(len(keys)):
+                old_val = kwargs[keys[i]]
+                if old_val:
+                    inputs[i] = old_val
 
         i = 0
         while 0 in inputs:
             i = self.get_single_user_input(prompts, inputs, i)
+        
+        # print("input list vals:", *inputs, sep="'\n\t'", end="'\n")
 
         self.set_input_types(inputs)
 
-        check_result = self.add_invoice_vendor_check(inputs)
-        if isinstance(check_result, bool) and check_result:
+        if self.add_invoice_vendor_check(inputs) or is_blank_list(inputs):
             return inputs
-        elif isinstance(check_result, list):
-            return check_result
         else:
-            return self.make_blank_row()
+            self.print_possible_vendors(inputs[0])
+            inputs = self.get_inputs(
+                prompts=prompts,
+                vendor=0,
+                invoice_num=inputs[1],
+                invoice_amt=inputs[2],
+            )
+            return inputs
         
     def set_input_types(
         self, inputs: list[str | int]) -> list[str | int | bool]:
@@ -309,7 +316,7 @@ class OsInterface:
         response = input_list[index]
 
         if response != 0:
-            input_len = len(input_list[index])
+            input_len = len(str(input_list[index]))
             print(input_list[index], end='', flush=True)
             print(f"\033[{input_len}D", end='', flush=True)
 
@@ -341,12 +348,13 @@ class OsInterface:
         found_vendor = self.validate_vendor(vendor_name)
         if found_vendor:
             return True
-        elif not is_blank_list(inputs):
-            inputs = self.get_inputs(OsInterface.invoice_prompts)
-            return inputs
+        # elif not is_blank_list(inputs):
+        #     inputs = self.get_inputs(OsInterface.invoice_prompts)
+        #     return inputs
         else:
-            return True
-    
+            # return True
+            return False
+            
     def validate_vendor(self, input: str | int) -> bool:
         """Validates presence of inputs in Vendor list"""
 
@@ -360,7 +368,28 @@ class OsInterface:
         cc_user = input("Enter initials of CC user:\t")
         invoice_data[cc_user_index] = cc_user
 
+    def print_possible_vendors(self, vendor: str):
+        """Prints a list of possible correct vendors to screen"""
 
+        vals = self.get_possible_vendors(vendor)
+        print("Vendor invalid. Did you mean...")
+        for i in vals:
+            print(f"\t{i}")
+
+    def get_possible_vendors(self, vendor: str) -> list[str]:
+        """Returns a list of possible correct vendor choices"""
+
+        split_vendor = vendor.split(" ")
+        possibilities = self.vendors.loc[
+            self.vendors["Vendor"].str.contains(
+                pat=split_vendor[0],
+                case=False,
+                na=""
+            )
+        ]
+        return possibilities["Vendor"].tolist()
+        
+        
     ####################
     # Input Navigation #
     ####################
