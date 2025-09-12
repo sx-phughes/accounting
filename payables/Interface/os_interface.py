@@ -260,8 +260,6 @@ class OsInterface:
         while 0 in inputs:
             i = self.get_single_user_input(prompts, inputs, i)
         
-        # print("input list vals:", *inputs, sep="'\n\t'", end="'\n")
-
         self.set_input_types(inputs)
 
         if self.add_invoice_vendor_check(inputs) or is_blank_list(inputs):
@@ -366,11 +364,7 @@ class OsInterface:
         found_vendor = self.validate_vendor(vendor_name)
         if found_vendor:
             return True
-        # elif not is_blank_list(inputs):
-        #     inputs = self.get_inputs(OsInterface.invoice_prompts)
-        #     return inputs
         else:
-            # return True
             return False
             
     def validate_vendor(self, input: str | int) -> bool:
