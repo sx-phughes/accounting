@@ -101,12 +101,19 @@ class PayablesWorkbook(pd.DataFrame):
         return data
 
     def validate_data(self, data: pd.DataFrame):
-        """Validate workbook columns and add missing ones"""
+        """Validate workbook columns, add missing ones, and remove
+        extra columns."""
+
         good_cols_index = self.get_extant_cols_index(data)
-        self.add_new_cols(data, good_cols_index)
+        if good_cols_index < len(self.column_headers):
+            self.add_new_cols(data, good_cols_index)
+        elif good_cols_index > len(self.column_headers):
+            drop_cols = data.columns.tolist()[good_cols_index+1:]
+            data.drop(columns=drop_cols, inplace=True)
 
     def add_new_cols(self, data: pd.DataFrame, add_from: int):
         """Add identified missing columns to payables table"""
+
         end = len(PayablesWorkbook.column_headers)
         for i in range(add_from, end):
             self.initialize_new_col(data, i)
@@ -130,6 +137,7 @@ class PayablesWorkbook(pd.DataFrame):
         Returns:
             int: number of columns in dataframe
         """
+
         n = len(original.columns.values.tolist())
         return n
 
