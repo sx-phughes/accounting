@@ -171,41 +171,42 @@ class OsInterface:
     ################
     def add_invoices(self):
         """Main loop for adding invoices to the payables table"""
-        print("Move downloads to temp folder? (y/n)")
-        resp = input(">\t")
-        if resp == "y":
-            self.preserve_downloads()
-            self.preserved_downloads = 1
-    
+        self.preserve_downloads_handler()
         try:
             while True:
                 cls()
 
                 try:
-                    invoice_data = self.get_invoice_data()
+                    invoice_data = self.get_inputs(prompts=self.invoice_prompts)
                 except EOFError:
-                    invoice_data = False
-
-                if invoice_data == False:
+                    invoice_data = [0]
+                if is_blank_list(data=invoice_data):
                     break
-                elif invoice_data[3] == True:
-                    self.add_cc_user(invoice_data)
 
-                paid_status_index = get_col_index("Paid")
-                invoice_data[paid_status_index] = False
+                if invoice_data[3]:
+                    self.add_cc_user(invoice_data=invoice_data)
+                self.set_paid_status(inputs=invoice_data, status=False)
 
-                self.payables.insert_invoice(invoice_data)
-
+                self.payables.insert_invoice(invoice_data=invoice_data)
                 add_more = input("\nAdd another invoice (y/n)\n>\t")
                 if add_more == "n":
                     break
         except ValueError:
             self.payables.save_workbook()
 
-        if self.preserved_downloads:
-            self.restore_downloads()
-            self.preserved_downloads = 0
+        self.preserve_downloads_handler()
 
+    def preserve_downloads_handler(self) -> int:
+        if self.preserved_downloads == np.uint8(0):
+            print("Move downloads to temp folder? (y/n)")
+            resp = input(">\t")
+            if resp == "y":
+                self.preserve_downloads()
+                self.preserved_downloads = np.uint8(1)
+        elif self.preserved_downloads == np.uint8(1):
+            self.restore_downloads()
+            self.preserved_downloads = np.uint8(0)
+        
     def preserve_downloads(self) -> None:
         """Preserves downloads contents by moving to temp folder"""
 
@@ -229,19 +230,19 @@ class OsInterface:
         for file in files:
             shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
 
-    def get_invoice_data(self):
-        """Retrieves invoice data from user.
+    # def get_invoice_data(self):
+    #     """Retrieves invoice data from user.
         
-        Returns False for a blank list, otherwise, returns user
-        inputs.
-        """
+    #     Returns False for a blank list, otherwise, returns user
+    #     inputs.
+    #     """
 
-        inputs = self.get_inputs(OsInterface.invoice_prompts)
+    #     inputs = self.get_inputs(OsInterface.invoice_prompts)
 
-        if not is_blank_list(inputs):
-            return inputs
-        else:
-            return False
+    #     if not is_blank_list(inputs):
+    #         return inputs
+    #     else:
+    #         return False
 
     def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
         """Management of receiving user input for a new invoice"""
@@ -401,6 +402,10 @@ class OsInterface:
         ]
         return possibilities["Vendor"].tolist()
         
+    def set_paid_status(self, inputs: list, status: bool) -> None:
+        paid_status_index = get_col_index("Paid")
+        inputs[paid_status_index] = status
+
         
     ####################
     # Input Navigation #
