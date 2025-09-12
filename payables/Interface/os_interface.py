@@ -194,10 +194,10 @@ class OsInterface:
         except ValueError:
             self.payables.save_workbook()
 
-        self.preserve_downloads_handler()
+        self.preserve_downloads_handler(end=True)
 
-    def preserve_downloads_handler(self) -> int:
-        if self.preserved_downloads == np.uint8(0):
+    def preserve_downloads_handler(self, end: bool=False) -> int:
+        if not end and self.preserved_downloads == np.uint8(0):
             print("Move downloads to temp folder? (y/n)")
             resp = input(">\t")
             if resp == "y":
@@ -1081,8 +1081,8 @@ class OsInterface:
             raise TypeError(f"Input was not a number: {input}")
 
 def debug_script():
-    instance = OsInterface("2025-08-31", True)
-    instance.make_wire_files()
+    instance = OsInterface(payables_date="2030-12-31", debug=True)
+    instance.add_invoices()
 
 def run_interface():
     OsInterface()
