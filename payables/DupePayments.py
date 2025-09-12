@@ -48,7 +48,12 @@ def get_n_months_payble_paths(
         dir_contents = os.listdir(payables_root + '/' + stem)
 
         # filter checks for items that fit the date pattern and are not equal to the current batch
-        folders = list(filter(lambda x: re.match(r'\d{4}-\d{2}-\d{2}', x) and x != payables_dt.strftime('%Y-%m-%d'), dir_contents))
+        folders = list(
+            filter(
+                lambda x: re.match(r'\d{4}-\d{2}-\d{2}', x) \
+                    and x != payables_dt.strftime('%Y-%m-%d'), dir_contents
+            )
+        )
 
         payables_folders.append([stem, folders])
     
