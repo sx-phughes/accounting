@@ -48,10 +48,6 @@ class OsInterface:
     # initialization #
     ##################
     def __init__(self, payables_date: str = None, debug: bool=False):
-        self.vendors = pd.read_excel(
-            "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx",
-            "Vendors",
-        )
         self.preserved_downloads = 0
 
         if payables_date is None:
@@ -109,6 +105,17 @@ class OsInterface:
     def payables(self, payables_wb: PayablesWorkbook):
         self._payables = payables_wb
 
+    @property
+    def vendors(self):
+        path = "/".join([
+            "C:/gdrive/Shared drives/accounting/patrick_data_files",
+            "ap/Vendors.xlsx"
+        ])
+        vendors = pd.read_excel(
+            io=path,
+            sheet_name="Vendors",
+        )
+        return vendors
 
     #######################
     # interface mechanics #
