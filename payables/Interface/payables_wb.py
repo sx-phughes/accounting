@@ -146,19 +146,6 @@ class PayablesWorkbook(pd.DataFrame):
     # class properties #
     ####################
     @property
-    def wb_path(self):
-        """Path to payables workbook"""
-        return self._wb_path
-    
-    @wb_path.setter
-    def wb_path(self, wb_path):
-        path = self.payables_path + self.stem + self.f_name
-        if wb_path == path:
-            self._wb_path = wb_path
-        else:
-            self._wb_path = path
-
-    @property
     def payables_date(self):
         return self._payables_date
 
@@ -191,6 +178,19 @@ class PayablesWorkbook(pd.DataFrame):
     @f_name.setter
     def f_name(self, f_name: str):
         self._f_name = f_name
+
+    @property
+    def wb_path(self):
+        """Path to payables workbook"""
+        return self._wb_path
+    
+    @wb_path.setter
+    def wb_path(self, wb_path):
+        path = self.payables_path + self.stem + self.f_name
+        if wb_path == path:
+            self._wb_path = wb_path
+        else:
+            self._wb_path = path
 
     ####################
     # helper functions #
@@ -369,3 +369,14 @@ class PayablesWorkbook(pd.DataFrame):
             "ACH Vendor Name",
         ]].copy(deep=True)
         return self.merge(right=vendors_small, how="left", on="Vendor")
+
+if __name__ == "__main__":
+    payables = PayablesWorkbook(date="2030-12-30")
+    payables.insert_invoice([
+        "Baycrest (IDB)",
+        "test",
+        np.float64(1000),
+        False,
+        "",
+        False
+    ])
