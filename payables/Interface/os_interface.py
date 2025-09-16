@@ -59,6 +59,7 @@ class OsInterface:
             self.payables = PayablesWorkbook(date=payables_date)
             self.main()
         
+
     ##################
     # date functions #
     ##################
@@ -116,6 +117,7 @@ class OsInterface:
             sheet_name="Vendors",
         )
         return vendors
+
 
     #######################
     # interface mechanics #
