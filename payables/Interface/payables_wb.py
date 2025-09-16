@@ -62,8 +62,8 @@ class PayablesWorkbook(pd.DataFrame):
         copy=None,
     ):
         if date:
+            self.stem = date
             self.payables_date = date
-            self.stem = self.payables_date
             self.wb_path = ''
 
         if data is not None:
