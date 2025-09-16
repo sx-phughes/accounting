@@ -55,17 +55,13 @@ class OsInterface:
         self.preserved_downloads = 0
 
         if payables_date is None:
-            self.date = self.ui_workbook_date()
-            self.payables = PayablesWorkbook(date=self.date)
-            self.main()
+            self.ui_workbook_date()
         else:
+            self.validate_date(payables_date)
+
+        if not debug:
             self.payables = PayablesWorkbook(date=payables_date)
-        
-        if debug:
-            self.date = payables_date
-            self.parse_date(payables_date)
-            # self.main()
-            
+            self.main()
         
     ##################
     # date functions #
@@ -73,15 +69,24 @@ class OsInterface:
     def ui_workbook_date(self):
         """User interface for getting payables date"""
         cls()
-        while True:
-            payables_date = input("Input Payables Workbook Date (yyyy-mm-dd)\n>\t")
-            if check_date(payables_date):
-                self.parse_date(payables_date)
-                break
-            else:
+        valid_date = False
+        while not valid_date:
+            payables_date = input(
+                "Input Payables Workbook Date (yyyy-mm-dd)\n>\t"
+            )
+            valid_date = self.validate_date(payables_date)
+            if not valid_date:
                 print("Invalid date, try again")
-        self.dt_date = datetime.strptime(payables_date, "%Y-%m-%d")
         return payables_date
+    
+    def validate_date(self, date: str) -> bool:
+        if check_date(date):
+            self.date = date
+            self.parse_date(date)
+            self.dt_date = datetime.strptime(date, "%Y-%m-%d")
+            return True
+        else:
+            return False
     
     def parse_date(self, date: str) -> None:
         """Parses date pieces from yyyy-mm-dd string and assigns pieces to properties"""
@@ -1072,16 +1077,18 @@ class OsInterface:
             raise TypeError(f"Input was not a number: {input}")
 
 def debug_script():
-    instance = OsInterface(payables_date="2030-12-31", debug=True)
-    inv = [
-        "Baycrest (IDB)",
-        "test",
-        np.float64(1000),
-        False,
-        "",
-        False
-    ]
-    instance.payables.insert_invoice(inv)
+    instance = OsInterface(payables_date="2030-12-31")
+    instance.main()
+    # instance = OsInterface()
+    # inv = [
+    #     "Baycrest (IDB)",
+    #     "test",
+    #     np.float64(1000),
+    #     False,
+    #     "",
+    #     False
+    # ]
+    # instance.payables.insert_invoice(inv)
 
 def run_interface():
     OsInterface()
