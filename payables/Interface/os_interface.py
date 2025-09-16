@@ -40,6 +40,8 @@ class OsInterface:
         "float64",
         "bool"
     ]
+    up_key = "k"
+    down_key = "j"
 
 
     ##################
@@ -230,20 +232,6 @@ class OsInterface:
         for file in files:
             shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
 
-    # def get_invoice_data(self):
-    #     """Retrieves invoice data from user.
-        
-    #     Returns False for a blank list, otherwise, returns user
-    #     inputs.
-    #     """
-
-    #     inputs = self.get_inputs(OsInterface.invoice_prompts)
-
-    #     if not is_blank_list(inputs):
-    #         return inputs
-    #     else:
-    #         return False
-
     def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
         """Management of receiving user input for a new invoice"""
         inputs = ["" for i in range(len(PayablesWorkbook.column_headers))]
@@ -332,27 +320,30 @@ class OsInterface:
         print(padded, end="")
         response = input_list[index]
 
-        if response != 0:
-            input_len = len(str(input_list[index]))
-            print(input_list[index], end='', flush=True)
+        if response:
+            input_len = len(str(response))
+            print(response, end='', flush=True)
+            # Erase from cursor to end of line
+            print("\033[0K", end='', flush=True)
+            # Move cursor to beginning of the response
             print(f"\033[{input_len}D", end='', flush=True)
+
 
         data = input()
 
         # Overwrite input_list[i] only if it's 0 or you're putting in a new val
-        if input_list[index] == 0:
-            input_list[index] = data
-        elif input_list[index] != 0 and data != '':
-            input_list[index] == data
-
-        if data == "k":
+        if data != self.up_key and data != self.down_key:
+            if not input_list[index]:
+                input_list[index] = data
+            elif input_list[index] and data != '':
+                input_list[index] = data
+            index += 1
+        elif data == self.up_key:
             index = self.up_arrow(index)
             print("", end="\r", flush=True)
-        elif data == "j":
+        elif data == self.down_key: 
             index = self.down_arrow(index, end)
             print("", end="\r")
-        else:
-            index += 1
 
         return index
 
@@ -1082,7 +1073,15 @@ class OsInterface:
 
 def debug_script():
     instance = OsInterface(payables_date="2030-12-31", debug=True)
-    instance.add_invoices()
+    inv = [
+        "Baycrest (IDB)",
+        "test",
+        np.float64(1000),
+        False,
+        "",
+        False
+    ]
+    instance.payables.insert_invoice(inv)
 
 def run_interface():
     OsInterface()
