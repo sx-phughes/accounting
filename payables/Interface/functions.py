@@ -5,24 +5,6 @@ import sys
 import os
 from typing import Any
 
-def cursor_up():
-    """Moves the cursor up one row after input."""
-
-    sys.stdout.flush()
-    # undo \n from entering input
-    print("\033[A", end='', flush=True)
-    # move up a line and to beginning
-    print("\033[1F", end='', flush=True)
-    # clear line
-    # print("\033[2K", end='', flush=True)
-
-def cursor_down():
-    """Moves the cursor down one row after input."""
-
-    sys.stdout.flush()
-    sys.stdout.flush()
-
-
 def cls():
     """Clears the terminal screen."""
 

@@ -17,6 +17,7 @@ sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
 # Package Imports
 from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
+from Interface.CursorFunc import *
 from nacha import NachaConstructor
 import DupePayments as DupePayments
 from Wires import WireFile, WirePayment
@@ -336,13 +337,7 @@ class OsInterface:
         response = input_list[index]
 
         if response:
-            input_len = len(str(response))
-            print(response, end='', flush=True)
-            # Erase from cursor to end of line
-            print("\033[0K", end='', flush=True)
-            # Move cursor to beginning of the response
-            print(f"\033[{input_len}D", end='', flush=True)
-
+            print_sugg_value(value=response)
 
         data = input()
 
@@ -353,15 +348,16 @@ class OsInterface:
             elif input_list[index] and data != '':
                 input_list[index] = data
             index += 1
+            clear_end_of_line_after_input(value=data)
         elif data == self.up_key:
             index = self.up_arrow(index)
-            print("", end="\r", flush=True)
+            print("\r", end="", flush=True)
         elif data == self.down_key: 
             index = self.down_arrow(index, end)
-            print("", end="\r")
-
+            print("\r", end="", flush=True)
+        
         return index
-
+    
     def add_invoice_vendor_check(
         self, inputs: list[str | int]) -> bool | list[str]:
         """Checks for valid vendor in user inputs. Recursively gets inputs if 
