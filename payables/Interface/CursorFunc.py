@@ -1,4 +1,6 @@
-import os
+import ctypes
+from ctypes import wintypes
+import re
 import sys
 
 def cursor_up():
@@ -35,3 +37,43 @@ def clear_end_of_line_after_input(value: str) -> None:
     print(f"\033[{20+data_len}C", end='', flush=True)
     print("\033[0K", end='', flush=True)
     print(f"\033[E", end='', flush=True)
+
+def get_cursor_pos() -> tuple[int, int]:
+    """Returns the cursor position in the terminal."""
+
+    old_stdin_mode = wintypes.DWORD()
+    old_stdout_mode = wintypes.DWORD()
+    kernel32 = ctypes.windll.kernel32
+    kernel32.GetConsoleMode(
+        kernel32.GetStdHandle(-10), ctypes.byref(old_stdin_mode)
+    )
+    kernel32.SetConsoleMode(kernel32.GetStdHandle(-10),0)
+    kernel32.GetConsoleMode(
+        kernel32.GetStdHandle(-11), ctypes.byref(old_stdout_mode)
+    )
+    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+    
+    try:
+        buff = ""
+        sys.stdout.write("\x1b[6n")
+        sys.stdout.flush()
+        while True:
+            buff += sys.stdin.read(1)
+            if buff[-1] == "R":
+                break
+    finally:
+        kernel32.SetConsoleMode(kernel32.GetStdHandle(-10), old_stdin_mode)
+        kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), old_stdout_mode)
+    
+    res = re.match(r"\x1b\[(?P<y>\d*);(?P<x>\d*)R", buff)
+    if res:
+        y = res.group("y")
+        x = res.group("x")
+        return (int(x), int(y))
+
+def better_input(prompt: str) -> str:
+    """Input that undoes the automatic enter after submitting the value."""
+
+    ret = input(prompt)
+    ret_len = len(ret)
+    
