@@ -1,18 +1,16 @@
 # Standard packages
 from datetime import datetime
 import os
+import sys
 import shutil
 import pandas as pd
 import numpy as np
 
+# Path adjustments
+sys.path.append("/".join([os.environ["HOMEPATH"], "accounting"]))
+
 # Package imports
-try:
-    from payables.Interface.functions import *
-except ModuleNotFoundError:
-    try:
-        from Interface.functions import *
-    except ModuleNotFoundError:
-        from functions import *
+from payables.Interface.functions import *
 
 
 def get_col_index(col_name: str) -> int:
@@ -23,8 +21,7 @@ def get_col_index(col_name: str) -> int:
         i = -1
     return i
 
-
-class PayablesWorkbook(pd.DataFrame):
+class PayablesWorkbook:
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"
     vendors_path = \
@@ -33,29 +30,13 @@ class PayablesWorkbook(pd.DataFrame):
     column_types = ["str", "str", "float64", "bool", "str", "bool"]
     column_defaults = ["", "", np.float64(0), False, "", False]
 
-    # for DataFrame constructor
-    _metadata = [
-        "wb_path",
-        "payables_date",
-        "stem",
-        "f_name",
-        "_payables_date",
-        "_stem",
-        "_f_name",
-        "_wb_path"
-    ]
-
-    @property
-    def _constructor(self):
-        return PayablesWorkbook
-
     ############################################################
     # initializer - handles reconstruction from pandas methods #
     ############################################################
     def __init__(
         self,
-        data: pd.DataFrame | None = None,
-        date=None,
+        data: pd.DataFrame | None= None,
+        date: str | datetime=None,
         index=None,
         columns=None,
         dtype=None,
@@ -71,7 +52,10 @@ class PayablesWorkbook(pd.DataFrame):
         else:
             input_data = self.initialize_from_date()
 
-        super().__init__(input_data, index, columns, dtype, copy)
+        self.data = input_data
+
+    def __repr__(self):
+        return self.data
 
     def initialize_from_date(self):
         """Initialize Payables Workbook from a given date string
@@ -145,6 +129,7 @@ class PayablesWorkbook(pd.DataFrame):
     ####################
     # class properties #
     ####################
+
     @property
     def payables_date(self):
         return self._payables_date
@@ -225,7 +210,7 @@ class PayablesWorkbook(pd.DataFrame):
 
     def insert_invoice(self, invoice_data: list):
         """Add an invoice to the bottom of the workbook"""
-        self.loc[len(self.index)] = invoice_data
+        self.data.loc[len(self.data.index)] = invoice_data
 
         self.move_files()
         self.save_workbook()
@@ -255,7 +240,7 @@ class PayablesWorkbook(pd.DataFrame):
         df.to_excel(excel_writer=self.wb_path, sheet_name="Invoices", index=False)
 
     def save_workbook(self):
-        self.to_excel(
+        self.data.to_excel(
             excel_writer=self.wb_path, 
             sheet_name="Invoices",
             index=False
@@ -324,7 +309,7 @@ class PayablesWorkbook(pd.DataFrame):
 
     def get_entered_data(self):
         """Get input data for most recent invoice"""
-        row = self.loc[len(self.index) - 1]
+        row = self.data.loc[len(self.data.index) - 1]
         vendor = self.get_vendor(row)
         invoice_num = row["Invoice #"]
         clean_invoice = self.clean_invoice_num(invoice_num)
@@ -356,7 +341,7 @@ class PayablesWorkbook(pd.DataFrame):
                                     "ACH ABA": str, 
                                     "ACH Account Number": str
                                 })
-        vendors_small = vendors[[
+        cols_needed = [
             "Vendor",
             "Company",
             "Expense Category",
@@ -367,16 +352,17 @@ class PayablesWorkbook(pd.DataFrame):
             "ACH ABA",
             "ACH Account Number",
             "ACH Vendor Name",
-        ]].copy(deep=True)
-        return self.merge(right=vendors_small, how="left", on="Vendor")
+        ]
+        vendors_small = vendors[cols_needed].copy(deep=True)
+        return self.data.merge(right=vendors_small, how="left", on="Vendor")
 
 if __name__ == "__main__":
-    payables = PayablesWorkbook(date="2030-12-30")
-    payables.insert_invoice([
-        "Baycrest (IDB)",
-        "test",
-        np.float64(1000),
-        False,
-        "",
-        False
-    ])
+    payables = PayablesWorkbook(date="2030-12-31")
+    # payables.insert_invoice([
+    #     "Baycrest (IDB)",
+    #     "test",
+    #     np.float64(1000),
+    #     False,
+    #     "",
+    #     False
+    # ])

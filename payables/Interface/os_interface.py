@@ -9,20 +9,20 @@ import shutil
 from datetime import datetime
 import xlsxwriter
 
-# Package Imports
+# Path updates for package imports
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
+
+# Package Imports
 from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
-import nacha
-from nacha import NachaConstructor, NachaFile, NachaLine, NachaMain
+from nacha import NachaConstructor
 import DupePayments as DupePayments
 from Wires import WireFile, WirePayment
 
 
 class OsInterface:
-
     ###################
     # Class variables #
     ###################
@@ -51,20 +51,22 @@ class OsInterface:
         self.preserved_downloads = 0
 
         if payables_date is None:
-            self.ui_workbook_date()
+            self._ui_workbook_date()
         else:
-            self.validate_date(payables_date)
+            self._validate_date(payables_date)
+
+        self.payables = PayablesWorkbook(date=payables_date)
 
         if not debug:
-            self.payables = PayablesWorkbook(date=payables_date)
             self.main()
         
 
     ##################
     # date functions #
     ##################
-    def ui_workbook_date(self):
+    def _ui_workbook_date(self) -> None:
         """User interface for getting payables date"""
+
         cls()
         valid_date = False
         while not valid_date:
@@ -74,18 +76,17 @@ class OsInterface:
             valid_date = self.validate_date(payables_date)
             if not valid_date:
                 print("Invalid date, try again")
-        return payables_date
     
-    def validate_date(self, date: str) -> bool:
+    def _validate_date(self, date: str) -> bool:
         if check_date(date):
             self.date = date
-            self.parse_date(date)
+            self._parse_date(date)
             self.dt_date = datetime.strptime(date, "%Y-%m-%d")
             return True
         else:
             return False
     
-    def parse_date(self, date: str) -> None:
+    def _parse_date(self, date: str) -> None:
         """Parses date pieces from yyyy-mm-dd string and assigns pieces to properties"""
         pattern = r"(\d{4})-(\d{2})-(\d{2})"
         re_match = re.match(pattern, date)
@@ -156,7 +157,7 @@ class OsInterface:
     def print_main_menu_status(self) -> None:
         print_list = [
             f"Current Workbook {self.date}",
-            f"Total # of invoices: {len(self.payables.index)!s}",
+            f"Total # of invoices: {len(self.payables.data.index)!s}",
             "Company Totals:"
         ]
         with_vendors = self.payables.merge_vendors()
@@ -560,7 +561,7 @@ class OsInterface:
     def filter_payments_on_type(self, type: str) -> pd.DataFrame:
         """Returns a table of only invoices paid via ACH."""
 
-        no_cc_pmts = self.payables.loc[~(self.payables["CC"])]
+        no_cc_pmts = self.payables.data.loc[~(self.payables.data["CC"])]
         payables_with_deets = no_cc_pmts.merge_vendors()
         filtered_payments = payables_with_deets.loc[
             payables_with_deets["Payment Type"] == type
@@ -751,7 +752,7 @@ class OsInterface:
     ######################
     def view_all_invoices(self) -> None:
         cls()
-        self.view_invoices(self.payables)
+        self.view_invoices(self.payables.data)
 
     def view_idb_invoices(self) -> None:
         # get table after merge with vendors
@@ -835,7 +836,7 @@ class OsInterface:
             return 0
 
     def print_invoice_details(self, index: int) -> None:
-        invoice_data = self.payables.iloc[index]
+        invoice_data = self.payables.data.iloc[index]
         lines = self.make_invoice_lines(invoice_data)
         for line in lines:
             print(line)
@@ -852,8 +853,8 @@ class OsInterface:
         print("To return to invoice view, hit enter on a blank line")
     
     def open_invoice(self, index: int) -> None:
-        vendor = self.payables.loc[index, "Vendor"]
-        invoice_no = self.payables.loc[index, "Invoice #"]
+        vendor = self.payables.data.loc[index, "Vendor"]
+        invoice_no = self.payables.data.loc[index, "Invoice #"]
         file_info = self.get_invoice_paths(vendor, invoice_no)
 
         print("Select file to open:")
@@ -934,10 +935,10 @@ class OsInterface:
                 input()
                 break
 
-            col_index = self.payables.columns.tolist().index(col)
+            col_index = self.payables.data.columns.tolist().index(col)
             val_type = self.payables.column_types[col_index]
             typed_val = set_type(val, val_type)
-            self.payables.loc[index, col] = typed_val
+            self.payables.data.loc[index, col] = typed_val
 
         self.payables.save_workbook()
     
@@ -955,7 +956,7 @@ class OsInterface:
         return inputs_valid
 
     def check_col(self, col: str) -> bool:
-        return (col in self.payables.columns)
+        return (col in self.payables.data.columns)
 
     def make_invoice_lines(self, data: pd.Series) -> list[str]:
         """Creates a list of formatted lines to print as invoice details
@@ -966,7 +967,7 @@ class OsInterface:
         Returns:
             list[str]: list of lines to print to screen
         """
-        fields = self.payables.columns.values.tolist()
+        fields = self.payables.data.columns.values.tolist()
 
         def pad_field(string: str):
             pad_len = 20
@@ -1054,20 +1055,20 @@ class OsInterface:
             self.perform_edit(index)
 
     def perform_edit(self, index: int) -> None:
-        data = self.payables.loc[index].copy()
+        data = self.payables.data.loc[index].copy()
         edit_prompts = self.make_edit_prompts(data)
         inputs = self.get_input(edit_prompts)
-        self.payables.loc[index] = inputs
+        self.payables.data.loc[index] = inputs
 
     def make_edit_prompts(self, new_data) -> None:
-        table_cols = self.payables.columns.to_list()
+        table_cols = self.payables.data.columns.to_list()
         no_nans = self.remove_nans(new_data)
         prompts = [col + ": " + no_nans[col] for col in table_cols]
         return prompts
 
     def remove_nans(self, new_data) -> dict[str, str]:
         no_nans = {}
-        for col in self.payables.columns.to_list():
+        for col in self.payables.data.columns.to_list():
             val = self.substitue_nan(new_data[col], "")
             updater = {col: val}
             no_nans.update(updater)
