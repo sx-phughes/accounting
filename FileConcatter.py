@@ -7,16 +7,19 @@ from zipfile import ZipFile
 
 downloads = "/".join([os.environ["HOMEPATH"], "Downloads"])
 
+
 def get_abn_file_with_pattern(pattern: str, date: str) -> pd.DataFrame:
     """Get abn file with a specific pattern. Pattern must be a formattable
     string with argument to substitute date."""
 
     formatted = pattern.format(date=date)
-    path = "/".join([
-        "C:/gdrive/Shared drives/Clearing Archive/ABN_Archive",
-        date,
-        formatted
-    ])
+    path = "/".join(
+        [
+            "C:/gdrive/Shared drives/Clearing Archive/ABN_Archive",
+            date,
+            formatted,
+        ]
+    )
     ext = get_extension(formatted)
     if ext == "csv":
         data = pd.read_csv(path, low_memory=False)
@@ -31,19 +34,21 @@ def get_abn_file_with_pattern(pattern: str, date: str) -> pd.DataFrame:
         return None
 
     return data
-        
+
+
 def get_extension(file_name: str) -> str:
-    """Gets extension from a given file type"""
+    """Gets extension from a given file"""
 
     split_name = file_name.split(".")
     extension = split_name[-1]
     return extension
 
+
 def generate_dates(date_list: list, year: int, month: int) -> None:
     """Generates the dates for all the days in a given month"""
 
     one_day = timedelta(days=1)
-    
+
     date = datetime(year, month, 1)
     for i in range(0, 32):
         if date.month == month:
@@ -51,14 +56,17 @@ def generate_dates(date_list: list, year: int, month: int) -> None:
         else:
             break
         date += one_day
-    
-def get_monthly_files(pattern: str, 
-                     year: int, month: int, 
-                     filter_function: Callable[[pd.DataFrame], pd.DataFrame]
-                     ) -> list[pd.DataFrame]:
+
+
+def get_monthly_files(
+    pattern: str,
+    year: int,
+    month: int,
+    filter_function: Callable[[pd.DataFrame], pd.DataFrame],
+) -> list[pd.DataFrame]:
     """Returns a monthly concatted file of data from daily files fitting
     the given pattern and filtered using the filter function.
-    
+
     Pattern: a string with a formatting field with parameter 'date'
     Year, month: int
     filter_function: a function that takes a dataframe and returns a dataframe
@@ -78,19 +86,20 @@ def get_monthly_files(pattern: str,
             files.append(data)
         except:
             continue
-    
+
     return files
 
-def filter_data_frame_by_col(df: pd.DataFrame, col: str,
-                             val: str, contains: bool=False,
-                             **kwargs) -> pd.DataFrame:
+
+def filter_data_frame_by_col(
+    df: pd.DataFrame, col: str, val: str, contains: bool = False, **kwargs
+) -> pd.DataFrame:
     """Filters a dataframe by col == val. If contains is true, filters by
     str.contains instead. Additional flags by kwargs"""
 
     filtered = df.loc[df[col] == val]
     if contains:
-        case=False
-        regex=True
+        case = False
+        regex = True
         if kwargs:
             case = kwargs["case"]
             regex = kwargs["regex"]
@@ -98,13 +107,15 @@ def filter_data_frame_by_col(df: pd.DataFrame, col: str,
 
     return filtered.copy(deep=True)
 
+
 def filter_cash_movement(df: pd.DataFrame) -> pd.DataFrame:
-    """Filters the cash_movement file to only rows where Cash Title contains 
+    """Filters the cash_movement file to only rows where Cash Title contains
     'SEC'"""
     col = "Cash Title"
     val = "SEC"
     data = filter_data_frame_by_col(df=df, col=col, val=val, contains=True)
     return data
+
 
 def concat_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
     """Concatenates a list of DataFrames into one DataFrame"""
@@ -116,6 +127,7 @@ def concat_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
         combined = pd.concat([combined, df_list[file_no]])
         combined = combined.reset_index(drop=True)
     return combined
+
 
 if __name__ == "__main__":
     pattern = "{date}-2518-C2518-Cash_Movement.csv.zip"
