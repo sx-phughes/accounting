@@ -35,20 +35,14 @@ class OsInterface:
         "Invoice Amount:",
         "Credit card:",
     ]
-    prompt_types = [
-        "str",
-        "str",
-        "float64",
-        "bool"
-    ]
+    prompt_types = ["str", "str", "float64", "bool"]
     up_key = "k"
     down_key = "j"
-
 
     ##################
     # initialization #
     ##################
-    def __init__(self, payables_date: str = None, debug: bool=False):
+    def __init__(self, payables_date: str = None, debug: bool = False):
         self.preserved_downloads = 0
 
         if payables_date is None:
@@ -60,13 +54,12 @@ class OsInterface:
 
         if not debug:
             self.main()
-        
 
     ##################
     # date functions #
     ##################
     def _ui_workbook_date(self) -> None:
-        """User interface for getting payables date"""
+        """User interface function for getting payables date"""
 
         cls()
         valid_date = False
@@ -77,7 +70,7 @@ class OsInterface:
             valid_date = self.validate_date(payables_date)
             if not valid_date:
                 print("Invalid date, try again")
-    
+
     def _validate_date(self, date: str) -> bool:
         if check_date(date):
             self.date = date
@@ -86,16 +79,17 @@ class OsInterface:
             return True
         else:
             return False
-    
+
     def _parse_date(self, date: str) -> None:
         """Parses date pieces from yyyy-mm-dd string and assigns pieces to properties"""
         pattern = r"(\d{4})-(\d{2})-(\d{2})"
         re_match = re.match(pattern, date)
         if re_match is None:
-            raise ValueError(f"Date string '{date}' improperly formatted; must be yyyy-mm-dd")
+            raise ValueError(
+                f"Date string '{date}' improperly formatted; must be yyyy-mm-dd"
+            )
         date_pieces = re_match.groups()
         self.year, self.month, self.day = date_pieces[0:3]
-
 
     ##############
     # properties #
@@ -110,16 +104,17 @@ class OsInterface:
 
     @property
     def vendors(self):
-        path = "/".join([
-            "C:/gdrive/Shared drives/accounting/patrick_data_files",
-            "ap/Vendors.xlsx"
-        ])
+        path = "/".join(
+            [
+                "C:/gdrive/Shared drives/accounting/patrick_data_files",
+                "ap/Vendors.xlsx",
+            ]
+        )
         vendors = pd.read_excel(
             io=path,
             sheet_name="Vendors",
         )
         return vendors
-
 
     #######################
     # interface mechanics #
@@ -149,24 +144,26 @@ class OsInterface:
                 break
             else:
                 options[selected][1]()
-    
+
     def switch_books(self) -> None:
         self.payables.save_workbook()
         self.date = self.ui_workbook_date()
         self.payables = PayablesWorkbook(date=self.date)
-        
+
     def print_main_menu_status(self) -> None:
         print_list = [
             f"Current Workbook {self.date}",
             f"Total # of invoices: {len(self.payables.data.index)!s}",
-            "Company Totals:"
+            "Company Totals:",
         ]
         with_vendors = self.payables.merge_vendors()
-        for co in with_vendors['Company'].unique():
-            co_total_invoiced = with_vendors.loc[with_vendors["Company"] == co, 'Amount'].sum()
+        for co in with_vendors["Company"].unique():
+            co_total_invoiced = with_vendors.loc[
+                with_vendors["Company"] == co, "Amount"
+            ].sum()
             co_string = f"\t{co:15}: ${co_total_invoiced:,.2f}"
             print_list.append(co_string)
-        
+
         for line in print_list:
             print(line)
         print("\n")
@@ -183,7 +180,6 @@ class OsInterface:
         for i in range(len(options.keys())):
             print(f"{str(i + 1)}: {options[list(options.keys())[i]][0]}")
 
-
     ################
     # Add invoices #
     ################
@@ -195,7 +191,9 @@ class OsInterface:
                 cls()
 
                 try:
-                    invoice_data = self.get_inputs(prompts=self.invoice_prompts)
+                    invoice_data = self.get_inputs(
+                        prompts=self.invoice_prompts
+                    )
                 except EOFError:
                     invoice_data = [0]
                 if is_blank_list(data=invoice_data):
@@ -214,7 +212,7 @@ class OsInterface:
 
         self.preserve_downloads_handler(end=True)
 
-    def preserve_downloads_handler(self, end: bool=False) -> int:
+    def preserve_downloads_handler(self, end: bool = False) -> int:
         if not end and self.preserved_downloads == np.uint8(0):
             print("Move downloads to temp folder? (y/n)")
             resp = input(">\t")
@@ -224,7 +222,7 @@ class OsInterface:
         elif self.preserved_downloads == np.uint8(1):
             self.restore_downloads()
             self.preserved_downloads = np.uint8(0)
-        
+
     def preserve_downloads(self) -> None:
         """Preserves downloads contents by moving to temp folder"""
 
@@ -253,7 +251,7 @@ class OsInterface:
         inputs = ["" for i in range(len(PayablesWorkbook.column_headers))]
         for i in range(len(prompts)):
             inputs[i] = 0
-        
+
         if kwargs:
             keys = list(kwargs.keys())
             for i in range(len(keys)):
@@ -264,7 +262,7 @@ class OsInterface:
         i = 0
         while 0 in inputs:
             i = self.get_single_user_input(prompts, inputs, i)
-        
+
         self.set_input_types(inputs)
 
         if self.add_invoice_vendor_check(inputs) or is_blank_list(inputs):
@@ -278,38 +276,37 @@ class OsInterface:
                 invoice_amt=inputs[2],
             )
             return inputs
-        
+
     def set_input_types(
-        self, inputs: list[str | int]) -> list[str | int | bool]:
+        self, inputs: list[str | int]
+    ) -> list[str | int | bool]:
         """Types str input values to table column d-types"""
 
-        zipped_inputs_and_types = zip(
-            inputs, OsInterface.prompt_types
-        )
+        zipped_inputs_and_types = zip(inputs, OsInterface.prompt_types)
         self.fix_cc_input(inputs)
 
         index = 0
         for val, val_type in zipped_inputs_and_types:
             inputs[index] = set_type(val, val_type)
             index += 1
-            
+
     def fix_cc_input(self, inputs: list[str | int]) -> list[str | int]:
         """Standardizes cc response to 'y' or ''."""
 
         cc_index = self.get_input_index("Credit card")
         cc_input = inputs[cc_index]
         inputs[cc_index] = self.swap_cc_input(cc_input)
-        
+
     def swap_cc_input(self, cc_val: str) -> str:
         """Returns 'y' if user response was 'y', else returns ''"""
 
-        new_val = '' 
+        new_val = ""
         if cc_val == "y":
             new_val = cc_val
         return new_val
-    
+
     def get_input_index(self, col: str) -> int:
-        """Gets the index of the prompt corresponding to the desired column 
+        """Gets the index of the prompt corresponding to the desired column
         header."""
 
         with_stub = col + ":"
@@ -345,22 +342,23 @@ class OsInterface:
         if data != self.up_key and data != self.down_key:
             if not input_list[index]:
                 input_list[index] = data
-            elif input_list[index] and data != '':
+            elif input_list[index] and data != "":
                 input_list[index] = data
             index += 1
             clear_end_of_line_after_input(value=data)
         elif data == self.up_key:
             index = self.up_arrow(index)
             print("\r", end="", flush=True)
-        elif data == self.down_key: 
+        elif data == self.down_key:
             index = self.down_arrow(index, end)
             print("\r", end="", flush=True)
-        
+
         return index
-    
+
     def add_invoice_vendor_check(
-        self, inputs: list[str | int]) -> bool | list[str]:
-        """Checks for valid vendor in user inputs. Recursively gets inputs if 
+        self, inputs: list[str | int]
+    ) -> bool | list[str]:
+        """Checks for valid vendor in user inputs. Recursively gets inputs if
         invalid."""
 
         vendor_name = inputs[0]
@@ -369,7 +367,7 @@ class OsInterface:
             return True
         else:
             return False
-            
+
     def validate_vendor(self, input: str | int) -> bool:
         """Validates presence of inputs in Vendor list"""
 
@@ -397,18 +395,15 @@ class OsInterface:
         split_vendor = vendor.split(" ")
         possibilities = self.vendors.loc[
             self.vendors["Vendor"].str.contains(
-                pat=split_vendor[0],
-                case=False,
-                na=""
+                pat=split_vendor[0], case=False, na=""
             )
         ]
         return possibilities["Vendor"].tolist()
-        
+
     def set_paid_status(self, inputs: list, status: bool) -> None:
         paid_status_index = get_col_index("Paid")
         inputs[paid_status_index] = status
 
-        
     ####################
     # Input Navigation #
     ####################
@@ -421,7 +416,7 @@ class OsInterface:
         return index
 
     def down_arrow(self, index: int, end_index: int) -> int:
-        """Navigates cursor down one line to a max line end_index. Returns 
+        """Navigates cursor down one line to a max line end_index. Returns
         resulting value."""
 
         if index <= end_index:
@@ -429,7 +424,7 @@ class OsInterface:
             cursor_down()
             # print('', end='\r', flush=True)
         return index
-    
+
     ######################
     # Create NACHA files #
     ######################
@@ -452,54 +447,50 @@ class OsInterface:
 
     def check_for_duplicate_payments(self):
         """Checks for duplicate payments in current payables batch."""
-        
+
         dupes = DupePayments.search_for_dupe_payments(
-            self.date,
-            4, 
-            "C:/gdrive/My Drive/dupe_pmts"
+            self.date, 4, "C:/gdrive/My Drive/dupe_pmts"
         )
         if len(dupes.index) > 0:
             print("Dupe payments present; please correct and rerun payables.")
             print("Hit enter to return")
             input()
             raise ValueError("Duplicate invoices present")
-        
-    def get_nacha_constructor(self, 
-        value_date: str):
+
+    def get_nacha_constructor(self, value_date: str):
         """Create nacha file constructor object."""
-        
+
         ach_payments = self.filter_payments_on_type("ACH")
         debug_bool = self.ask_for_debug()
         nacha_file = NachaConstructor.NachaConstructor(
-            ach_payments,
-            value_date,
-            debug_bool)
-        
+            ach_payments, value_date, debug_bool
+        )
+
         return nacha_file
-    
+
     def ask_for_debug(self) -> bool:
         debug_yn = input("\nPrint debug information? (y/n)\n>\t")
         debug_bool = False
         if debug_yn == "y":
             debug_bool = True
         return debug_bool
-    
-    def write_payment_file(self, 
-                           company_data,
-                           value_date: str, 
-                           company_name: str) -> None:
+
+    def write_payment_file(
+        self, company_data, value_date: str, company_name: str
+    ) -> None:
         """Writes NACHA files to Downloads on disk"""
 
         with open(
-            file="/".join([
-                os.environ["HOMEPATH"].replace("\\","/"),
-                "Downloads",
-                f"{value_date}_ACHS_{company_name}.txt"
-            ]),
-            mode="w"
+            file="/".join(
+                [
+                    os.environ["HOMEPATH"].replace("\\", "/"),
+                    "Downloads",
+                    f"{value_date}_ACHS_{company_name}.txt",
+                ]
+            ),
+            mode="w",
         ) as file:
             file.write(company_data.__str__())
-    
 
     #############################
     # Create Wire Payment Files #
@@ -515,10 +506,14 @@ class OsInterface:
 
         file = WireFile.WireFile(payments)
         f_name = " ".join([self.date, "Wire Payments"])
-        file.write_file("/".join([os.environ["HOMEPATH"], "Downloads"]), f_name)
-        
-    def get_vendor_objs(self, wires: pd.DataFrame) -> dict[str, WirePayment.Vendor]:
-        """Returns a dict mapping vendor names to their corresponding vendor 
+        file.write_file(
+            "/".join([os.environ["HOMEPATH"], "Downloads"]), f_name
+        )
+
+    def get_vendor_objs(
+        self, wires: pd.DataFrame
+    ) -> dict[str, WirePayment.Vendor]:
+        """Returns a dict mapping vendor names to their corresponding vendor
         object."""
 
         unique_vendors = wires["Vendor"].unique()
@@ -527,11 +522,11 @@ class OsInterface:
             vendor_obj = WirePayment.Vendor(vendor)
             vendor_dict.update({vendor: vendor_obj})
         return vendor_dict
-    
-    def make_payment_objs(self,
-                          wires: pd.DataFrame,
-                          vendors: dict[str, WirePayment.Vendor]) -> list[WirePayment.WirePayment]:
-        """Returns a tuple of wire payment objects for use in a WireFile 
+
+    def make_payment_objs(
+        self, wires: pd.DataFrame, vendors: dict[str, WirePayment.Vendor]
+    ) -> list[WirePayment.WirePayment]:
+        """Returns a tuple of wire payment objects for use in a WireFile
         object"""
         payments = []
         dt_wire_vd = datetime.strptime(self.wire_vd, "%y%m%d")
@@ -546,7 +541,7 @@ class OsInterface:
                 value_date=dt_wire_vd,
                 vendor=vendor_ob,
                 details=row["Invoice #"],
-                template=True
+                template=True,
             )
             payments.append(new_payment)
         return payments
@@ -573,7 +568,7 @@ class OsInterface:
         return vd_str
 
     ####################################
-    # Create Summary Workbook for Joan #   
+    # Create Summary Workbook for Joan #
     ####################################
     def make_summary_workbook(self) -> None:
         """Write invoice summary workbook to disk"""
@@ -586,9 +581,9 @@ class OsInterface:
         #      to make wires easier to input
 
         with pd.ExcelWriter(
-            os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx", 
-            "xlsxwriter", 
-            date_format="%Y-%m-%d"
+            os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx",
+            "xlsxwriter",
+            date_format="%Y-%m-%d",
         ) as writer:
             workbook: xlsxwriter.workbook.Workbook = writer.book
 
@@ -598,109 +593,102 @@ class OsInterface:
             bold_with_border = workbook.add_format({"bold": True})
             bold_with_border.set_border(1)
             decimal = workbook.add_format({"num_format": "#,##0.00"})
-            
+
             self.write_summary_sheet(writer, workbook)
             self.write_wire_setup_sheet(writer, workbook)
             self.write_invoice_sheet(writer, workbook)
 
-    def write_summary_sheet(self,
-                            writer: pd.ExcelWriter,
-                            workbook: xlsxwriter.Workbook) -> None:
+    def write_summary_sheet(
+        self, writer: pd.ExcelWriter, workbook: xlsxwriter.Workbook
+    ) -> None:
         """Write the summary sheet to file."""
 
         summary_tables = self.get_summary_tables()
         summary_sheet = self.create_summarypage(workbook)
         write_col = 0
         for table in summary_tables:
-            table.to_excel(excel_writer=writer, 
-                           sheet_name="Main Summary", 
-                           startcol=write_col, 
-                           startrow=2)
+            table.to_excel(
+                excel_writer=writer,
+                sheet_name="Main Summary",
+                startcol=write_col,
+                startrow=2,
+            )
             # Set table first column width to 30
-            summary_sheet.set_column(first_col=write_col,
-                                     last_col=write_col,
-                                     width=30)
+            summary_sheet.set_column(
+                first_col=write_col, last_col=write_col, width=30
+            )
             # Set table second col width 20, num format with $
-            summary_sheet.set_column(first_col=write_col+1,
-                                     last_col=write_col+1,
-                                     width=20,
-                                     cell_format=money)
+            summary_sheet.set_column(
+                first_col=write_col + 1,
+                last_col=write_col + 1,
+                width=20,
+                cell_format=money,
+            )
             write_col += 3
-        
-    def write_invoice_sheet(self,
-                            writer: pd.DataFrame,
-                            workbook: xlsxwriter.Workbook) -> None:
+
+    def write_invoice_sheet(
+        self, writer: pd.DataFrame, workbook: xlsxwriter.Workbook
+    ) -> None:
         invoice_sheet = workbook.add_worksheet("Invoices")
         invoices = self.get_invoice_table()
         invoices.to_excel(excel_writer=writer, sheet_name="Invoices")
 
         invoice_sheet.set_row(row=0, cell_format=bold_with_border)
         num_cols = len(invoices.columns)
-        invoice_sheet.set_column(first_col=1, last_col=num_cols-1, width=30)
-        invoice_sheet.set_column(first_col=num_cols,
-                                 last_col=num_cols,
-                                 width=20,
-                                 cell_format=money)
-            
-    def write_wire_setup_sheet(self, 
-                               writer: pd.ExcelWriter,
-                               workbook: xlsxwriter.Workbook) -> None:
+        invoice_sheet.set_column(first_col=1, last_col=num_cols - 1, width=30)
+        invoice_sheet.set_column(
+            first_col=num_cols, last_col=num_cols, width=20, cell_format=money
+        )
+
+    def write_wire_setup_sheet(
+        self, writer: pd.ExcelWriter, workbook: xlsxwriter.Workbook
+    ) -> None:
         wire_sheet = workbook.add_worksheet("Wire Setup")
         wires = self.get_wire_table()
         wires.to_excel(excel_writer=writer, sheet_name="Wire Setup")
-        wire_sheet.set_column(first_col=0,
-                              last_col=0,
-                              width=30)
-        wire_sheet.set_column(first_col=1,
-                              last_col=1,
-                              width=20,
-                              cell_format=decimal)
-        
+        wire_sheet.set_column(first_col=0, last_col=0, width=30)
+        wire_sheet.set_column(
+            first_col=1, last_col=1, width=20, cell_format=decimal
+        )
+
     def get_invoice_table(self) -> pd.DataFrame:
         data = self.payables.merge_vendors()
         cols = [
-            'Vendor',
-            'Invoice #',
-            'Company',
-            'Expense Category',
-            'Approver',
-            'Payment Type',
-            'Amount'
+            "Vendor",
+            "Invoice #",
+            "Company",
+            "Expense Category",
+            "Approver",
+            "Payment Type",
+            "Amount",
         ]
         selected_cols = data[cols].copy(deep=True)
         return selected_cols
-        
+
     def create_summarypage(
-        self,
-        workbook: xlsxwriter.workbook.Workbook
+        self, workbook: xlsxwriter.workbook.Workbook
     ) -> xlsxwriter.workbook.Worksheet:
         summary_sheet = workbook.add_worksheet("Main Summary")
-        summary_sheet.write(0,0,f"Payables Summary: {self.date}")
+        summary_sheet.write(0, 0, f"Payables Summary: {self.date}")
         return summary_sheet
-        
+
     def get_summary_tables(self) -> tuple[pd.DataFrame]:
         """Get summary tables for the main summary page of the workbook."""
 
         merged_vendors = self.payables.merge_vendors()
         by_vendor = merged_vendors.pivot_table(
-            values="Amount", 
+            values="Amount",
             index="QB Mapping",
             aggfunc="sum",
         ).sort_values("Amount", ascending=False)
         by_approver = merged_vendors.pivot_table(
-            values="Amount",
-            index="Approver",
-            aggfunc="sum"
+            values="Amount", index="Approver", aggfunc="sum"
         )
         by_expense_cat = merged_vendors.pivot_table(
-            values="Amount",
-            index="Expense Category",
-            aggfunc="sum"
+            values="Amount", index="Expense Category", aggfunc="sum"
         )
         by_company = merged_vendors.pivot_table(
-            values="Amount",
-            index="Company",
-            aggfunc="sum"
+            values="Amount", index="Company", aggfunc="sum"
         )
         summary_tables = (by_vendor, by_approver, by_expense_cat, by_company)
 
@@ -708,40 +696,35 @@ class OsInterface:
             table.loc["Total", "Amount"] = table["Amount"].sum()
 
         return summary_tables
-        
+
     def get_wire_table(self) -> pd.DataFrame:
         with_deets = self.payables.merge_vendors()
         wire_mask = with_deets["Payment Type"] == "Wire"
         wires = with_deets.loc[wire_mask].copy(deep=True)
         by_vendor_wires = wires.pivot_table(
-            values="Amount",
-            index="Vendor",
-            aggfunc="sum"
+            values="Amount", index="Vendor", aggfunc="sum"
         )
 
         invoices_by_vendor_wires = self.get_wire_invoices_by_vendor(wires)
         by_vendor_wires_merged = by_vendor_wires.merge(
-            right=invoices_by_vendor_wires,
-            how="left",
-            on="Vendor"
+            right=invoices_by_vendor_wires, how="left", on="Vendor"
         )
         return by_vendor_wires_merged
-    
+
     def get_wire_invoices_by_vendor(self, wires: pd.DataFrame) -> pd.DataFrame:
         unique_vendors = wires["Vendor"].unique()
         unique_vendors.sort()
-        wire_invoices_by_vendor = pd.DataFrame(index=unique_vendors,
-                                               columns=["Invoices"])
+        wire_invoices_by_vendor = pd.DataFrame(
+            index=unique_vendors, columns=["Invoices"]
+        )
         wire_invoices_by_vendor = wire_invoices_by_vendor.rename_axis("Vendor")
         # print(wire_invoices_by_vendor)
         for vendor in unique_vendors:
             vendor_invoices = wires.loc[wires.index == vendor, "Invoice #"]
             str_vendor_invoices = ", ".join(vendor_invoices)
             mask = wire_invoices_by_vendor.index == vendor
-            wire_invoices_by_vendor.loc[mask, "Invoices"] = \
-                                                            str_vendor_invoices
+            wire_invoices_by_vendor.loc[mask, "Invoices"] = str_vendor_invoices
         return wire_invoices_by_vendor
-
 
     ######################
     # Invoice management #
@@ -778,16 +761,17 @@ class OsInterface:
                 self.filter_df(data, "Vendor", response)
             elif re.search(r"export", response, re.IGNORECASE):
                 match = re.search(r"export:?", response, re.IGNORECASE)
-                f_name = '.'.join([
-                    response.replace(match.group(), "").strip(),
-                    'xlsx'
-                ])
+                f_name = ".".join(
+                    [response.replace(match.group(), "").strip(), "xlsx"]
+                )
                 print(f_name)
-                path = '/'.join([os.environ["HOMEPATH"], "Downloads", f_name])
-                data.to_excel(excel_writer=path,
-                              sheet_name="Export",
-                              index=False,
-                              na_rep="")
+                path = "/".join([os.environ["HOMEPATH"], "Downloads", f_name])
+                data.to_excel(
+                    excel_writer=path,
+                    sheet_name="Export",
+                    index=False,
+                    na_rep="",
+                )
                 print("Data export success. File in downloads.")
                 print("Enter to continue.")
                 input()
@@ -814,9 +798,10 @@ class OsInterface:
                 break
 
             self.payables.save_workbook()
-    
+
     def handle_invoice_details_input(
-        self, index: int, match: re.Match| None, update: str) -> int:
+        self, index: int, match: re.Match | None, update: str
+    ) -> int:
         if match:
             groups = match.groups()
             self.update_values(index, groups)
@@ -836,18 +821,16 @@ class OsInterface:
         lines = self.make_invoice_lines(invoice_data)
         for line in lines:
             print(line)
-    
+
     def print_details_directions(self) -> None:
         print("\n\n")
 
         print("To remove an invoice, type delete, then enter\n")
         print("To open an invoice, type open, then enter\n")
         print("To update a value, type [field]: [new value]")
-        print(
-            "For multiple fields, separate field-value pairs with a comma\n"
-        )
+        print("For multiple fields, separate field-value pairs with a comma\n")
         print("To return to invoice view, hit enter on a blank line")
-    
+
     def open_invoice(self, index: int) -> None:
         vendor = self.payables.data.loc[index, "Vendor"]
         invoice_no = self.payables.data.loc[index, "Invoice #"]
@@ -859,14 +842,16 @@ class OsInterface:
             list_no = count + 1
             print(f"{list_no}:\t{i[1]} file")
             count += 1
-        
+
         file_selection = self.convert_str_to_int_input(input("\n>\t"))
         file_selection -= 1
 
-        os.system(f"\"{file_info[file_selection][0]}\"")
-    
-    def filter_df(self, data: pd.DataFrame, column: str, response: str) -> None:
-        parsed_response = response[response.index(":")+1:].strip()
+        os.system(f'"{file_info[file_selection][0]}"')
+
+    def filter_df(
+        self, data: pd.DataFrame, column: str, response: str
+    ) -> None:
+        parsed_response = response[response.index(":") + 1 :].strip()
         debug(f"\nparsed_reponse: {parsed_response}")
         filtered = data.loc[
             data[column].str.match(parsed_response, case=False)
@@ -877,17 +862,15 @@ class OsInterface:
 
     def invoice_search_path_constructor(self) -> str:
         pieces = [
-                  self.payables_path,
-                  self.year,
-                  self.year + self.month,
-                #   self.date
+            self.payables_path,
+            self.year,
+            self.year + self.month,
+            #   self.date
         ]
-        path = '/'.join(pieces)
+        path = "/".join(pieces)
         return path
-        
-    def get_invoice_paths(
-        self, vendor: str, inv_no: str
-    ) -> list[list[str]]:
+
+    def get_invoice_paths(self, vendor: str, inv_no: str) -> list[list[str]]:
         test_var = 0
         path = self.invoice_search_path_constructor()
         pattern = f"{vendor} - {inv_no}"
@@ -905,19 +888,19 @@ class OsInterface:
             for f_name in filenames:
                 if re.match(pattern, f_name):
                     # print(f"matched: {f_name}")
-                    joined = '/'.join([dirpath, f_name])
+                    joined = "/".join([dirpath, f_name])
                     found_files.append(joined)
         extensions = self.get_file_extensions(found_files)
         files_w_exts = list(zip(found_files, extensions))
         return files_w_exts
-    
+
     def get_file_extensions(self, file_list: list[str]) -> list[str]:
         exts = []
         for file in file_list:
-            extension = file.split('.')[-1]
+            extension = file.split(".")[-1]
             exts.append(extension)
         return exts
-        
+
     def update_values(self, index: int, groups: tuple[str]):
         for group in groups:
             if group is None:
@@ -937,14 +920,14 @@ class OsInterface:
             self.payables.data.loc[index, col] = typed_val
 
         self.payables.save_workbook()
-    
+
     def validate_updates(self, col: str, val: str):
         inputs_valid = True
 
         if not self.check_col(col):
             print(f"Invalid column name: {col}")
             inputs_valid = False
-        
+
         if col == "Vendor" and not self.check_vendor(val):
             print(f"Bad vendor {val}")
             inputs_valid = False
@@ -952,7 +935,7 @@ class OsInterface:
         return inputs_valid
 
     def check_col(self, col: str) -> bool:
-        return (col in self.payables.data.columns)
+        return col in self.payables.data.columns
 
     def make_invoice_lines(self, data: pd.Series) -> list[str]:
         """Creates a list of formatted lines to print as invoice details
@@ -1074,13 +1057,14 @@ class OsInterface:
         if isinstance(value, float) and np.isnan(value):
             value = sub
         return value
-    
+
     def convert_str_to_int_input(self, input: str) -> int:
         """Checks if a string is int-able and returns the int"""
         if re.match(r"\d+", input):
             return int(input)
         else:
             raise TypeError(f"Input was not a number: {input}")
+
 
 def debug_script():
     instance = OsInterface(payables_date="2030-12-31")
@@ -1096,8 +1080,10 @@ def debug_script():
     # ]
     # instance.payables.insert_invoice(inv)
 
+
 def run_interface():
     OsInterface()
+
 
 if __name__ == "__main__":
     debug_script()

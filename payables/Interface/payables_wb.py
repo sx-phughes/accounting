@@ -21,11 +21,13 @@ def get_col_index(col_name: str) -> int:
         i = -1
     return i
 
+
 class PayablesWorkbook:
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"
-    vendors_path = \
+    vendors_path = (
         "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx"
+    )
     column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
     column_types = ["str", "str", "float64", "bool", "str", "bool"]
     column_defaults = ["", "", np.float64(0), False, "", False]
@@ -35,8 +37,8 @@ class PayablesWorkbook:
     ############################################################
     def __init__(
         self,
-        data: pd.DataFrame | None= None,
-        date: str | datetime=None,
+        data: pd.DataFrame | None = None,
+        date: str | datetime = None,
         index=None,
         columns=None,
         dtype=None,
@@ -45,7 +47,7 @@ class PayablesWorkbook:
         if date:
             self.stem = date
             self.payables_date = date
-            self.wb_path = ''
+            self.wb_path = ""
 
         if data is not None:
             input_data = data
@@ -72,7 +74,9 @@ class PayablesWorkbook:
         try:
             data = pd.read_excel(self.wb_path, "Invoices")
         except:
-            data = pd.read_excel(self.wb_path.replace("xlsx", "xlsm"), "Invoices")
+            data = pd.read_excel(
+                self.wb_path.replace("xlsx", "xlsm"), "Invoices"
+            )
 
         self.validate_data(data)
         data = self.set_types(data)
@@ -87,13 +91,13 @@ class PayablesWorkbook:
 
     def validate_data(self, data: pd.DataFrame):
         """Validate workbook columns, add missing ones, and remove
-        extra columns."""
+        extra columns to ensure payables workbook conforms."""
 
         good_cols_index = self.get_extant_cols_index(data)
         if good_cols_index < len(self.column_headers):
             self.add_new_cols(data, good_cols_index)
         elif good_cols_index > len(self.column_headers):
-            drop_cols = data.columns.tolist()[good_cols_index+1:]
+            drop_cols = data.columns.tolist()[good_cols_index + 1 :]
             data.drop(columns=drop_cols, inplace=True)
 
     def add_new_cols(self, data: pd.DataFrame, add_from: int):
@@ -168,7 +172,7 @@ class PayablesWorkbook:
     def wb_path(self):
         """Path to payables workbook"""
         return self._wb_path
-    
+
     @wb_path.setter
     def wb_path(self, wb_path):
         path = self.payables_path + self.stem + self.f_name
@@ -237,13 +241,13 @@ class PayablesWorkbook:
         """Create a new blank payables file for a given date"""
         cols = PayablesWorkbook.column_headers
         df = pd.DataFrame(columns=cols)
-        df.to_excel(excel_writer=self.wb_path, sheet_name="Invoices", index=False)
+        df.to_excel(
+            excel_writer=self.wb_path, sheet_name="Invoices", index=False
+        )
 
     def save_workbook(self):
         self.data.to_excel(
-            excel_writer=self.wb_path, 
-            sheet_name="Invoices",
-            index=False
+            excel_writer=self.wb_path, sheet_name="Invoices", index=False
         )
 
     def move_files(self):
@@ -253,7 +257,7 @@ class PayablesWorkbook:
 
         for old, new in zipped_paths:
             self.move_a_file(old, new)
-        
+
     def move_a_file(self, old_path: str, new_path: str) -> None:
         while True:
             try:
@@ -329,18 +333,20 @@ class PayablesWorkbook:
     def get_invoice_files(self):
         """Get files in download folder"""
         drive = "C:"
-        downloads = drive + os.environ["HOMEPATH"].replace("\\", "/") + "/Downloads"
+        downloads = (
+            drive + os.environ["HOMEPATH"].replace("\\", "/") + "/Downloads"
+        )
         files = list(filter(lambda x: ".ini" not in x, os.listdir(downloads)))
         old_paths = [downloads + "/" + file for file in files]
 
         return old_paths
 
     def merge_vendors(self) -> pd.DataFrame:
-        vendors = pd.read_excel(self.vendors_path, "Vendors",
-                                dtype={
-                                    "ACH ABA": str, 
-                                    "ACH Account Number": str
-                                })
+        vendors = pd.read_excel(
+            self.vendors_path,
+            "Vendors",
+            dtype={"ACH ABA": str, "ACH Account Number": str},
+        )
         cols_needed = [
             "Vendor",
             "Company",
@@ -355,6 +361,7 @@ class PayablesWorkbook:
         ]
         vendors_small = vendors[cols_needed].copy(deep=True)
         return self.data.merge(right=vendors_small, how="left", on="Vendor")
+
 
 if __name__ == "__main__":
     payables = PayablesWorkbook(date="2030-12-31")
