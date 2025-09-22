@@ -45,8 +45,8 @@ class OsInterface:
     def __init__(self, payables_date: str = None, debug: bool = False):
         self.preserved_downloads = 0
 
-        if payables_date is None:
-            self._ui_workbook_date()
+        if not payables_date:
+            payables_date = self._ui_workbook_date()
         else:
             self._validate_date(payables_date)
 
@@ -70,6 +70,7 @@ class OsInterface:
             valid_date = self._validate_date(payables_date)
             if not valid_date:
                 print("Invalid date, try again")
+        return payables_date
 
     def _validate_date(self, date: str) -> bool:
         if check_date(date):
