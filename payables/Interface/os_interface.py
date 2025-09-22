@@ -67,7 +67,7 @@ class OsInterface:
             payables_date = input(
                 "Input Payables Workbook Date (yyyy-mm-dd)\n>\t"
             )
-            valid_date = self.validate_date(payables_date)
+            valid_date = self._validate_date(payables_date)
             if not valid_date:
                 print("Invalid date, try again")
 
