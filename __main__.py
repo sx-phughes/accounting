@@ -1,3 +1,4 @@
 import PatEngine
 
-PatEngine.PatEngine()
+instance = PatEngine.PatEngine()
+instance.main_menu()
