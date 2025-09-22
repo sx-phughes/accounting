@@ -134,6 +134,7 @@ class OsInterface:
 
             print("Payables Main Menu\n")
             self.print_main_menu_status()
+            print("\n")
             self.print_main_menu(options)
 
             selected = 0
