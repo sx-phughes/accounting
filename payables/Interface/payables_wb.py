@@ -36,9 +36,9 @@ class PayablesWorkbook:
     # initializer - handles reconstruction from pandas methods #
     ############################################################
     def __init__(self, date: str | datetime):
-        self.stem = date
         self.payables_date = date
-        self.wb_path = self.payables_path + self.stem + self.f_name
+        self.stem = date
+        self.wb_path = "/".join([self.payables_path, self.stem, self.f_name])
         self.data = self.initialize_from_date()
 
     def __repr__(self):
@@ -153,19 +153,6 @@ class PayablesWorkbook:
     def f_name(self, f_name: str):
         self._f_name = f_name
 
-    # @property
-    # def wb_path(self):
-    #     """Path to payables workbook"""
-    #     return self._wb_path
-
-    # @wb_path.setter
-    # def wb_path(self, wb_path):
-    #     path = self.payables_path + self.stem + self.f_name
-    #     if wb_path == path:
-    #         self._wb_path = wb_path
-    #     else:
-    #         self._wb_path = path
-
     ####################
     # helper functions #
     ####################
@@ -183,13 +170,12 @@ class PayablesWorkbook:
         formats = ["%Y", "%Y%m", "%Y-%m-%d"]
         dates = [self.formatted_date(f_str) for f_str in formats]
 
-        self._stem = "/" + "/".join(dates)
-        self._f_name = "/" + dates[2] + " Payables.xlsx"
+        self._stem = "/".join(dates)
+        self._f_name = dates[2] + " Payables.xlsx"
 
     def stem_from_str(self, date: str):
-        self._stem = date
-        self._f_name = "/" + date.split("/")[-1] + " Payables.xlsx"
-        self._wb_path = self.payables_path + self.stem + self.f_name
+        dt_date = datetime.strptime(date, "%Y-%m-%d")
+        self.stem_from_datetime(dt_date)
 
     #################
     # class methods #
