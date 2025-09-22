@@ -35,26 +35,11 @@ class PayablesWorkbook:
     ############################################################
     # initializer - handles reconstruction from pandas methods #
     ############################################################
-    def __init__(
-        self,
-        data: pd.DataFrame | None = None,
-        date: str | datetime = None,
-        index=None,
-        columns=None,
-        dtype=None,
-        copy=None,
-    ):
-        if date:
-            self.stem = date
-            self.payables_date = date
-            self.wb_path = ""
-
-        if data is not None:
-            input_data = data
-        else:
-            input_data = self.initialize_from_date()
-
-        self.data = input_data
+    def __init__(self, date: str | datetime):
+        self.stem = date
+        self.payables_date = date
+        self.wb_path = self.payables_path + self.stem + self.f_name
+        self.data = self.initialize_from_date()
 
     def __repr__(self):
         return self.data
@@ -168,18 +153,18 @@ class PayablesWorkbook:
     def f_name(self, f_name: str):
         self._f_name = f_name
 
-    @property
-    def wb_path(self):
-        """Path to payables workbook"""
-        return self._wb_path
+    # @property
+    # def wb_path(self):
+    #     """Path to payables workbook"""
+    #     return self._wb_path
 
-    @wb_path.setter
-    def wb_path(self, wb_path):
-        path = self.payables_path + self.stem + self.f_name
-        if wb_path == path:
-            self._wb_path = wb_path
-        else:
-            self._wb_path = path
+    # @wb_path.setter
+    # def wb_path(self, wb_path):
+    #     path = self.payables_path + self.stem + self.f_name
+    #     if wb_path == path:
+    #         self._wb_path = wb_path
+    #     else:
+    #         self._wb_path = path
 
     ####################
     # helper functions #
@@ -204,6 +189,7 @@ class PayablesWorkbook:
     def stem_from_str(self, date: str):
         self._stem = date
         self._f_name = "/" + date.split("/")[-1] + " Payables.xlsx"
+        self._wb_path = self.payables_path + self.stem + self.f_name
 
     #################
     # class methods #
