@@ -28,9 +28,17 @@ class PayablesWorkbook:
     vendors_path = (
         "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx"
     )
-    column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
-    column_types = ["str", "str", "float64", "bool", "str", "bool"]
-    column_defaults = ["", "", np.float64(0), False, "", False]
+    column_headers = [
+        "Vendor",
+        "Invoice #",
+        "Amount",
+        "CC",
+        "CC User",
+        "Paid",
+        "Approved",
+    ]
+    column_types = ["str", "str", "float64", "bool", "str", "bool", "bool"]
+    column_defaults = ["", "", np.float64(0), False, "", False, False]
 
     ############################################################
     # initializer - handles reconstruction from pandas methods #
