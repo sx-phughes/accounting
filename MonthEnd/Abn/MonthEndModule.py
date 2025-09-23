@@ -1,6 +1,15 @@
 # Package Imports
-from MonthEnd.Abn import Base, FileGrabber, InterestData
-from MonthEnd.Abn import Positions, MonthEndData, MiscBreakdown
+import sys, os
+
+sys.path.append("\\".join([os.environ["HOMEPATH"], "accounting"]))
+from MonthEnd.Abn import (
+    Base,
+    FileGrabber,
+    InterestData,
+    Positions,
+    MonthEndData,
+    MiscBreakdown,
+)
 import Debug
 
 table_names = [

@@ -14,7 +14,7 @@ import AbnCash
 from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
 from MonthEnd.ExchangeFees import ExchangeFeesDownload
-from MonthEnd.Abn import MonthEnd
+from MonthEnd.Abn import MonthEndModule
 from payables.nacha import NachaMain
 from payables.nacha import BlankBatch
 import UpdateVendors
@@ -241,7 +241,7 @@ class PatEngine:
             "ABN Month End": [
                 "Run ABN Month End Process - \
                 process data files and save to CM directory",
-                MonthEnd.run_month_end_files,
+                MonthEndModule.run_month_end_files,
             ],
             "Organize BAML ME Files": [
                 "Move BofA ME Data Files and Process to Summary Files",
