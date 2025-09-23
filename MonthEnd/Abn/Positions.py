@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
+import sys
+import os
 
+sys.path.append("/".join([os.environ["HOMEPATH"], "accounting"]))
 from MonthEnd.Abn import FileGrabber
 import Debug
 
@@ -11,7 +14,7 @@ def process_positions_data(raw: pd.DataFrame) -> pd.DataFrame:
     """Prepares a month-end positions file for use in the positions summary
     functions"""
 
-    data = clean_positions_data()
+    data = clean_positions_data(positions=raw)
     data["Unique Name"] = vector_unique_name(data.copy())
     return data
 
