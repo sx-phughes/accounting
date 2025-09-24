@@ -152,7 +152,7 @@ class OsInterface:
 
     def switch_books(self) -> None:
         self.payables.save_workbook()
-        self.date = self.ui_workbook_date()
+        self.__init__()
         self.payables = PayablesWorkbook(date=self.date)
 
     def print_main_menu_status(self) -> None:
