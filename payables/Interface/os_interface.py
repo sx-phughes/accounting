@@ -607,7 +607,7 @@ class OsInterface:
             if re.match(r"\d+", response):
                 self.invoice_details(int(response))
             elif re.search(r"vendor:", response, re.IGNORECASE):
-                self.filter_df(data, "Vendor", response)
+                self.filter_df(df, "Vendor", response)
             elif re.search(r"export", response, re.IGNORECASE):
                 match = re.search(r"export:?", response, re.IGNORECASE)
                 f_name = ".".join(
