@@ -322,6 +322,7 @@ class PayablesWorkbook:
         return old_paths
 
     def merge_vendors(self) -> pd.DataFrame:
+        """Returns the invoices table with the vendors table merged."""
         vendors = pd.read_excel(
             self.vendors_path,
             "Vendors",
@@ -335,12 +336,22 @@ class PayablesWorkbook:
             "Payment Type",
             "QB Mapping",
             "Account Mapping",
+            "IDB Broker",
             "ACH ABA",
             "ACH Account Number",
             "ACH Vendor Name",
         ]
         vendors_small = vendors[cols_needed].copy(deep=True)
         return self.data.merge(right=vendors_small, how="left", on="Vendor")
+
+    def get_idb_invoices(self) -> pd.DataFrame:
+        """Returns a view of the invoices table with just IDB invoices."""
+
+        with_vendors = self.merge_vendors()
+        just_idb = with_vendors.loc[
+            with_vendors["IDB Broker"] == "Yes", self.column_headers
+        ].sort_values("Vendor")
+        return just_idb
 
 
 if __name__ == "__main__":

@@ -592,15 +592,16 @@ class OsInterface:
         while True:
             cls()
             df = self.payables.data
-            if data:
+            if data is not None:
                 df = data
 
             print(df)
 
             print("\n\nEnter an index to view invoice details,")
             print("type 'Vendor: [vendor]' to filter by vendor,")
-            print("or export: [file_name] to save file to downloads")
-            print("or hit enter to return to the main menu.")
+            print("'export: [file_name]' to save file to downloads")
+            print("'IDB' to view IDB only invoices")
+            print("or just hit enter to return to the main menu.")
             response = input(">\t")
 
             if re.match(r"\d+", response):
@@ -623,6 +624,8 @@ class OsInterface:
                 print("Data export success. File in downloads.")
                 print("Enter to continue.")
                 input()
+            elif response == "IDB":
+                self.view_invoices(self.payables.get_idb_invoices())
             elif response == "":
                 break
             else:
