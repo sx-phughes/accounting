@@ -159,15 +159,21 @@ class OsInterface:
         print_list = [
             f"Current Workbook {self.date}",
             f"Total # of invoices: {len(self.payables.data.index)!s}",
-            "Company Totals:",
+            "Company ACH/Wire Totals:",
         ]
         with_vendors = self.payables.merge_vendors()
-        for co in with_vendors["Company"].unique():
-            co_total_invoiced = with_vendors.loc[
-                with_vendors["Company"] == co, "Amount"
+        just_ach_wire = with_vendors.loc[
+            with_vendors["Payment Type"].isin(["ACH", "Wire"])
+        ]
+        for co in just_ach_wire["Company"].unique():
+            co_total_invoiced = just_ach_wire.loc[
+                (with_vendors["Company"] == co), "Amount"
             ].sum()
             co_string = f"\t{co:15}: ${co_total_invoiced:,.2f}"
             print_list.append(co_string)
+        total_total = just_ach_wire["Amount"].sum()
+        f_total_total = f"Total: ${total_total:,.2f}"
+        print_list.append(f_total_total)
 
         for line in print_list:
             print(line)
