@@ -591,45 +591,79 @@ class OsInterface:
         """Prints invoices to screen"""
         while True:
             cls()
-            df = self.payables.data
+            df = self.payables.merge_vendors()
             if data is not None:
                 df = data
-
-            print(df)
+                print(df)
+            else:
+                print(
+                    df[
+                        [
+                            "Vendor",
+                            "Invoice #",
+                            "Company",
+                            "Amount",
+                            "Approved",
+                        ]
+                    ]
+                )
 
             print("\n\nEnter an index to view invoice details,")
             print("type 'Vendor: [vendor]' to filter by vendor,")
             print("'export: [file_name]' to save file to downloads")
             print("'IDB' to view IDB only invoices")
             print("or just hit enter to return to the main menu.")
-            response = input(">\t")
 
-            if re.match(r"\d+", response):
-                self.invoice_details(int(response))
-            elif re.search(r"vendor:", response, re.IGNORECASE):
-                self.filter_df(df, "Vendor", response)
-            elif re.search(r"export", response, re.IGNORECASE):
-                match = re.search(r"export:?", response, re.IGNORECASE)
-                f_name = ".".join(
-                    [response.replace(match.group(), "").strip(), "xlsx"]
-                )
-                print(f_name)
-                path = "/".join([os.environ["HOMEPATH"], "Downloads", f_name])
-                data.to_excel(
-                    excel_writer=path,
-                    sheet_name="Export",
-                    index=False,
-                    na_rep="",
-                )
-                print("Data export success. File in downloads.")
-                print("Enter to continue.")
-                input()
-            elif response == "IDB":
-                self.view_invoices(self.payables.get_idb_invoices())
-            elif response == "":
+            response = input(">\t")
+            if self.user_response_handler(df, response):
                 break
-            else:
-                print("Invalid input")
+
+    def user_response_handler(
+        self, df: pd.DataFrame, response: str
+    ) -> np.int8:
+        """Parses user response and starts relevant routine."""
+
+        if re.match(r"\d+", response):
+            self.invoice_details(int(response))
+        elif re.search(r"vendor:", response, re.IGNORECASE):
+            self.filter_df(df, "Vendor", response)
+        elif re.search(r"export", response, re.IGNORECASE):
+            self.export_invoice_view(df, response)
+            print("Data export success. File in downloads.")
+            print("Enter to continue.")
+            input()
+        elif response == "IDB":
+            self.view_invoices(self.payables.get_idb_invoices())
+        elif re.search(r"company", response, re.IGNORECASE):
+            self.filter_df(df, "Company", response)
+        elif response == "":
+            return np.int8(1)
+        else:
+            print("Invalid input")
+            input("Enter to contiue...")
+
+        return np.int8(0)
+
+    def export_invoice_view(self, data: pd.DataFrame, response: str) -> None:
+        """Exports current table being viewed to downloads."""
+        path = self.extract_path(response=response)
+        data.to_excel(
+            excel_writer=path,
+            sheet_name="Export",
+            index=False,
+            na_rep="",
+        )
+
+    def extract_path(self, response: str) -> str:
+        """Extracts path from user response and returns it as a string."""
+
+        match = re.search(r"export:?", response, re.IGNORECASE)
+        f_name = ".".join(
+            [response.replace(match.group(), "").strip(), "xlsx"]
+        )
+        print(f_name)
+        path = "/".join([os.environ["HOMEPATH"], "Downloads", f_name])
+        return path
 
     def invoice_details(self, index: int) -> None:
         """Prints invoice details to screen"""
