@@ -30,6 +30,11 @@ def make_summary_workbook(
     if path:
         write_to = path
 
+    all_payables = payables.merge_vendors()
+    no_cc_pmts = all_payables.loc[
+        ~(all_payables["Payment Type"] == "Credit Card")
+    ].copy()
+
     with pd.ExcelWriter(
         write_to,
         "xlsxwriter",
@@ -47,25 +52,29 @@ def make_summary_workbook(
         normal = workbook.add_format({"bold": False})
 
         write_summary_sheet(
-            payables=payables, writer=writer, workbook=workbook
+            payables=no_cc_pmts,
+            writer=writer,
+            workbook=workbook,
+            date=payables.payables_date,
         )
         # write_wire_setup_sheet(
         #     payables=payables, writer=writer, workbook=workbook
         # )
         write_invoice_sheet(
-            payables=payables, writer=writer, workbook=workbook
+            payables=no_cc_pmts, writer=writer, workbook=workbook
         )
 
 
 def write_summary_sheet(
-    payables: PayablesWorkbook,
+    payables: pd.DataFrame,
     writer: pd.ExcelWriter,
     workbook: xlsxwriter.Workbook,
+    date: datetime,
 ) -> None:
     """Write the summary sheet to file."""
 
     summary_tables = get_summary_tables(payables=payables)
-    summary_sheet = create_summarypage(workbook, payables.payables_date)
+    summary_sheet = create_summarypage(workbook, date)
     write_col = 0
     for table in summary_tables:
         table.to_excel(
@@ -142,7 +151,6 @@ def write_wire_setup_sheet(
 
 
 def get_invoice_table(payables: PayablesWorkbook) -> pd.DataFrame:
-    data = payables.merge_vendors()
     cols = [
         "Vendor",
         "Invoice #",
@@ -152,7 +160,7 @@ def get_invoice_table(payables: PayablesWorkbook) -> pd.DataFrame:
         "Payment Type",
         "Amount",
     ]
-    selected_cols = data[cols].copy(deep=True)
+    selected_cols = payables[cols].copy(deep=True)
     return selected_cols
 
 
@@ -167,19 +175,18 @@ def create_summarypage(
 def get_summary_tables(payables: PayablesWorkbook) -> tuple[pd.DataFrame]:
     """Get summary tables for the main summary page of the workbook."""
 
-    merged_vendors = payables.merge_vendors()
-    by_vendor = merged_vendors.pivot_table(
+    by_vendor = payables.pivot_table(
         values="Amount",
         index="QB Mapping",
         aggfunc="sum",
     ).sort_values("Amount", ascending=False)
-    by_approver = merged_vendors.pivot_table(
+    by_approver = payables.pivot_table(
         values="Amount", index="Approver", aggfunc="sum"
     )
-    by_expense_cat = merged_vendors.pivot_table(
+    by_expense_cat = payables.pivot_table(
         values="Amount", index="Expense Category", aggfunc="sum"
     )
-    by_company = merged_vendors.pivot_table(
+    by_company = payables.pivot_table(
         values="Amount", index="Company", columns="Payment Type", aggfunc="sum"
     )
     by_company["Total"] = by_company[by_company.columns].sum(axis=1)
