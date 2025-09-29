@@ -58,7 +58,7 @@ class Vendor:
         "Vendors",
     ).fillna("")
 
-    def __init__(self, vendor):
+    def __init__(self, vendor: str):
         self.vendor = vendor
         self.get_vendor_info(vendor)
 
