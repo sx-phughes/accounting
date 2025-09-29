@@ -257,14 +257,11 @@ class PatEngine:
 
     def payables(self):
         """Sub-menu options for running payables-related scripts"""
+
         options = {
-            "Input Payables": [
+            "AP": [
                 "Manage Payables Workbook: view/input/remove",
                 os_interface.run_interface,
-            ],
-            "Create Payables Payment Files": [
-                "Create NACHA files for a Payables Batch",
-                NachaMain.nacha_main,
             ],
             "Create Paybles JE Files": [
                 "Create Payables JE files for upload to QB",
