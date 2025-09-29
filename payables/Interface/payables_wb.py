@@ -203,11 +203,11 @@ class PayablesWorkbook:
         """Removed invoices at given indexes"""
         if isinstance(index, list):
             for ind in index:
-                self.drop(index=ind, inplace=True)
+                self.data.drop(index=ind, inplace=True)
         else:
-            self.drop(index=index, inplace=True)
+            self.data.drop(index=index, inplace=True)
 
-        self.reset_index(drop=True, inplace=True)
+        self.data.reset_index(drop=True, inplace=True)
         self.save_workbook()
 
     def path_exists(self, path: str):
