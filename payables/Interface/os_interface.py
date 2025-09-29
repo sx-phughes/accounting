@@ -238,17 +238,23 @@ class OsInterface:
         """Preserves downloads contents by moving to temp folder"""
 
         try:
-            os.mkdir("./.tempdownloads")
+            os.mkdir("/".join([os.environ["HOMEPATH"], ".tempdownloads"]))
         except FileExistsError:
             pass
 
-        self.move_all_files("./Downloads", "./.tempdownloads/")
+        self.move_all_files(
+            "/".join([os.environ["HOMEPATH"], "Downloads"]),
+            "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
+        )
 
     def restore_downloads(self) -> None:
         """Restores downloads from temp folder"""
 
-        self.move_all_files("./.tempdownloads", "./Downloads/")
-        shutil.rmtree("./.tempdownloads")
+        self.move_all_files(
+            "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
+            "/".join([os.environ["HOMEPATH"], "Downloads"]),
+        )
+        shutil.rmtree("/".join([os.environ["HOMEPATH"], ".tempdownloads/"]))
 
     def move_all_files(self, source: str, dest: str) -> None:
         """Moves all files from a source folder to a destination folder."""
