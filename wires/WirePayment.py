@@ -428,8 +428,15 @@ class WirePayment:
             self._amount = amount
         elif re.match(r"\d+.\d{3,}", str(amount)):
             self._amount = round(amount, 2)
+        elif "-" in str(amount):
+            raise TypeError(
+                amount,
+                f"Value {amount} is a negative; please combine with another payment amount",
+            )
         else:
-            raise TypeError
+            raise TypeError(
+                amount, "Amount does not conform to a float pattern"
+            )
 
     @property
     def value_date(self):
