@@ -6,10 +6,13 @@ import csv
 class WireFile:
     """An object for holding information to be used in construction of a wire payment file to be written to disk."""
 
-    def __init__(self, transactions: list[WirePayment] | WirePayment):
+    def __init__(
+        self, transactions: list[WirePayment] | WirePayment, company: str
+    ):
         """Object initialized from either single or multiple WirePayment objects."""
         self.transactions = transactions
         self.header = ["HEADER", datetime.now().strftime("%Y%m%d%H%M%S"), 1]
+        self.company = company
         self.hash_sum = 0
         if len(transactions) > 1:
             for i in transactions:
