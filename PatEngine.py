@@ -215,7 +215,7 @@ class PatEngine:
                 "Unzip Files in a Folder",
                 UnzipFiles.script_wrapper,
             ],
-            "Payables": self.payables,
+            "AP": self.payables,
             "Update Vendor Value": [
                 "Update a value in the vendor database",
                 UpdateVendors.update_vendor,
