@@ -442,10 +442,19 @@ class OsInterface:
     def make_payment_files(self):
         """Creates NACHA payment files for current payables batch."""
 
+        good_to_pay = self.invoices_good_to_pay()
         self.check_for_duplicate_payments()
+        self.make_nacha_files(invoices=good_to_pay)
+        self.simple_wire_payments(invoices=good_to_pay)
+
+    def make_nacha_files(self, invoices: pd.DataFrame) -> None:
+        """Create NACHA payment files for invoiced payable via ACH and save
+        to disk."""
 
         vd = self.get_vd()
-        nacha_file = self.get_nacha_constructor(value_date=vd)
+        nacha_file = self.get_nacha_constructor(
+            invoices=invoices, value_date=vd
+        )
 
         files = nacha_file.main()
         co_names = NachaConstructor.NachaConstructor.company_names
@@ -468,10 +477,12 @@ class OsInterface:
             input()
             raise ValueError("Duplicate invoices present")
 
-    def get_nacha_constructor(self, value_date: str):
+    def get_nacha_constructor(
+        self, invoices: pd.DataFrame, value_date: str
+    ) -> NachaConstructor.NachaConstructor:
         """Create nacha file constructor object."""
 
-        ach_payments = self.filter_payments_on_type("ACH")
+        ach_payments = self.filter_payments_on_type(invoices, "ACH")
         debug_bool = self.ask_for_debug()
         nacha_file = NachaConstructor.NachaConstructor(
             ach_payments, value_date, debug_bool
@@ -506,14 +517,14 @@ class OsInterface:
     #############################
     # Create Wire Payment Files #
     #############################
-    def simple_wire_payments(self) -> None:
+    def simple_wire_payments(self, invoices: pd.DataFrame) -> None:
         """Method for creating a simple batch of wire payments for a given
         payables run. One invoice = one wire.
         """
         vd = self.get_vd(dt=True)
 
         PayablesWires.os_interface_wire_wrapper(
-            payables=self.payables, valuedate=vd
+            payables=invoices, valuedate=vd
         )
 
     def make_wire_files(self) -> None:
@@ -570,13 +581,25 @@ class OsInterface:
     #################################
     # Payment File Common Functions #
     #################################
-    def filter_payments_on_type(self, type: str) -> pd.DataFrame:
+    def invoices_good_to_pay(self) -> pd.DataFrame:
+        """Filter dataframe on invoices payable via wire or ACH, approved, and
+        unpaid."""
+
+        all_invoices = self.payables.merge_vendors()
+        good_to_pay = all_invoices.loc[
+            (all_invoices["Payment Type"].isin(["ACH", "Wire"]))
+            & (all_invoices["Approved"])
+            & ~(all_invoices["Paid"])
+        ]
+        return good_to_pay
+
+    def filter_payments_on_type(
+        self, invoices: pd.DataFrame, type: str
+    ) -> pd.DataFrame:
         """Returns a table of only invoices paid via ACH."""
 
-        no_cc_pmts = self.payables.data.loc[~(self.payables.data["CC"])]
-        payables_with_deets = no_cc_pmts.merge_vendors()
-        filtered_payments = payables_with_deets.loc[
-            payables_with_deets["Payment Type"] == type
+        filtered_payments = invoices.loc[
+            invoices["Payment Type"] == type
         ].copy(deep=True)
         return filtered_payments
 
@@ -653,6 +676,8 @@ class OsInterface:
             self.filter_df(df, "Vendor", response)
         elif re.search(r"approver:", response, re.IGNORECASE):
             self.filter_df(df, "Approver", response)
+        elif re.search(r"payment type:", response, re.IGNORECASE):
+            self.filter_df(df, "Payment Type", response)
         elif re.search(r"export", response, re.IGNORECASE):
             self.export_invoice_view(df, response)
             print("Data export success. File in downloads.")
@@ -849,7 +874,7 @@ class OsInterface:
             print(f"Invalid column name: {col}")
             inputs_valid = False
 
-        if col == "Vendor" and not self.check_vendor(val):
+        if col == "Vendor" and not self.validate_vendor(val):
             print(f"Bad vendor {val}")
             inputs_valid = False
 
