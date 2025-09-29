@@ -20,7 +20,7 @@ from Interface.functions import *
 from Interface.CursorFunc import *
 from nacha import NachaConstructor
 import DupePayments as DupePayments
-from Wires import WireFile, WirePayment
+from Wires import WireFile, WirePayment, PayablesWires
 import Interface.PayableSummary as PayableSummary
 
 
@@ -500,6 +500,16 @@ class OsInterface:
     #############################
     # Create Wire Payment Files #
     #############################
+    def simple_wire_payments(self) -> None:
+        """Method for creating a simple batch of wire payments for a given
+        payables run. One invoice = one wire.
+        """
+        vd = self.get_vd(dt=True)
+
+        PayablesWires.os_interface_wire_wrapper(
+            payables=self.payables, valuedate=vd
+        )
+
     def make_wire_files(self) -> None:
         """Makes a wire payment file for upload to JPM Access"""
         vd = self.get_vd()
@@ -564,13 +574,16 @@ class OsInterface:
         ].copy(deep=True)
         return filtered_payments
 
-    def get_vd(self) -> str:
+    def get_vd(self, dt: bool = False) -> str:
         year = int(get_valid_input("VD Year:  ", r"\d{4}"))
         month = int(get_valid_input("VD Month: ", r"\d{1,2}"))
         day = int(get_valid_input("VD Day:   ", r"\d{1,2}"))
         vd_dt = datetime(year, month, day)
         vd_str = vd_dt.strftime("%y%m%d")
-        return vd_str
+        if dt:
+            return vd_dt
+        else:
+            return vd_str
 
     ####################################
     # Create Summary Workbook for Joan #
