@@ -10,21 +10,24 @@ class WireFile:
         self, transactions: list[WirePayment] | WirePayment, company: str
     ):
         """Object initialized from either single or multiple WirePayment objects."""
+
         self.transactions = transactions
         self.header = ["HEADER", datetime.now().strftime("%Y%m%d%H%M%S"), 1]
         self.company = company
         self.hash_sum = 0
+        print("transactions len: ", len(transactions))
         if len(transactions) > 1:
             for i in transactions:
                 self.hash_sum += i.amount
-        else:
+        elif len(transactions) == 1:
             self.hash_sum = transactions.amount
+
         self.trailer = ["TRAILER", len(transactions), self.hash_sum]
 
     def write_file(self, path: str, file_name: str):
         """Writes file to disk."""
 
-        with open(path + "/" + file_name + ".csv", "x") as f:
+        with open(path + "/" + file_name + ".csv", "w") as f:
             writer = csv.writer(f)
             writer.writerow(self.header)
 
