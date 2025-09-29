@@ -608,29 +608,34 @@ class OsInterface:
 
     def view_invoices(self, data: pd.DataFrame = None) -> None:
         """Prints invoices to screen"""
+
+        print_cols = [
+            "Vendor",
+            "Invoice #",
+            "Company",
+            "Amount",
+            "Approved",
+            "Approver",
+        ]
+
         while True:
             cls()
-            df = self.payables.merge_vendors()
+            self.payables.save_workbook()
+
+            all_payables = self.payables.merge_vendors()
+            df = all_payables.loc[all_payables["CC"] == False]
             if data is not None:
                 df = data
-                print(df)
-            else:
-                print(
-                    df[
-                        [
-                            "Vendor",
-                            "Invoice #",
-                            "Company",
-                            "Amount",
-                            "Approved",
-                        ]
-                    ]
-                )
+
+            print(df[print_cols])
 
             print("\n\nEnter an index to view invoice details,")
             print("type 'Vendor: [vendor]' to filter by vendor,")
+            print("'Approver: [name]' to filter by approver,")
             print("'export: [file_name]' to save file to downloads")
-            print("'IDB' to view IDB only invoices")
+            print("'IDB' to view IDB only invoices,")
+            print("'unapproved' to see all unapproved invoices,")
+            print("'mark approved' to mark all showing invoices as approved")
             print("or just hit enter to return to the main menu.")
 
             response = input(">\t")
@@ -646,15 +651,23 @@ class OsInterface:
             self.invoice_details(int(response))
         elif re.search(r"vendor:", response, re.IGNORECASE):
             self.filter_df(df, "Vendor", response)
+        elif re.search(r"approver:", response, re.IGNORECASE):
+            self.filter_df(df, "Approver", response)
         elif re.search(r"export", response, re.IGNORECASE):
             self.export_invoice_view(df, response)
             print("Data export success. File in downloads.")
             print("Enter to continue.")
             input()
+        elif response == "unapproved":
+            self.filter_df(df, "Approved", response, val=False)
         elif response == "IDB":
             self.view_invoices(self.payables.get_idb_invoices())
         elif re.search(r"company", response, re.IGNORECASE):
             self.filter_df(df, "Company", response)
+        elif response == "mark approved":
+            self.payables.data.loc[df.index, "Approved"] = True
+        elif response == "reset approved":
+            self.payables.data["Approved"] = False
         elif response == "":
             return np.int8(1)
         else:
@@ -753,15 +766,19 @@ class OsInterface:
         os.system(f'"{file_info[file_selection][0]}"')
 
     def filter_df(
-        self, data: pd.DataFrame, column: str, response: str
+        self, data: pd.DataFrame, column: str, response: str, val: Any = None
     ) -> None:
-        parsed_response = response[response.index(":") + 1 :].strip()
-        debug(f"\nparsed_reponse: {parsed_response}")
-        filtered = data.loc[
-            data[column].str.match(parsed_response, case=False)
-        ].copy()
-        if filtered.empty:
-            return
+        if val is None:
+            parsed_response = response[response.index(":") + 1 :].strip()
+            debug(f"\nparsed_reponse: {parsed_response}")
+            filtered = data.loc[
+                data[column].str.match(parsed_response, case=False)
+            ]
+            if filtered.empty:
+                return
+        else:
+            filtered = data.loc[data[column] == val]
+
         self.view_invoices(filtered)
 
     def invoice_search_path_constructor(self) -> str:
