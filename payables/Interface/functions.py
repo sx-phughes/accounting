@@ -5,22 +5,27 @@ import sys
 import os
 from typing import Any
 
+
 def cls():
     """Clears the terminal screen."""
 
     os.system("cls")
 
+
 def check_date(date: str):
     """Check that date matches YYYY-MM-DD format"""
 
-    match = re.match(r'(\d{4})-(\d{2})-(\d{2})', date)
-    
+    match = re.match(r"(\d{4})-(\d{2})-(\d{2})", date)
+
     if match:
-        if int(match.group(1)) in range(2020, 2040) and \
-            int(match.group(2)) in range(1,13) and \
-            int(match.group(3)) in range(1, 32):
+        if (
+            int(match.group(1)) in range(2020, 2040)
+            and int(match.group(2)) in range(1, 13)
+            and int(match.group(3)) in range(1, 32)
+        ):
             return True
     return False
+
 
 def set_type(obj: Any, dest_type: str) -> Any:
     """Allows for programmatic type setting."""
@@ -38,11 +43,13 @@ def set_type(obj: Any, dest_type: str) -> Any:
     else:
         raise TypeError(f"Unprogrammed type: {dest_type}")
 
+
 def debug(text: str) -> None:
     """Outputs text to a log file."""
 
     with open("debug.log", "+a") as file:
         file.write(text)
+
 
 def string_to_int(string: str) -> int:
     """Converts a string to an integer based on its unicode value."""
@@ -51,6 +58,7 @@ def string_to_int(string: str) -> int:
     for char in string:
         sum += ord(char)
     return sum
+
 
 def is_blank_list(data: list) -> bool:
     """Checks if a list is blank or not."""
@@ -62,6 +70,7 @@ def is_blank_list(data: list) -> bool:
             no_data = False
         i += 1
     return no_data
+
 
 def str_list_to_int(n: list[str]) -> list[int]:
     """Converts a list of strings to a list of integers"""
@@ -77,6 +86,7 @@ def str_list_to_int(n: list[str]) -> list[int]:
         n_copy[i] = str_as_int
     return n_copy
 
+
 def get_valid_input(prompt: str, pattern: str) -> str:
     """Returns a user input string fitting the pattern given."""
 
@@ -86,3 +96,7 @@ def get_valid_input(prompt: str, pattern: str) -> str:
             return val
         else:
             print(f"Bad input! Must match pattern '{pattern}'")
+            input("Enter to continue")
+            for i in range(4):
+                print("\x1b[2K", end="", flush=True)
+                print("\x1b[A", end="", flush=True)
