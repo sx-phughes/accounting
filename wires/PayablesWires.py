@@ -12,7 +12,7 @@ def write_files_to_disk(
     """Given a list of wire files, one for each company, write the files to
     disk at the given path. Default write location is downloads."""
 
-    dest = os.environ["HOMEPATH"]
+    dest = "/".join([os.environ["HOMEPATH"], "Downloads"])
     if path:
         dest = path
     vd = datetime.now().strftime("%Y-%m-%d")
@@ -30,8 +30,11 @@ def create_wire_files(wires: dict[str, list[WirePayment]]) -> list[WireFile]:
 
     wire_files = []
     for co in wires.keys():
-        file = WireFile(wires[co], co)
-        wire_files.append(file)
+        if len(wires[co]) > 0:
+            file = WireFile(wires[co], co)
+            wire_files.append(file)
+        else:
+            continue
     return wire_files
 
 
@@ -48,12 +51,14 @@ def process_payables_df_to_wires(
     co_wires_dict = {company: [] for company in company_names.keys()}
 
     companies = wire_invoices["Company"].unique()
+    # print("Companies: ", companies)
     for company in companies:
         company_wires = wire_invoices.loc[
             wire_invoices["Company"] == company
         ].copy()
 
         create_payment_objects(company_wires, co_wires_dict[company])
+        # print("Num ", company, " wires: ", len(co_wires_dict[company]))
 
     return co_wires_dict
 
@@ -64,7 +69,8 @@ def create_payment_objects(
     """Creates a list of payment objects from a data frame of invoices. All
     invoices in the dataframe must be invoices intended to be paid via wire,
     and one company."""
-    company = invoices.loc[0, "Company"].value
+
+    company = invoices["Company"].values[0]
     global wire_value_date
 
     for i, row in invoices.iterrows():
