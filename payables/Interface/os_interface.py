@@ -736,7 +736,7 @@ class OsInterface:
             self.print_details_directions()
 
             update = input(">\t")
-            pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.-]+)+"
+            pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.\&\-]+)+"
             matched_phrase = re.match(pattern, update)
 
             ret = self.handle_invoice_details_input(
