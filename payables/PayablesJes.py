@@ -36,7 +36,24 @@ class JECreator:
         self.coas = self.get_coas()
         self.invoices = self.get_invoice_data()
 
+    @property
+    def ap_path(self) -> str:
+        """Path to the payables workbook with invoice data."""
+
+        path = "/".join(
+            [
+                "C:/gdrive/Shared drives/accounting/Payables",
+                str(self.date.year),
+                self.date.strftime("%Y%m"),
+                self.date.strftime("%Y-%m-%d"),
+                f"{self.date.strftime('%Y-%m-%d')} Payables.xlsm",
+            ]
+        )
+        return path
+
     def get_vendor_map(self) -> pd.DataFrame:
+        """Returns the vendor details table."""
+
         vendor_path = (
             "C:/gdrive/Shared drives/accounting"
             + "/patrick_data_files/ap/Vendors.xlsx"
@@ -64,17 +81,10 @@ class JECreator:
         return coas
 
     def get_invoice_data(self):
-        ap_path = "/".join(
-            [
-                "C:/gdrive/Shared drives/accounting/Payables",
-                str(self.date.year),
-                self.date.strftime("%Y%m"),
-                self.date.strftime("%Y-%m-%d"),
-                f"{self.date.strftime('%Y-%m-%d')} Payables.xlsm",
-            ]
-        )
+        """Gets the table with all the invoice data for the current batch."""
+
         try:
-            invoices_df = pd.read_excel(ap_path, "Invoices")
+            invoices_df = pd.read_excel(self.ap_path, "Invoices")
         except FileNotFoundError:
             invoices_df = PayablesWorkbook(self.date).merge_vendors()
             self.standard_wb = False
@@ -166,18 +176,13 @@ class JECreator:
 
         bills = pd.DataFrame(columns=self.je_headers)
         for i, row in invoices.iterrows():
-            # print(
-            #     f"Processing bill {row['Vendor']} - {row['Invoice #']}",
-            #     end="\r",
-            # )
             bill = self.bill_creator(row)
 
+            # to prevent merging to an empty dataframe
             if len(bills.index) > 0:
-                bills = pd.concat([bills, bill])
+                bills = pd.concat([bills, bill]).reset_index(drop=True)
             else:
-                bills = bill
-
-            bills = bills.reset_index(drop=True)
+                bills = bill.reset_index(drop=True)
 
         clean_bills = self.clean_bill_df(bills)
         return clean_bills
@@ -186,17 +191,24 @@ class JECreator:
         """Adjust column types and fix duplicate invoice names"""
 
         new = company_data.copy(deep=True)
-        new["Bill No."] = new["Bill No."].astype(str)
-        new["Memo"] = new["Memo"].astype(str)
-        new["Description"] = new["Description"].astype(str)
+        cols = ["Bill No.", "Memo", "Description"]
+        new[cols] = new[cols].astype(str)
         new = self.fix_dupe_bill_nums(new, "Vendor", "Bill No.")
         return new
 
     def fix_dupe_bill_nums(
         self, df: pd.DataFrame, vendor_col: str, bill_col: str
     ) -> pd.DataFrame:
-        """Convert duplicate bill numbers to usable numbers"""
+        """Convert duplicate bill numbers to usable numbers.
 
+        Quickbooks will misinterpret bills with the same invoice number as
+        belonging to the same overall bill. We need to check for bills that
+        have the same bill number, e.g. '202508', but different vendors.
+        Those invoice numbers are prefixed with the first four chars of the
+        vendor name.
+        """
+
+        df["concat"] = df[bill_col] + df[vendor_col]
         vendors = list(df[vendor_col].values)
         bill_nos = list(df[bill_col].values)
         qb_mapping_and_bills = [
@@ -206,9 +218,13 @@ class JECreator:
 
         new = df.copy(deep=True)
         for i in range(len(bill_nos)):
+            # count of bills with name _x_ in all
             c1 = bill_nos.count(bill_nos[i])
+            # count of bills with name _x_ and vendor _y_
             c2 = qb_mapping_and_bills.count(qb_mapping_and_bills[i])
+            # if there are dupes of bill numbers but not of the bill itself
             if c1 > 1 and c2 == 1:
+                # create a new name
                 new_no = vendors[i][0:4] + bill_nos[i]
                 new.loc[i, bill_col] = new_no
             else:
@@ -217,10 +233,11 @@ class JECreator:
         return new
 
     def bill_creator(self, df_row: pd.Series) -> pd.DataFrame:
-        """Create a bill from an invoice entry"""
+        """Create a bill from an invoice row in the payables table."""
 
         bill = pd.DataFrame(columns=self.je_headers)
 
+        # 21 character limit on bill numbers in quickbooks
         if len(str(df_row["Invoice #"])) > 21:
             bill.loc[0, "Bill No."] = str(df_row["Invoice #"])[-21:]
         else:
@@ -251,10 +268,15 @@ def get_bill_file_path(company: str, date: datetime) -> str:
 def run_payables():
     """Run payables process for a specific date and create the bill import files for QB"""
 
-    year, month, day = ui_get_date(dt=False)
+    batch_date = ui_get_date()
+    create_save_bill_files(date=batch_date)
 
-    batch_date = datetime(year, month, day)
-    payables = JECreator(batch_date)
+
+def create_save_bill_files(date: datetime) -> None:
+    """Creates and saves the bill files for the payables batch on the given
+    date."""
+
+    payables = JECreator(date)
     bill_dfs = payables.generate_all_bills()
 
     for i in bill_dfs.keys():
@@ -266,9 +288,7 @@ def run_payables():
             while True:
                 try:
                     bill_dfs[i][j].to_csv(
-                        path_or_buf=get_bill_file_path(
-                            company_name, batch_date
-                        ),
+                        path_or_buf=get_bill_file_path(company_name, date),
                         index=False,
                     )
                     break
