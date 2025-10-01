@@ -342,7 +342,8 @@ class PayablesWorkbook:
             "ACH Vendor Name",
         ]
         vendors_small = vendors[cols_needed].copy(deep=True)
-        return self.data.merge(right=vendors_small, how="left", on="Vendor")
+        merged = self.data.merge(right=vendors_small, how="left", on="Vendor")
+        return merged
 
     def get_idb_invoices(self) -> pd.DataFrame:
         """Returns a view of the invoices table with just IDB invoices."""
