@@ -457,7 +457,7 @@ class OsInterface:
         """Create NACHA payment files for invoiced payable via ACH and save
         to disk."""
 
-        vd = self.get_vd()
+        vd = ui_get_date(dt=True).strftime("%Y-%m-%d")
         nacha_file = self.get_nacha_constructor(
             invoices=invoices, value_date=vd
         )
@@ -527,7 +527,7 @@ class OsInterface:
         """Method for creating a simple batch of wire payments for a given
         payables run. One invoice = one wire.
         """
-        vd = self.get_vd(dt=True)
+        vd = ui_get_date(dt=True)
 
         PayablesWires.os_interface_wire_wrapper(
             payables=invoices, valuedate=vd
