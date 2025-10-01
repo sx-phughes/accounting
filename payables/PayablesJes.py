@@ -89,7 +89,11 @@ class JECreator:
             invoices_df = PayablesWorkbook(self.date).merge_vendors()
             self.standard_wb = False
 
-        return invoices_df
+        no_cc = invoices_df.loc[
+            ~(invoices_df["Payment Type"].isin(["CC", "Credit Card"]))
+        ]
+
+        return no_cc
 
     def generate_all_bills(self) -> dict[str, pd.DataFrame]:
         """Create bills for all companies, separated into dataframes for every
