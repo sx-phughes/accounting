@@ -19,9 +19,10 @@ from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
 from Interface.CursorFunc import *
 from nacha import NachaConstructor
-import DupePayments as DupePayments
+import DupePayments
 from Wires import WireFile, WirePayment, PayablesWires
 import Interface.PayableSummary as PayableSummary
+import PayablesJes
 
 
 class OsInterface:
@@ -130,7 +131,8 @@ class OsInterface:
             3: ["Switch Payables Workbook", self.switch_books],
             4: ["Create Payment Files", self.make_payment_files],
             5: ["Create Summary Workbook", self.save_summary_workbook],
-            6: ["Exit"],
+            6: ["Create Quickbooks Bill Files", self.create_bill_files],
+            7: ["Exit"],
         }
         while True:
             cls()
@@ -445,19 +447,11 @@ class OsInterface:
     ######################
     # Create NACHA files #
     ######################
-    def make_payment_files(self):
-        """Creates NACHA payment files for current payables batch."""
-
-        good_to_pay = self.invoices_good_to_pay()
-        self.check_for_duplicate_payments()
-        self.make_nacha_files(invoices=good_to_pay)
-        self.simple_wire_payments(invoices=good_to_pay)
-
     def make_nacha_files(self, invoices: pd.DataFrame) -> None:
         """Create NACHA payment files for invoiced payable via ACH and save
         to disk."""
 
-        vd = self.get_vd()
+        vd = ui_get_date(dt=True).strftime("%Y-%m-%d")
         nacha_file = self.get_nacha_constructor(
             invoices=invoices, value_date=vd
         )
@@ -527,7 +521,7 @@ class OsInterface:
         """Method for creating a simple batch of wire payments for a given
         payables run. One invoice = one wire.
         """
-        vd = self.get_vd(dt=True)
+        vd = ui_get_date(dt=True)
 
         PayablesWires.os_interface_wire_wrapper(
             payables=invoices, valuedate=vd
@@ -587,6 +581,14 @@ class OsInterface:
     #################################
     # Payment File Common Functions #
     #################################
+    def make_payment_files(self):
+        """Creates NACHA payment files for current payables batch."""
+
+        good_to_pay = self.invoices_good_to_pay()
+        self.check_for_duplicate_payments()
+        self.make_nacha_files(invoices=good_to_pay)
+        self.simple_wire_payments(invoices=good_to_pay)
+
     def invoices_good_to_pay(self) -> pd.DataFrame:
         """Filter dataframe on invoices payable via wire or ACH, approved, and
         unpaid."""
@@ -631,10 +633,17 @@ class OsInterface:
         print("Workbook saved.")
         input("\nEnter to return to main_menu...")
 
+    #########################
+    # Quickbooks Bill Files #
+    #########################
+    def create_bill_files(self) -> None:
+        PayablesJes.create_save_bill_files(date=self.dt_date)
+        print("Files saved to downloads")
+        input()
+
     ######################
     # Invoice management #
     ######################
-
     def view_invoices(self, data: pd.DataFrame = None) -> None:
         """Prints invoices to screen"""
 
@@ -736,7 +745,7 @@ class OsInterface:
             self.print_details_directions()
 
             update = input(">\t")
-            pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.-]+)+"
+            pattern = r"([,]?[\s]?[\w\s#]+: [\d\w\s\(\)\.\&\-]+)+"
             matched_phrase = re.match(pattern, update)
 
             ret = self.handle_invoice_details_input(

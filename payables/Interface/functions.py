@@ -1,7 +1,7 @@
 # Standard imports
 import numpy as np
 import re
-import sys
+from datetime import datetime
 import os
 from typing import Any
 
@@ -100,3 +100,17 @@ def get_valid_input(prompt: str, pattern: str) -> str:
             for i in range(4):
                 print("\x1b[2K", end="", flush=True)
                 print("\x1b[A", end="", flush=True)
+
+
+def ui_get_date(dt: bool = True) -> datetime | tuple[int]:
+    """Gets date from user. Returns datetime object if dt == True."""
+
+    year = int(get_valid_input("Year:  ", r"\d{4}"))
+    month = int(get_valid_input("Month: ", r"\d{1,2}"))
+    day = int(get_valid_input("Day:   ", r"\d{1,2}"))
+    vd_dt = datetime(year, month, day)
+    vd_str = vd_dt.strftime("%y%m%d")
+    if dt:
+        return vd_dt
+    else:
+        return (year, month, day)
