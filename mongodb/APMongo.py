@@ -1,7 +1,9 @@
 import asyncio
 import pandas as pd
+import numpy as np
 from pymongo import AsyncMongoClient
 import json
+import copy
 
 vendor_field_renamer = {
     "Vendor": "name",
@@ -12,7 +14,7 @@ vendor_field_renamer = {
     "QB Mapping": "qb_name",
     "Account Mapping": "qb_acct",
     "ACH ABA": "ach_aba",
-    "ACH Account Number": "ach_account",
+    "ACH Account Number": "ach_acct",
     "ACH Vendor Name": "ach_name",
     "IDB Broker": "idb",
     "Contact": "contact_name",
@@ -27,14 +29,14 @@ vendor_field_renamer = {
     "Beneficiary Bank Name": "ben_bank",
     "Beneficiary Bank Address Line 1": "ben_bank_addr_1",
     "Beneficiary Bank Address Line 2": "ben_bank_addr_2",
-    "Beneficiary Bank City, State\/Province, Zip\/Postal Code": "ben_bank_city_st_zip",
+    "Beneficiary Bank City, State/Province, Zip/Postal Code": "ben_bank_city_st_zip",
     "Beneficiary Bank Country": "ben_bank_country",
     "Intermediary Bank ID Type": "int_bank_id_type",
     "Intermediary Bank ID": "int_bank_id",
     "Intermediary Bank Name": "int_bank",
     "Intermediary Bank Address Line 1": "int_bank_addr_1",
     "Intermediary Bank Address Line 2": "int_bank_addr_2",
-    "Intermediary Bank City, State\/Province, Zip\/Postal Code": "int_bank_city_st_zip",
+    "Intermediary Bank City, State/Province, Zip/Postal Code": "int_bank_city_st_zip",
     "Intermediary Bank Country": "int_bank_country",
 }
 
@@ -48,6 +50,7 @@ vendor_doc_template = {
     "expense_cat": "",
     "approver": "",
     "pmt_type": "",
+    "idb": False,
     "qb": {
         "qb_name": "",
         "qb_acct": 0,
@@ -58,6 +61,7 @@ vendor_doc_template = {
         "phone": "",
     },
     "ach": {
+        "ach_name": "",
         "ach_acct": "",
         "ach_aba": "",
     },
@@ -89,11 +93,13 @@ vendor_field_sub_obj_mapping = {
     "expense_cat": "",
     "approver": "",
     "pmt_type": "",
+    "idb": "",
     "qb_name": "qb",
     "qb_acct": "qb",
     "contact_name": "contact",
     "email": "contact",
     "phone": "contact",
+    "ach_name": "ach",
     "ach_acct": "ach",
     "ach_aba": "ach",
     "template": "wire",
@@ -153,16 +159,42 @@ def get_vendors_data() -> pd.DataFrame:
     )
     sheet = "Vendors"
 
-    df = pd.read_excel(io=path, sheet_name=sheet)
+    df = pd.read_excel(io=path, sheet_name=sheet, dtype=str)
     renamed = df.rename(columns=vendor_field_renamer)
+    renamed["qb_acct"] = renamed["qb_acct"].fillna(0).astype(np.int32)
+    print(*renamed.columns, sep="\n")
     return renamed
 
 
 def convert_row_to_dict(row: pd.Series) -> dict:
     """Converts vendor row into the structured dict"""
 
+    new_dict = copy.deepcopy(vendor_doc_template)
     for col in new_cols:
-        new_dict = vendor_doc_template.copy()
+        sub = vendor_field_sub_obj_mapping[col]
+        if sub:
+            try:
+                if np.isnan(row[col]):
+                    continue
+                else:
+                    new_dict[sub][col] = row[col]
+            except:
+                new_dict[sub][col] = row[col]
+        elif col == "idb":
+            try:
+                if np.isnan(row[col]):
+                    new_dict[col] = False
+            except:
+                new_dict[col] = True
+        else:
+            try:
+                if np.isnan(row[col]):
+                    continue
+                else:
+                    new_dict[col] = row[col]
+            except:
+                new_dict[col] = row[col]
+    return new_dict
 
 
 def read_vendors_json() -> list[str]:
@@ -183,6 +215,43 @@ def get_vendors_as_dicts() -> None:
     return vendors_as_dicts
 
 
+def print_dict(obj: dict) -> None:
+    keys = list(obj.keys())
+    print("{")
+    for key in keys:
+        if isinstance(obj[key], str) or isinstance(obj[key], bool):
+            print(f"\t'{key}': '{obj[key]}'")
+        elif isinstance(obj[key], dict):
+            sub_dict = obj[key]
+            print(f"\t'{key}':", "{", sep=" ")
+            sub_dict_keys = list(sub_dict.keys())
+            for sub_dict_key in sub_dict_keys:
+                print(f"\t\t'{sub_dict_key}': '{sub_dict[sub_dict_key]}'")
+            print("\t}")
+    print("}")
+
+
+async def upload_vendors_to_db() -> None:
+    vendors = get_vendors_data()
+    vendor_docs = []
+    count = 0
+    # lim = 3
+    for i, row in vendors.iterrows():
+        doc = convert_row_to_dict(row)
+        vendor_docs.append(doc)
+        count += 1
+        # if count >= lim:
+        #     break
+
+    # for i in range(lim):
+    # print_dict(vendor_docs[i])
+
+    client = await connect_to_ap()
+    db = client["accountspayable"]
+    vendors_cluster = db["vendors"]
+    object_ids = await vendors_cluster.insert_many(vendor_docs)
+    print(object_ids)
+
+
 if __name__ == "__main__":
-    # convert_vendors_to_dict()
     pass
