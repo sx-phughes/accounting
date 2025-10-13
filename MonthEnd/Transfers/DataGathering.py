@@ -105,9 +105,9 @@ def EtMonthEnd(year, month):
     path = f'C:/gdrive/My Drive/ET Payout Reports/{yrmo} - ET Payout Traders Report.xlsx'
     file = pd.read_excel(path, 'Transfer Check')
     file = file.fillna(0)
-    new_headers = file.iloc[0].to_list()
-    renamer = {old: new for old, new in zip(file.columns.to_list(), new_headers)}
-    file = file.rename(columns=renamer).drop(index=0).reset_index(drop=True)
+    # new_headers = file.iloc[0].to_list()
+    # renamer = {old: new for old, new in zip(file.columns.to_list(), new_headers)}
+    # file = file.rename(columns=renamer).drop(index=0).reset_index(drop=True)
     
     totals_i = file.loc[file['Account'] == 'Totals'].index[0]
     drop_index = file.iloc[totals_i:].index

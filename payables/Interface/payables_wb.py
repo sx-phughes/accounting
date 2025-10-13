@@ -1,18 +1,16 @@
 # Standard packages
 from datetime import datetime
 import os
+import sys
 import shutil
 import pandas as pd
 import numpy as np
 
+# Path adjustments
+sys.path.append("/".join([os.environ["HOMEPATH"], "accounting"]))
+
 # Package imports
-try:
-    from payables.Interface.functions import *
-except ModuleNotFoundError:
-    try:
-        from Interface.functions import *
-    except ModuleNotFoundError:
-        from functions import *
+from payables.Interface.functions import *
 
 
 def get_col_index(col_name: str) -> int:
@@ -24,52 +22,35 @@ def get_col_index(col_name: str) -> int:
     return i
 
 
-class PayablesWorkbook(pd.DataFrame):
+class PayablesWorkbook:
     # class vars
     payables_path = "C:/gdrive/Shared drives/accounting/Payables"
-    vendors_path = \
+    vendors_path = (
         "C:/gdrive/Shared drives/accounting/patrick_data_files/ap/Vendors.xlsx"
-    column_headers = ["Vendor", "Invoice #", "Amount", "CC", "CC User", "Paid"]
-    column_defaults = ["", "", np.float64(0), False, "", False]
-
-    # for DataFrame constructor
-    _metadata = [
-        # "wb_path",
-        "payables_date",
-        "stem",
-        "f_name",
-        "_payables_date",
-        "_stem",
-        "_f_name",
-        # "_wb_path"
+    )
+    column_headers = [
+        "Vendor",
+        "Invoice #",
+        "Amount",
+        "CC",
+        "CC User",
+        "Paid",
+        "Approved",
     ]
-
-    @property
-    def _constructor(self):
-        return PayablesWorkbook
+    column_types = ["str", "str", "float64", "bool", "str", "bool", "bool"]
+    column_defaults = ["", "", np.float64(0), False, "", False, False]
 
     ############################################################
     # initializer - handles reconstruction from pandas methods #
     ############################################################
-    def __init__(
-        self,
-        data: pd.DataFrame | None = None,
-        date=None,
-        index=None,
-        columns=None,
-        dtype=None,
-        copy=None,
-    ):
-        if date:
-            self.payables_date = date
-            self.stem = self.payables_date
+    def __init__(self, date: str | datetime):
+        self.payables_date = date
+        self.stem = date
+        self.wb_path = "/".join([self.payables_path, self.stem, self.f_name])
+        self.data = self.initialize_from_date()
 
-        if data is not None:
-            input_data = data
-        else:
-            input_data = self.initialize_from_date()
-
-        super().__init__(input_data, index, columns, dtype, copy)
+    def __repr__(self):
+        return self.data
 
     def initialize_from_date(self):
         """Initialize Payables Workbook from a given date string
@@ -79,14 +60,16 @@ class PayablesWorkbook(pd.DataFrame):
         """
         # check to see if date folder exists--implies existence of payables
         # workbook
-        path = self.wb_path().replace(self.f_name, "")
+        path = self.wb_path.replace(self.f_name, "")
         if not self.path_exists(path):
             self.new_workbook()
 
         try:
-            data = pd.read_excel(self.wb_path(), "Invoices")
+            data = pd.read_excel(self.wb_path, "Invoices")
         except:
-            data = pd.read_excel(self.wb_path().replace("xlsx", "xlsm"), "Invoices")
+            data = pd.read_excel(
+                self.wb_path.replace("xlsx", "xlsm"), "Invoices"
+            )
 
         self.validate_data(data)
         data = self.set_types(data)
@@ -100,12 +83,19 @@ class PayablesWorkbook(pd.DataFrame):
         return data
 
     def validate_data(self, data: pd.DataFrame):
-        """Validate workbook columns and add missing ones"""
+        """Validate workbook columns, add missing ones, and remove
+        extra columns to ensure payables workbook conforms."""
+
         good_cols_index = self.get_extant_cols_index(data)
-        self.add_new_cols(data, good_cols_index)
+        if good_cols_index < len(self.column_headers):
+            self.add_new_cols(data, good_cols_index)
+        elif good_cols_index > len(self.column_headers):
+            drop_cols = data.columns.tolist()[good_cols_index + 1 :]
+            data.drop(columns=drop_cols, inplace=True)
 
     def add_new_cols(self, data: pd.DataFrame, add_from: int):
         """Add identified missing columns to payables table"""
+
         end = len(PayablesWorkbook.column_headers)
         for i in range(add_from, end):
             self.initialize_new_col(data, i)
@@ -129,21 +119,13 @@ class PayablesWorkbook(pd.DataFrame):
         Returns:
             int: number of columns in dataframe
         """
+
         n = len(original.columns.values.tolist())
         return n
 
     ####################
     # class properties #
     ####################
-    # @property
-    def wb_path(self):
-        """Path to payables workbook"""
-        return PayablesWorkbook.payables_path + self.stem + self.f_name
-
-    # @wb_path.setter
-    # def wb_path(self, wb_path):
-    #     """Needed for class reconstruction via pandas built-in methods"""
-    #     pass
 
     @property
     def payables_date(self):
@@ -157,25 +139,10 @@ class PayablesWorkbook(pd.DataFrame):
             self.payables_date_from_dt(date)
         elif date is None:
             pass
-            # raise TypeError
-
-    def payables_date_from_str(self, date: str) -> None:
-        if check_date(date):
-            self._payables_date = datetime.strptime(date, "%Y-%m-%d")
-        else:
-            raise TypeError
-
-    def payables_date_from_dt(self, date: datetime):
-        self._payables_date = date
-        return 1
 
     @property
     def stem(self):
         return self._stem
-
-    @property
-    def f_name(self):
-        return self._f_name
 
     @stem.setter
     def stem(self, date: datetime | str):
@@ -186,20 +153,37 @@ class PayablesWorkbook(pd.DataFrame):
         elif date is None:
             pass
 
-    def stem_from_datetime(self, date):
-        formats = ["%Y", "%Y%m", "%Y-%m-%d"]
-        dates = [self.formatted_date(f_str) for f_str in formats]
-
-        self._stem = "/" + "/".join(dates)
-        self._f_name = "/" + dates[2] + " Payables.xlsx"
-
-    def stem_from_str(self, date: str):
-        self._stem = date
-        self._f_name = "/" + date.split("/")[-1] + " Payables.xlsx"
+    @property
+    def f_name(self):
+        return self._f_name
 
     @f_name.setter
     def f_name(self, f_name: str):
         self._f_name = f_name
+
+    ####################
+    # helper functions #
+    ####################
+    def payables_date_from_str(self, date: str) -> None:
+        if check_date(date):
+            self._payables_date = datetime.strptime(date, "%Y-%m-%d")
+        else:
+            raise TypeError
+
+    def payables_date_from_dt(self, date: datetime):
+        self._payables_date = date
+        return 1
+
+    def stem_from_datetime(self, date):
+        formats = ["%Y", "%Y%m", "%Y-%m-%d"]
+        dates = [self.formatted_date(f_str) for f_str in formats]
+
+        self._stem = "/".join(dates)
+        self._f_name = dates[2] + " Payables.xlsx"
+
+    def stem_from_str(self, date: str):
+        dt_date = datetime.strptime(date, "%Y-%m-%d")
+        self.stem_from_datetime(dt_date)
 
     #################
     # class methods #
@@ -210,7 +194,7 @@ class PayablesWorkbook(pd.DataFrame):
 
     def insert_invoice(self, invoice_data: list):
         """Add an invoice to the bottom of the workbook"""
-        self.loc[len(self.index)] = invoice_data
+        self.data.loc[len(self.data.index)] = invoice_data
 
         self.move_files()
         self.save_workbook()
@@ -219,11 +203,11 @@ class PayablesWorkbook(pd.DataFrame):
         """Removed invoices at given indexes"""
         if isinstance(index, list):
             for ind in index:
-                self.drop(index=ind, inplace=True)
+                self.data.drop(index=ind, inplace=True)
         else:
-            self.drop(index=index, inplace=True)
+            self.data.drop(index=index, inplace=True)
 
-        self.reset_index(drop=True, inplace=True)
+        self.data.reset_index(drop=True, inplace=True)
         self.save_workbook()
 
     def path_exists(self, path: str):
@@ -237,12 +221,14 @@ class PayablesWorkbook(pd.DataFrame):
         """Create a new blank payables file for a given date"""
         cols = PayablesWorkbook.column_headers
         df = pd.DataFrame(columns=cols)
-        # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
-        df.to_excel(self.wb_path(), sheet_name="Invoices", index=False)
+        df.to_excel(
+            excel_writer=self.wb_path, sheet_name="Invoices", index=False
+        )
 
     def save_workbook(self):
-        # with pd.ExcelWriter(path=self.wb_path, engine="openpyxl") as writer:
-        self.to_excel(self.wb_path(), sheet_name="Invoices", index=False)
+        self.data.to_excel(
+            excel_writer=self.wb_path, sheet_name="Invoices", index=False
+        )
 
     def move_files(self):
         """Move invoice files from Downloads to relevant payables folder with
@@ -251,7 +237,7 @@ class PayablesWorkbook(pd.DataFrame):
 
         for old, new in zipped_paths:
             self.move_a_file(old, new)
-        
+
     def move_a_file(self, old_path: str, new_path: str) -> None:
         while True:
             try:
@@ -307,7 +293,7 @@ class PayablesWorkbook(pd.DataFrame):
 
     def get_entered_data(self):
         """Get input data for most recent invoice"""
-        row = self.loc[len(self.index) - 1]
+        row = self.data.loc[len(self.data.index) - 1]
         vendor = self.get_vendor(row)
         invoice_num = row["Invoice #"]
         clean_invoice = self.clean_invoice_num(invoice_num)
@@ -327,15 +313,22 @@ class PayablesWorkbook(pd.DataFrame):
     def get_invoice_files(self):
         """Get files in download folder"""
         drive = "C:"
-        downloads = drive + os.environ["HOMEPATH"].replace("\\", "/") + "/Downloads"
+        downloads = (
+            drive + os.environ["HOMEPATH"].replace("\\", "/") + "/Downloads"
+        )
         files = list(filter(lambda x: ".ini" not in x, os.listdir(downloads)))
         old_paths = [downloads + "/" + file for file in files]
 
         return old_paths
 
     def merge_vendors(self) -> pd.DataFrame:
-        vendors = pd.read_excel(self.vendors_path, "Vendors")
-        vendors_small = vendors[[
+        """Returns the invoices table with the vendors table merged."""
+        vendors = pd.read_excel(
+            self.vendors_path,
+            "Vendors",
+            dtype={"ACH ABA": str, "ACH Account Number": str},
+        )
+        cols_needed = [
             "Vendor",
             "Company",
             "Expense Category",
@@ -343,8 +336,32 @@ class PayablesWorkbook(pd.DataFrame):
             "Payment Type",
             "QB Mapping",
             "Account Mapping",
+            "IDB Broker",
             "ACH ABA",
             "ACH Account Number",
             "ACH Vendor Name",
-        ]].copy(deep=True)
-        return self.merge(right=vendors_small, how="left", on="Vendor")
+        ]
+        vendors_small = vendors[cols_needed].copy(deep=True)
+        merged = self.data.merge(right=vendors_small, how="left", on="Vendor")
+        return merged
+
+    def get_idb_invoices(self) -> pd.DataFrame:
+        """Returns a view of the invoices table with just IDB invoices."""
+
+        with_vendors = self.merge_vendors()
+        just_idb = with_vendors.loc[
+            with_vendors["IDB Broker"] == "Yes", self.column_headers
+        ].sort_values("Vendor")
+        return just_idb
+
+
+if __name__ == "__main__":
+    payables = PayablesWorkbook(date="2030-12-31")
+    # payables.insert_invoice([
+    #     "Baycrest (IDB)",
+    #     "test",
+    #     np.float64(1000),
+    #     False,
+    #     "",
+    #     False
+    # ])

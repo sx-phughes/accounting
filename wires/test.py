@@ -8,8 +8,16 @@ if os.path.exists('C:/Users/phughes_simplextradi/Downloads/Test File.csv'):
 
 anova = Vendor('Anova')
 
-pmt = WirePayment('021000021', '0000000000000000000000000559711101', 500.00, datetime(2024,11,16), anova, 'Test Payment', True)
+pmt = WirePayment(
+    orig_bank_id='071000013',
+    orig_account='000000559711101',
+    amount=500.00, 
+    value_date=datetime(2025,9,16), 
+    vendor=anova, 
+    details='Test Payment', 
+    template=True
+)
 
 file = WireFile(pmt)
 
-file.write_file('C:/Users/phugh/Downloads', 'Test File')
+file.write_file('C:/Users/phughes_simplextradi/Downloads', 'Test File')

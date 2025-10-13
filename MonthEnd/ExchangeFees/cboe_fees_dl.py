@@ -1,6 +1,7 @@
 import requests
 import re
 import pandas as pd
+import os
 from datetime import datetime
 
 
@@ -132,6 +133,7 @@ def updateMpids():
     writeNewMpids(mpidsData)
 
 def writeNewMpids(mpidsData):
+    # print(os.getcwd())
     with open(mpidFileName, 'wb') as file:
         file.write(mpidsData)
 

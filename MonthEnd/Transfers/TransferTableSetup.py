@@ -43,7 +43,11 @@ class BamlTransferTable(TransferTable):
     def settle_date(self, date):
         self._settle_date = date
         self.dt_settle_date = datetime.strptime(date, '%m/%d/%Y')
-        self.comment_date_str = datetime(self.dt_settle_date.year, self.dt_settle_date.month - 1, 1).strftime('%b %Y')
+        self.comment_date_str = datetime(
+            self.dt_settle_date.year,
+            self.dt_settle_date.month,
+            1
+        ).strftime('%b %Y')
     
     def add_data_row(self, account_no: str, amount: float, user: str = 'KPIE'):
         account_no = account_no.replace('-','')

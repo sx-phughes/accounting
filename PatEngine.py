@@ -3,6 +3,7 @@ import os
 import re
 import traceback
 import inspect
+from datetime import datetime
 from typing import Any, Callable
 
 # Package Imports
@@ -13,7 +14,7 @@ import AbnCash
 from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
 from MonthEnd.ExchangeFees import ExchangeFeesDownload
-from MonthEnd.Abn import MonthEnd
+from MonthEnd.Abn import MonthEndModule
 from payables.nacha import NachaMain
 from payables.nacha import BlankBatch
 import UpdateVendors
@@ -27,7 +28,7 @@ def cls():
 
 class PatEngine:
     def __init__(self):
-        self.main_menu()
+        self.date = datetime.now()
 
     def menu(
         self,
@@ -96,7 +97,9 @@ class PatEngine:
         print(traceback.format_exc())
         input("Press enter to return to menu\n>\t")
 
-    def run_selection(self, option: int, options: dict[str, list[str | Callable]]):
+    def run_selection(
+        self, option: int, options: dict[str, list[str | Callable]]
+    ):
         """Get function from list of options and run function or initialize
         next menu
         """
@@ -113,7 +116,9 @@ class PatEngine:
             option = self.get_option_input(options)
         return option
 
-    def get_option_input(self, options: dict[str, list[str | Callable]]) -> int | None:
+    def get_option_input(
+        self, options: dict[str, list[str | Callable]]
+    ) -> int | None:
         num_options = len(list(options.keys()))
         selection = input(">\t")
         validated = self.validate_option(selection, num_options)
@@ -152,7 +157,9 @@ class PatEngine:
 
         fn(**input_dict)
 
-    def get_arg(self, arg: str, arg_storage: dict[str, str | int | Any]) -> None:
+    def get_arg(
+        self, arg: str, arg_storage: dict[str, str | int | Any]
+    ) -> None:
         """Get argument value from user"""
         print(f"Input value for parameter {arg}: ")
         val = input(">\t")
@@ -208,7 +215,7 @@ class PatEngine:
                 "Unzip Files in a Folder",
                 UnzipFiles.script_wrapper,
             ],
-            "Payables": self.payables,
+            "AP": self.payables,
             "Update Vendor Value": [
                 "Update a value in the vendor database",
                 UpdateVendors.update_vendor,
@@ -234,7 +241,7 @@ class PatEngine:
             "ABN Month End": [
                 "Run ABN Month End Process - \
                 process data files and save to CM directory",
-                MonthEnd.run_month_end_files,
+                MonthEndModule.run_month_end_files,
             ],
             "Organize BAML ME Files": [
                 "Move BofA ME Data Files and Process to Summary Files",
@@ -250,14 +257,11 @@ class PatEngine:
 
     def payables(self):
         """Sub-menu options for running payables-related scripts"""
+
         options = {
-            "Input Payables": [
+            "AP": [
                 "Manage Payables Workbook: view/input/remove",
                 os_interface.run_interface,
-            ],
-            "Create Payables Payment Files": [
-                "Create NACHA files for a Payables Batch",
-                NachaMain.nacha_main,
             ],
             "Create Paybles JE Files": [
                 "Create Payables JE files for upload to QB",
@@ -266,3 +270,8 @@ class PatEngine:
         }
 
         self.menu("Payables Menu", options, "Main Menu")
+
+
+if __name__ == "__main__":
+    instance = PatEngine()
+    instance.run_f(os_interface.run_interface)

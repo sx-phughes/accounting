@@ -6,8 +6,37 @@ from MonthEnd.Abn import Base, FileGrabber
 
 def get_data()-> pd.DataFrame:
     data = get_combined_data()
+    #########
+    # Debug #
+    #########
+    # cm_bal = data[Base.cm_moyr].sum()
+    # print(f"Total after combining: {cm_bal:,.2f}")
+    #############
+    # End debug #
+    #############
+
     clean_data = clean_data_tab(data)
+    #########
+    # Debug #
+    #########
+    # cm_bal = clean_data[Base.cm_moyr].sum()
+    # print(f"Total after cleaning: {cm_bal:,.2f}")
+    #############
+    # End debug #
+    #############
+
     final = finalize_data(clean_data)
+    #########
+    # Debug #
+    #########
+    # cm_bal = final["Aug 2025\t"].sum()
+    # print(f"Total after finalizing: {cm_bal:,.2f}")
+    #############
+    # End debug #
+    #############
+
+
+    input()
     return final
 
 def get_combined_data() -> pd.DataFrame:
@@ -25,8 +54,27 @@ def get_pm_data() -> pd.DataFrame:
     
 def get_cm_data() -> pd.DataFrame:
     cm_data = modfiy_cash(FileGrabber.cm_cash)
+
+    #########
+    # Debug #
+    #########
+    open_bal_total = cm_data["Opening Balance"].sum()
+    print(f"Opening Balance Total: {open_bal_total:,.2f}")
+    #############
+    # End debug #
+    #############
+
     update_ledger_mapping(cm_data)
     rename_opening_balance(cm_data, Base.cm_moyr)
+
+    #########
+    # Debug #
+    #########
+    open_bal_total = cm_data[Base.cm_moyr].sum()
+    print(f"Opening Balance Total: {open_bal_total:,.2f}")
+    #############
+    # End debug #
+    #############
     return cm_data
     
 def modfiy_cash(cash: pd.DataFrame) -> pd.DataFrame:

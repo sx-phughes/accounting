@@ -4,7 +4,7 @@ def get_path() -> None:
     """Get path to baycrest file from user
     """
     global file_path
-    file_path = input('Input path to file:\n\t>') 
+    file_path = input('Input path to file:\n>\t') 
 
 def get_file() -> pd.DataFrame:
     """Reads baycrest invoice spreadsheet into excel
@@ -88,8 +88,12 @@ def export_tables() -> None:
     """Exports tables to file
     """
     with pd.ExcelWriter(make_f_names()) as writer:
-        split_tables[0].to_excel(writer, 'IDB Trades', index=False)
-        split_tables[1].to_excel(writer, 'IX Trades', index=False)
+        split_tables[0].to_excel(
+            excel_writer=writer, sheet_name='IDB Trades', index=False
+        )
+        split_tables[1].to_excel(
+            excel_writer=writer, sheet_name='IX Trades', index=False
+        )
 
 def split_table(df: pd. DataFrame, symbol_col: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Splits table based on criteria for IX trades

@@ -3,7 +3,6 @@ SummaryPanel {
     background: white;
     height: 100%;
     width: 50%;
-    align: center middle;
 }
 
 OptionsPanel {
@@ -14,12 +13,17 @@ OptionsPanel {
     align: center middle;
 }
 
+#main {
+    height: 100%;
+    width: 100%;
+}
+
 SummaryPanel > Button {
     background: lightblue;
     width: 100%
 }
 
-SummaryPanel > Label {
+SummaryPanel > Placeholder {
     background: lightblue;
     margin: 5;
     padding: 5;
