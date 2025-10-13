@@ -2,8 +2,8 @@ import pandas as pd
 from datetime import datetime
 import os
 
-from Wires.WirePayment import company_ids, company_names, WirePayment, Vendor
-from Wires.WireFile import WireFile
+from wires.WirePayment import company_ids, company_names, WirePayment, Vendor
+from wires.WireFile import WireFile
 
 
 def write_files_to_disk(
