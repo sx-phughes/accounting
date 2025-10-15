@@ -2,8 +2,10 @@
 import os
 import numpy as np
 import pandas as pd
+import getpass
 import re
 import sys
+import pyodbc
 from typing import Any
 import shutil
 from datetime import datetime
@@ -18,6 +20,7 @@ sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
 from Interface.payables_wb import PayablesWorkbook, get_col_index
 from Interface.functions import *
 from Interface.CursorFunc import *
+import APDatabase
 from nacha import NachaConstructor
 import DupePayments
 from wires import WireFile, WirePayment, PayablesWires
@@ -48,32 +51,35 @@ class OsInterface:
         pd.set_option("display.max_rows", None)
         self.preserved_downloads = 0
 
-        if not payables_date:
-            payables_date = self._ui_workbook_date()
-        else:
-            self._validate_date(payables_date)
+        date = datetime.now().strftime("%Y-%m-%d")
+        self._validate_date(date)
 
-        self.payables = PayablesWorkbook(date=payables_date)
+        self.get_db_connection()
 
         if not debug:
             self.main()
 
+    def _get_uid_and_pwd(self) -> tuple[str]:
+        cls()
+        uid = input("Username: ")
+        pwd = getpass.getpass()
+        return (uid, pwd)
+
+    def get_db_connection(self):
+        while True:
+            creds = self._get_uid_and_pwd()
+            try:
+                self.conn = APDatabase.establish_db_connection(*creds)
+                break
+            except pyodbc.Error as e:
+                if "Access denied for user" in str(e):
+                    APDatabase.incorrect_password_handler()
+                else:
+                    raise e
+
     ##################
     # date functions #
     ##################
-    def _ui_workbook_date(self) -> None:
-        """User interface function for getting payables date"""
-
-        cls()
-        valid_date = False
-        while not valid_date:
-            payables_date = input(
-                "Input Payables Workbook Date (yyyy-mm-dd)\n>\t"
-            )
-            valid_date = self._validate_date(payables_date)
-            if not valid_date:
-                print("Invalid date, try again")
-        return payables_date
 
     def _validate_date(self, date: str) -> bool:
         if check_date(date):
@@ -138,8 +144,8 @@ class OsInterface:
             cls()
 
             print("Payables Main Menu\n")
-            self.print_main_menu_status()
-            print("\n")
+            # self.print_main_menu_status()
+            # print("\n")
             self.print_main_menu(options)
 
             selected = 0
