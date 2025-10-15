@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 import pandas as pd
+import numpy as np
 import os
 import pyodbc
+from collections import Counter
 
 
 payables_root = "C:/gdrive/Shared drives/accounting/Payables"
@@ -12,7 +14,7 @@ def connect_to_accounting():
     pwd = input("pwd:")
 
     conn_string = (
-        "DRIVER=MySQL ODBC 9.4 ANSI Driver;"
+        "DRIVER=MySQL ODBC 9.1 ANSI Driver;"
         "SERVER=simplex.s;"
         "DATABASE=accounting;"
         f"UID={uid};"
@@ -43,13 +45,24 @@ def get_ym_list() -> list[str]:
     return months
 
 
+def check_good_files(filename: str) -> bool:
+    bad_names = [
+        "December Payables Final Accrual.xlsm",
+        "December Payables Batch 1 Final Accrual.xlsm",
+    ]
+    if ".xlsm" in filename and filename not in bad_names:
+        return True
+    else:
+        return False
+
+
 def get_ap_files_for_month(month: str) -> list[list[str]]:
     month_path = "/".join(
         ["C:/gdrive/Shared drives/accounting/Payables", month[:4], month]
     )
 
     ls_result = os.listdir(month_path)
-    xlsm_files = list(filter(lambda x: ".xlsm" in x, ls_result))
+    xlsm_files = list(filter(lambda x: check_good_files(x), ls_result))
     xlsms_with_paths = [[file, month_path, month] for file in xlsm_files]
     folders = list(filter(lambda x: "." not in x, ls_result))
 
@@ -61,7 +74,9 @@ def get_ap_files_for_month(month: str) -> list[list[str]]:
             except NotADirectoryError:
                 continue
 
-            sub_xlsm_files = list(filter(lambda x: ".xlsm" in x, contents))
+            sub_xlsm_files = list(
+                filter(lambda x: check_good_files(x), contents)
+            )
             if len(sub_xlsm_files) > 0:
                 for file in sub_xlsm_files:
                     item = [file, sub_dir, month]
@@ -199,12 +214,39 @@ def get_clean_data_from_disk() -> pd.DataFrame:
     return data
 
 
+def check_dupe_invoices(invoice_table: pd.DataFrame) -> pd.DataFrame:
+    invoice_table["Concat"] = (
+        invoice_table["Vendor"]
+        + invoice_table["Invoice #"]
+        + invoice_table["Amount"].astype(str)
+    )
+
+    no_dupes = invoice_table.drop_duplicates("Concat").reset_index(drop=True)
+    return no_dupes
+
+    concats = invoice_table["Concat"].values.tolist()
+    dupe_invoices = pd.DataFrame(columns=invoice_table.columns)
+    dupe_counter = Counter(concats)
+    for i in dupe_counter.keys():
+        if dupe_counter[i] > 1:
+            dupe_rows = invoice_table.loc[invoice_table["Concat"] == i]
+            dupe_invoices = pd.concat([dupe_invoices, dupe_rows])
+
+    dupe_invoices.to_csv(
+        path_or_buf=os.environ["HOMEPATH"]
+        + "/Downloads/Duplicate Invoices.csv"
+    )
+
+
 def make_fresh_clean_data_file() -> None:
     invoices = get_raw_data_from_disk()
     cleaned_invoices = replace_unmatched_vendors(invoices)
-    cleaned_invoices.to_csv(
+    no_dupes = check_dupe_invoices(cleaned_invoices)
+    no_dupes.to_csv(
         os.environ["HOMEPATH"] + "/Downloads/Cleaned_Master_Invoices.csv"
     )
+    dropped_concat = no_dupes.drop(columns="Concat")
+    return no_dupes
 
 
 def do_the_data_thing():
@@ -215,9 +257,82 @@ def do_the_data_thing():
     data["Paid"] = True
 
 
-def create_invoices_table() -> None:
-    con = connect_to_accounting()
+def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
+    clean_data["cc"] = False
+    clean_data["cc_user"] = ""
+    clean_data["approved"] = True
+    clean_data["paid"] = True
+
+    cols = [
+        "Vendor",
+        "Invoice #",
+        "Amount",
+        "ym",
+        "cc",
+        "cc_user",
+        "approved",
+        "paid",
+    ]
+    with_final_cols = clean_data[cols].copy(deep=True)
+
+    new_names = ["vendor", "inv_num", "amount"]
+
+    renamer = {cols[i]: new_names[i] for i in range(len(new_names))}
+    renamed_cols = with_final_cols.rename(columns=renamer)
+    return renamed_cols
+
+
+def row_to_string(row_data: pd.Series, col_names: list[str]) -> str:
+    chars = ""
+    for i in col_names:
+        if i == "amount" or i == "ym":
+            formatted = f"{row_data[i]}"
+        elif i in ["cc", "approved", "paid"]:
+            formatted = f"TRUE" if row_data[i] else "FALSE"
+        else:
+            if row_data[i]:
+                use_data = row_data[i]
+                try:
+                    if "'" in row_data[i]:
+                        use_data = row_data[i].replace("'", "''")
+                    formatted = f"'{use_data}'"
+                except TypeError:
+                    if np.isnan(row_data[i]):
+                        formatted = f"NULL"
+                    else:
+                        raise TypeError(f"Cannot parse value {row_data[i]}")
+            else:
+                formatted = "NULL"
+
+        if i == "paid":
+            chars = "".join([chars, formatted])
+        else:
+            chars = "".join([chars, formatted, ", "])
+
+    return chars
+
+
+def construct_insert_statement(
+    row_data: pd.Series, col_names: list[str]
+) -> str:
+    vals_string = row_to_string(row_data=row_data, col_names=col_names)
+    statement = f"INSERT INTO invoices (vendor, inv_num, amount, ym, cc, cc_user, approved, paid) VALUES ({vals_string});"
+    return statement
+
+
+def add_invoices_to_db(
+    invoices_table: pd.DataFrame, cxn: pyodbc.Connection
+) -> None:
+    inv_table_cols = invoices_table.columns
+    for i, row in invoices_table.iterrows():
+        statement = construct_insert_statement(row, inv_table_cols)
+        print(statement)
+        cxn.execute(statement)
+
+
+def create_invoices_table(connection: pyodbc.Connection) -> None:
     command = """CREATE TABLE invoices (
+        id int unsigned primary key auto_increment,
         vendor varchar(255),
         inv_num varchar(255),
         amount float,
@@ -227,9 +342,14 @@ def create_invoices_table() -> None:
         approved tinyint(1),
         paid tinyint(1)
         );"""
-    con.execute(command)
-    con.close()
+    connection.execute(command)
 
 
 if __name__ == "__main__":
-    do_the_data_thing()
+    data = get_clean_data_from_disk()
+    final_table = finalize_table_for_db(clean_data=data)
+    con = connect_to_accounting()
+    # create_invoices_table(connection=con)
+    add_invoices_to_db(invoices_table=final_table, cxn=con)
+    con.commit()
+    con.close()
