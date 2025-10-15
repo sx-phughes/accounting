@@ -52,8 +52,8 @@ class PayablesWorkbook:
     def __repr__(self):
         return self.data
 
-    def initialize_from_date(self):
-        """Initialize Payables Workbook from a given date string
+    # def initialize_from_date(self):
+    #     """Initialize Payables Workbook from a given date string
 
         Checks for a pre-existing payables workbook or uses a new one, then
         validates columns
