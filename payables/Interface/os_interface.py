@@ -20,7 +20,7 @@ from Interface.functions import *
 from Interface.CursorFunc import *
 from nacha import NachaConstructor
 import DupePayments
-from Wires import WireFile, WirePayment, PayablesWires
+from wires import WireFile, WirePayment, PayablesWires
 import Interface.PayableSummary as PayableSummary
 import PayablesJes
 from SigIntHandler import DelayedKeyboardInterrupt
