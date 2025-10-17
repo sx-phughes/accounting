@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
+import re
+import calendar
+import getpass
+import logging
 import os
 import pyodbc
 from collections import Counter
@@ -8,10 +12,18 @@ from collections import Counter
 
 payables_root = "C:/gdrive/Shared drives/accounting/Payables"
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename="InvoicesToMySQL.log",
+    encoding="utf-8",
+    level=logging.DEBUG,
+    filemode="w",
+)
+
 
 def connect_to_accounting():
-    uid = input("userid:")
-    pwd = input("pwd:")
+    uid = input("userid: ")
+    pwd = getpass.getpass("pwd: ")
 
     conn_string = (
         "DRIVER=MySQL ODBC 9.1 ANSI Driver;"
@@ -101,11 +113,17 @@ def create_payables_master_table(files_list: list[list[str]]):
     master_table = pd.DataFrame()
     for file in files_list:
         full_path = file[1] + "/" + file[0]
+
+        # extract pay date from file name here
+        pay_date = get_pay_date(filename=file[0])
+
         sub_table = pd.read_excel(io=full_path, sheet_name="Invoices")
         if sub_table.empty:
             continue
 
         sub_table["ym"] = file[2]
+        sub_table["date_paid"] = pay_date.strftime("%Y-%m-%d")
+        sub_table["date_added"] = get_date_added(pay_date).strftime("%Y-%m-%d")
         empty_rows = sub_table.loc[sub_table["Amount"].isna()].index
         sub_table = sub_table.drop(index=empty_rows).reset_index(drop=True)
 
@@ -116,6 +134,7 @@ def create_payables_master_table(files_list: list[list[str]]):
 
     master_table = master_table[
         [
+            "date_added",
             "Vendor",
             "Invoice #",
             "Simplex2",
@@ -124,10 +143,57 @@ def create_payables_master_table(files_list: list[list[str]]):
             "Payment Type",
             "Amount",
             "ym",
+            "date_paid",
         ]
     ].copy(deep=True)
 
     return master_table
+
+
+def get_date_added(pay_date: datetime) -> datetime:
+    date_added = datetime(pay_date.year, pay_date.month, 1)
+
+    if date_added == pay_date or pay_date.day < 3:
+        ref_date = date_added - timedelta(days=20)
+        date_added = datetime(ref_date.year, ref_date.month, 1)
+
+    return date_added
+
+
+def get_pay_date(filename: str) -> datetime:
+    logging.debug(filename)
+    date_patterns = (
+        r"^(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})",
+        r"^(?P<year>\d{4})(?P<month>\d{2})(?=\s)",
+        r"^(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})",
+    )
+
+    pattern_match = len(date_patterns) + 5
+    for i in range(len(date_patterns)):
+        match = re.search(date_patterns[i], filename)
+        if match:
+            pattern_match = i
+            break
+
+    if pattern_match > len(date_patterns) - 1:
+        raise ValueError(
+            f"Unable to find date pattern in file name {filename}"
+        )
+
+    strp_patterns = ("%Y-%m-%d", "%Y%m", "%Y%m%d")
+    logging.debug(match.group())
+    logging.debug(strp_patterns[pattern_match])
+
+    if pattern_match == 1:
+        year = int(match.group("year"))
+        month = int(match.group("month"))
+        eom_day = calendar.monthrange(year, month)[1]
+        pay_date = datetime(year, month, eom_day)
+    else:
+        pay_date = datetime.strptime(
+            match.group(), strp_patterns[pattern_match]
+        )
+    return pay_date
 
 
 def get_vendor_match(con: pyodbc.Connection, vendor: str) -> str | None:
@@ -197,9 +263,15 @@ def save_raw_data_to_disk() -> None:
     dates = get_ym_list()
     files = get_ap_files_for_all(months=dates)
     invoices = create_payables_master_table(files)
-    invoices.to_csv(
-        os.environ["HOMEPATH"] + "/Downloads/Master_Invoices.csv", index=False
-    )
+    while True:
+        try:
+            invoices.to_csv(
+                os.environ["HOMEPATH"] + "/Downloads/Master_Invoices.csv",
+                index=False,
+            )
+            break
+        except PermissionError:
+            input("Please close the file...")
 
 
 def get_raw_data_from_disk() -> pd.DataFrame:
@@ -224,37 +296,36 @@ def check_dupe_invoices(invoice_table: pd.DataFrame) -> pd.DataFrame:
     no_dupes = invoice_table.drop_duplicates("Concat").reset_index(drop=True)
     return no_dupes
 
-    concats = invoice_table["Concat"].values.tolist()
-    dupe_invoices = pd.DataFrame(columns=invoice_table.columns)
-    dupe_counter = Counter(concats)
-    for i in dupe_counter.keys():
-        if dupe_counter[i] > 1:
-            dupe_rows = invoice_table.loc[invoice_table["Concat"] == i]
-            dupe_invoices = pd.concat([dupe_invoices, dupe_rows])
+    # concats = invoice_table["Concat"].values.tolist()
+    # dupe_invoices = pd.DataFrame(columns=invoice_table.columns)
+    # dupe_counter = Counter(concats)
+    # for i in dupe_counter.keys():
+    #     if dupe_counter[i] > 1:
+    #         dupe_rows = invoice_table.loc[invoice_table["Concat"] == i]
+    #         dupe_invoices = pd.concat([dupe_invoices, dupe_rows])
 
-    dupe_invoices.to_csv(
-        path_or_buf=os.environ["HOMEPATH"]
-        + "/Downloads/Duplicate Invoices.csv"
-    )
+    # dupe_invoices.to_csv(
+    #     path_or_buf=os.environ["HOMEPATH"]
+    #     + "/Downloads/Duplicate Invoices.csv"
+    # )
 
 
 def make_fresh_clean_data_file() -> None:
     invoices = get_raw_data_from_disk()
     cleaned_invoices = replace_unmatched_vendors(invoices)
     no_dupes = check_dupe_invoices(cleaned_invoices)
-    no_dupes.to_csv(
-        os.environ["HOMEPATH"] + "/Downloads/Cleaned_Master_Invoices.csv"
-    )
     dropped_concat = no_dupes.drop(columns="Concat")
-    return no_dupes
+    while True:
+        try:
+            dropped_concat.to_csv(
+                os.environ["HOMEPATH"]
+                + "/Downloads/Cleaned_Master_Invoices.csv"
+            )
+            break
+        except PermissionError:
+            input("Close the file")
 
-
-def do_the_data_thing():
-    data = get_clean_data_from_disk()
-    data["CC"] = False
-    data["CC User"] = ""
-    data["Approved"] = True
-    data["Paid"] = True
+    return dropped_concat
 
 
 def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
@@ -264,6 +335,7 @@ def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
     clean_data["paid"] = True
 
     cols = [
+        "date_added",
         "Vendor",
         "Invoice #",
         "Amount",
@@ -272,12 +344,14 @@ def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
         "cc_user",
         "approved",
         "paid",
+        "date_paid",
     ]
     with_final_cols = clean_data[cols].copy(deep=True)
 
     new_names = ["vendor", "inv_num", "amount"]
+    old = cols[1:4]
 
-    renamer = {cols[i]: new_names[i] for i in range(len(new_names))}
+    renamer = {old[i]: new_names[i] for i in range(len(new_names))}
     renamed_cols = with_final_cols.rename(columns=renamer)
     return renamed_cols
 
@@ -285,6 +359,7 @@ def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
 def row_to_string(row_data: pd.Series, col_names: list[str]) -> str:
     chars = ""
     for i in col_names:
+        logging.debug(f"col '{i}': val: '{row_data[i]}'")
         if i == "amount" or i == "ym":
             formatted = f"{row_data[i]}"
         elif i in ["cc", "approved", "paid"]:
@@ -304,7 +379,7 @@ def row_to_string(row_data: pd.Series, col_names: list[str]) -> str:
             else:
                 formatted = "NULL"
 
-        if i == "paid":
+        if i == col_names[-1]:
             chars = "".join([chars, formatted])
         else:
             chars = "".join([chars, formatted, ", "])
@@ -316,7 +391,7 @@ def construct_insert_statement(
     row_data: pd.Series, col_names: list[str]
 ) -> str:
     vals_string = row_to_string(row_data=row_data, col_names=col_names)
-    statement = f"INSERT INTO invoices (vendor, inv_num, amount, ym, cc, cc_user, approved, paid) VALUES ({vals_string});"
+    statement = f"INSERT INTO invoices (date_added, vendor, inv_num, amount, ym, cc, cc_user, approved, paid, date_paid) VALUES ({vals_string});"
     return statement
 
 
@@ -324,6 +399,7 @@ def add_invoices_to_db(
     invoices_table: pd.DataFrame, cxn: pyodbc.Connection
 ) -> None:
     inv_table_cols = invoices_table.columns
+    print(*inv_table_cols, sep="\n")
     for i, row in invoices_table.iterrows():
         statement = construct_insert_statement(row, inv_table_cols)
         print(statement)
@@ -333,6 +409,7 @@ def add_invoices_to_db(
 def create_invoices_table(connection: pyodbc.Connection) -> None:
     command = """CREATE TABLE invoices (
         id int unsigned primary key auto_increment,
+        date_added date,
         vendor varchar(255),
         inv_num varchar(255),
         amount float,
@@ -340,16 +417,25 @@ def create_invoices_table(connection: pyodbc.Connection) -> None:
         cc tinyint(1),
         cc_user char(2),
         approved tinyint(1),
-        paid tinyint(1)
+        paid tinyint(1),
+        date_paid date
         );"""
-    connection.execute(command)
+    try:
+        connection.execute(command)
+    except pyodbc.ProgrammingError as e:
+        if "Table 'invoices' already exists" not in str(e):
+            raise e
 
 
 if __name__ == "__main__":
+    save_raw_data_to_disk()
+    make_fresh_clean_data_file()
+
     data = get_clean_data_from_disk()
     final_table = finalize_table_for_db(clean_data=data)
+
     con = connect_to_accounting()
-    # create_invoices_table(connection=con)
+    create_invoices_table(connection=con)
     add_invoices_to_db(invoices_table=final_table, cxn=con)
     con.commit()
     con.close()
