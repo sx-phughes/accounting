@@ -80,3 +80,9 @@ def search_possible_vendors(
     sql = f"SELECT * FROM vendors WHERE vendor LIKE '%{vendor}%';"
     results = pd.read_sql(sql, conn)
     return results
+
+
+def view_invoices(conn: pyodbc.Connection) -> pd.DataFrame:
+    sql = "select * from invoices where paid = FALSE;"
+    results = pd.read_sql(sql, conn)
+    return results
