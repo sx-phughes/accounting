@@ -86,3 +86,40 @@ def view_invoices(conn: pyodbc.Connection) -> pd.DataFrame:
     sql = "select * from invoices where paid = FALSE;"
     results = pd.read_sql(sql, conn)
     return results
+
+
+def construct_sql_query(table: str, **kwargs) -> str:
+    """Constructs a sql query that pulls all data from table matching the
+    criteria submitted.
+
+    Criteria submitted as keyword args, each col as the arg name and the
+    parameter as the value desired.
+
+    If wildcards are included in the parameter, the query will use a LIKE clause
+    for that column.
+    """
+
+    base = "select * from " + table
+    if kwargs:
+        base += " where"
+        cols = list(kwargs.keys())
+        for col in cols:
+            val = kwargs[col]
+            if isinstance(val, str):
+                clause = " ".join([col, parse_col_param_to_sql(val)])
+            elif isinstance(val, int) or isinstance(val, float):
+                clause = f"{col} = {str(val)}"
+            elif isinstance(val, bool):
+                clause = f"{col} = {"1" if val else "0"}"
+            base = " ".join([base, clause])
+
+
+def parse_col_param_to_sql(param: Any) -> str:
+    if "%" in param or "_" in param:
+        clause = "like '" + param + "'"
+    elif "<" in param or ">" in param:
+        clause = param
+    else:
+        clause = "= '" + param + "'"
+
+    return clause
