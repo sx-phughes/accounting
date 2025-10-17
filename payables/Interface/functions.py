@@ -114,3 +114,25 @@ def ui_get_date(dt: bool = True) -> datetime | tuple[int]:
         return vd_dt
     else:
         return (year, month, day)
+
+
+def pad_string(string: str, pad_len: int, char: str = " ") -> str:
+    """Pad a string to a given length with char
+
+    Args:
+        string (str): string to pad
+        pad_len (int): length to pad to
+        char (str, optional): char to pad with. Defaults to " " (space).
+
+    Returns:
+        str: padded string
+    """
+    pad_len = pad_len - len(string)
+    if pad_len < 0:
+        return string[0 : (pad_len - 1)]
+    elif pad_len > 0:
+        pad = "".join([char for i in range(pad_len)])
+        padded_string = "".join([string, pad])
+        return padded_string
+    else:
+        return string
