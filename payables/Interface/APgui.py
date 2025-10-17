@@ -5,6 +5,7 @@ import os
 import shutil
 import time
 import sys
+import warnings
 
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting")
@@ -40,6 +41,7 @@ class ApGui:
 
     def __init__(self):
         pd.set_option("display.max_rows", None)
+        warnings.simplefilter(action="ignore", category=UserWarning)
         self.conn = None
         self.preserved_downloads = np.uint8(0)
         self.connect_to_db()
@@ -300,7 +302,10 @@ class ApGui:
             print(f"\t{i}")
 
     def view_invoices(self):
-        pass
+        cls()
+        print_header("UNPAID INVOICES")
+        print(APDatabase.view_invoices(self.conn))
+        input()
 
     def make_payment_files(self):
         pass
