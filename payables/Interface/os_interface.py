@@ -23,6 +23,7 @@ import DupePayments
 from Wires import WireFile, WirePayment, PayablesWires
 import Interface.PayableSummary as PayableSummary
 import PayablesJes
+from SigIntHandler import DelayedKeyboardInterrupt
 
 
 class OsInterface:
@@ -198,32 +199,34 @@ class OsInterface:
     ################
     def add_invoices(self):
         """Main loop for adding invoices to the payables table"""
-        self.preserve_downloads_handler()
-        try:
-            while True:
-                cls()
 
-                try:
-                    invoice_data = self.get_inputs(
-                        prompts=self.invoice_prompts
-                    )
-                except EOFError:
-                    invoice_data = [0]
-                if is_blank_list(data=invoice_data):
-                    break
+        with DelayedKeyboardInterrupt():
+            self.preserve_downloads_handler()
+            try:
+                while True:
+                    cls()
 
-                if invoice_data[3]:
-                    self.add_cc_user(invoice_data=invoice_data)
-                self.set_paid_status(inputs=invoice_data, status=False)
+                    try:
+                        invoice_data = self.get_inputs(
+                            prompts=self.invoice_prompts
+                        )
+                    except EOFError:
+                        invoice_data = [0]
+                    if is_blank_list(data=invoice_data):
+                        break
 
-                self.payables.insert_invoice(invoice_data=invoice_data)
-                add_more = input("\nAdd another invoice (y/n)\n>\t")
-                if add_more == "n":
-                    break
-        except ValueError:
-            self.payables.save_workbook()
+                    if invoice_data[3]:
+                        self.add_cc_user(invoice_data=invoice_data)
+                    self.set_paid_status(inputs=invoice_data, status=False)
 
-        self.preserve_downloads_handler(end=True)
+                    self.payables.insert_invoice(invoice_data=invoice_data)
+                    add_more = input("\nAdd another invoice (y/n)\n>\t")
+                    if add_more == "n":
+                        break
+            except ValueError:
+                self.payables.save_workbook()
+
+            self.preserve_downloads_handler(end=True)
 
     def preserve_downloads_handler(self, end: bool = False) -> int:
         if not end and self.preserved_downloads == np.uint8(0):
