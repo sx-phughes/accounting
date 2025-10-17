@@ -136,3 +136,10 @@ def pad_string(string: str, pad_len: int, char: str = " ") -> str:
         return padded_string
     else:
         return string
+
+
+def print_header(text: str, border_char: str = "#") -> None:
+    border_len = len(text) + 4
+    border = border_char * border_len
+    header = "".join([border, "\n", "# ", text, " #\n", border])
+    print(header)
