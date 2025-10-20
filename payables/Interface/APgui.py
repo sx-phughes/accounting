@@ -15,6 +15,7 @@ import APDatabase
 from SigIntHandler import DelayedKeyboardInterrupt
 from functions import *
 from CursorFunc import *
+from wires import PayablesWires
 
 
 def get_uid_pwd() -> tuple[str]:
@@ -63,7 +64,7 @@ class ApGui:
         options = {
             "Add Invoices": self.add_invoices,
             "View/Edit Invoices": self.view_invoices,
-            "Create Payment Files": self.make_payment_files,
+            "Create Payment Files": self.make_all_payment_files,
             "Create Summary Workbook": self.save_summary_workbook,
             "Create Quickbooks Bill Files": self.create_bill_files,
             "Exit": "",
@@ -72,8 +73,8 @@ class ApGui:
             cls()
 
             print("Payables Main Menu\n")
-            # self.print_main_menu_status()
-            # print("\n")
+            self.print_main_menu_status()
+            print("\n")
             self.print_main_menu(options)
 
             selected = 0
@@ -101,6 +102,13 @@ class ApGui:
         else:
             print("Bad option!")
 
+    def print_main_menu_status(self) -> None:
+        summary_data = APDatabase.get_main_menu_summary_data(self.conn)
+        print("Unpaid Invoices Summary")
+        for i, row in summary_data.iterrows():
+            print(f"\t{row["company"]:15}: ${row["total"]:,.2f}")
+        print(f"{"TOTAL":23}: ${summary_data.total.sum():,.2f}")
+
     ####
     # Add invoices code
     ####
@@ -113,20 +121,22 @@ class ApGui:
                 cls()
 
                 try:
-                    invoice_data = self.get_inputs(
+                    invoice_data = self.get_invoice_data(
                         prompts=self.invoice_prompts
                     )
                 except EOFError:
                     invoice_data = [0]
+
                 if is_blank_list(data=invoice_data):
                     break
-
-                if invoice_data[3]:
-                    self.add_cc_user(invoice_data=invoice_data)
-
-                APDatabase.add_invoice(
-                    invoice_data=invoice_data, connection=self.conn
-                )
+                elif APDatabase.check_for_duplicate_entry(
+                    invoice_data[0], invoice_data[1]
+                ):
+                    print("Invoice was a duplicate, not submitting entry.")
+                else:
+                    APDatabase.add_invoice(
+                        invoice_data=invoice_data, connection=self.conn
+                    )
 
                 add_more = input("\nAdd another invoice (y/n)\n>\t")
                 if add_more == "n":
@@ -139,42 +149,15 @@ class ApGui:
             print("Move downloads to temp folder? (y/n)")
             resp = input(">\t")
             if resp == "y":
-                self.preserve_downloads()
+                preserve_downloads()
                 self.preserved_downloads = np.uint8(1)
         elif self.preserved_downloads == np.uint8(1):
-            self.restore_downloads()
+            restore_downloads()
             self.preserved_downloads = np.uint8(0)
 
-    def preserve_downloads(self) -> None:
-        """Preserves downloads contents by moving to temp folder"""
-
-        try:
-            os.mkdir("/".join([os.environ["HOMEPATH"], ".tempdownloads"]))
-        except FileExistsError:
-            pass
-
-        self.move_all_files(
-            "/".join([os.environ["HOMEPATH"], "Downloads"]),
-            "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
-        )
-
-    def restore_downloads(self) -> None:
-        """Restores downloads from temp folder"""
-
-        self.move_all_files(
-            "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
-            "/".join([os.environ["HOMEPATH"], "Downloads"]),
-        )
-        shutil.rmtree("/".join([os.environ["HOMEPATH"], ".tempdownloads/"]))
-
-    def move_all_files(self, source: str, dest: str) -> None:
-        """Moves all files from a source folder to a destination folder."""
-
-        files = os.listdir(source)
-        for file in files:
-            shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
-
-    def get_inputs(self, prompts: list[str], **kwargs) -> list[str | int]:
+    def get_invoice_data(
+        self, prompts: list[str], **kwargs
+    ) -> list[str | int]:
         """Management of receiving user input for a new invoice"""
 
         inputs = ["" for i in range(5)]
@@ -192,7 +175,9 @@ class ApGui:
         while 0 in inputs:
             i = self.get_single_user_input(prompts, inputs, i)
 
-        self.set_input_types(inputs)
+        fix_cc_input(inputs)
+        if inputs[3]:
+            self.add_cc_user(inputs)
 
         if APDatabase.check_vendor(inputs[0], self.conn) or is_blank_list(
             inputs
@@ -207,41 +192,6 @@ class ApGui:
                 invoice_amt=inputs[2],
             )
             return inputs
-
-    def set_input_types(
-        self, inputs: list[str | int]
-    ) -> list[str | int | bool]:
-        """Types str input values to table column d-types"""
-
-        zipped_inputs_and_types = zip(inputs, self.prompt_types)
-        self.fix_cc_input(inputs)
-
-        index = 0
-        for val, val_type in zipped_inputs_and_types:
-            inputs[index] = set_type(val, val_type)
-            index += 1
-
-    def fix_cc_input(self, inputs: list[str | int]) -> list[str | int]:
-        """Standardizes cc response to 'y' or ''."""
-
-        cc_index = self.get_input_index("Credit card")
-        cc_input = inputs[cc_index]
-        inputs[cc_index] = self.swap_cc_input(cc_input)
-
-    def swap_cc_input(self, cc_val: str) -> str:
-        """Returns 'y' if user response was 'y', else returns ''"""
-
-        new_val = ""
-        if cc_val == "y":
-            new_val = cc_val
-        return new_val
-
-    def get_input_index(self, col: str) -> int:
-        """Gets the index of the prompt corresponding to the desired column
-        header."""
-
-        with_stub = col + ":"
-        return self.invoice_prompts.index(with_stub)
 
     def get_single_user_input(
         self, prompts: list[str], input_list: list, curr_index: int
@@ -260,7 +210,8 @@ class ApGui:
         index = curr_index
         end = len(prompts) - 1
 
-        padded = pad_string(prompts[index], 20)
+        pad_len = 30
+        padded = pad_string(prompts[index], pad_len)
         print(padded, end="")
         response = input_list[index]
 
@@ -276,7 +227,7 @@ class ApGui:
             elif input_list[index] and data != "":
                 input_list[index] = data
             index += 1
-            clear_end_of_line_after_input(value=data)
+            clear_end_of_line_after_input(value=data, pad_len=pad_len)
         elif data == self.up_key:
             index = self.up_arrow(index)
             print("\r", end="", flush=True)
@@ -288,8 +239,11 @@ class ApGui:
 
     def add_cc_user(self, invoice_data) -> None:
         """Add credit card user to invoice data for credit card invoices"""
+
         cc_user_index = len(self.invoice_prompts)
-        cc_user = input("Enter initials of CC user:\t")
+        padded = pad_string("Enter initials of CC User:", 30)
+        print(padded, end="")
+        cc_user = input()
         invoice_data[cc_user_index] = cc_user
 
     def print_possible_vendors(self, vendor: str):
@@ -301,14 +255,77 @@ class ApGui:
         for i in val_list:
             print(f"\t{i}")
 
-    def view_invoices(self):
-        cls()
-        print_header("UNPAID INVOICES")
-        print(APDatabase.view_invoices(self.conn))
-        input()
+    def view_invoices(self, data: pd.DataFrame = None):
+        """Prints unpaid invoices for user."""
 
-    def make_payment_files(self):
-        pass
+        print_cols = [
+            "vendor",
+            "inv_num",
+            "company",
+            "amount",
+            "approved",
+            "approver",
+        ]
+
+        while True:
+            cls()
+            print_header("UNPAID INVOICES")
+
+            if data:
+                df = data
+            else:
+                sql = APDatabase.construct_sql_query(
+                    "invoices", cols=print_cols, paid=False, cc=False
+                )
+                df = pd.read_sql(sql, con=self.conn)
+
+            print(df)
+
+            print("\n\nEnter an index to view invoice details,")
+            print("type 'Vendor: [vendor]' to filter by vendor,")
+            print("'Approver: [name]' to filter by approver,")
+            print("'export: [file_name]' to save file to downloads")
+            print("'IDB' to view IDB only invoices,")
+            # print("'unapproved' to see all unapproved invoices,")
+            # print("'mark approved' to mark all showing invoices as approved")
+            print("or just hit enter to return to the main menu.")
+
+            response = input(">\t")
+            parse_result = APDatabase.parse_user_response(
+                user_response=response,
+                table="invoices",
+                table_cols=print_cols,
+                con=self.conn,
+            )
+            if parse_result == np.int8(1):
+                break
+            elif isinstance(parse_result, pd.DataFrame):
+                self.view_invoices(data=parse_result)
+
+    ########################
+    # Create Payment Files #
+    ########################
+    def generate_nacha_files(self) -> None:
+        """Create NACHA payment files for invoiced payable via ACH and save
+        to disk."""
+
+        vd = ui_get_date(dt=True).strftime("%Y-%m-%d")
+        debug = True if input("Debug (y/n): ") == "y" else False
+        make_nacha_files(value_date=vd, con=self.conn, debug=debug)
+        print("NACHA file generation complete. Files saved to downloads.")
+        input("Enter to continue.")
+
+    def generate_wire_files(self) -> None:
+        """Method for creating a simple batch of wire payments for a given
+        payables run. One invoice = one wire.
+        """
+
+        vd = ui_get_date(dt=True)
+        make_wire_pmt_files(value_date=vd, con=self.conn)
+
+    def make_all_payment_files(self) -> None:
+        self.generate_nacha_files()
+        self.generate_wire_files()
 
     def save_summary_workbook(self):
         pass
