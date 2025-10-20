@@ -50,11 +50,11 @@ def process_payables_df_to_wires(
     wire_value_date = value_date
     co_wires_dict = {company: [] for company in company_names.keys()}
 
-    companies = wire_invoices["Company"].unique()
+    companies = wire_invoices["company"].unique()
     # print("Companies: ", companies)
     for company in companies:
         company_wires = wire_invoices.loc[
-            wire_invoices["Company"] == company
+            wire_invoices["company"] == company
         ].copy()
 
         create_payment_objects(company_wires, co_wires_dict[company])
@@ -77,10 +77,10 @@ def create_payment_objects(
         payment = WirePayment(
             orig_bank_id="071000013",
             orig_account=company_ids[company],
-            amount=row["Amount"],
+            amount=row["amount"],
             value_date=wire_value_date,
-            vendor=Vendor(row["Vendor"]),
-            details=row["Invoice #"],
+            vendor=Vendor(row["vendor"]),
+            details=row["inv_num"],
             template=True,
         )
         co_list.append(payment)
@@ -91,9 +91,8 @@ def os_interface_wire_wrapper(
 ) -> None:
     """Wrapper for creating wire payments from inside of the AP module."""
 
-    wire_invoices = payables.loc[payables["Payment Type"] == "Wire"].copy()
     wire_payment_dict = process_payables_df_to_wires(
-        wire_invoices=wire_invoices, value_date=valuedate
+        wire_invoices=payables, value_date=valuedate
     )
     wire_files = create_wire_files(wires=wire_payment_dict)
     write_files_to_disk(wire_files=wire_files)
