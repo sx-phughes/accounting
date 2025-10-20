@@ -4,6 +4,15 @@ import re
 from datetime import datetime
 import os
 from typing import Any
+import shutil
+import pyodbc
+import pandas as pd
+
+from APgui import ApGui
+import APDatabase
+from payables.nacha.NachaConstructor import NachaConstructor
+from payables.nacha.NachaFile import NachaFile
+from wires import PayablesWires
 
 
 def cls():
@@ -143,3 +152,91 @@ def print_header(text: str, border_char: str = "#") -> None:
     border = border_char * border_len
     header = "".join([border, "\n", "# ", text, " #\n", border])
     print(header)
+
+
+def preserve_downloads() -> None:
+    """Preserves downloads contents by moving to temp folder"""
+
+    try:
+        os.mkdir("/".join([os.environ["HOMEPATH"], ".tempdownloads"]))
+    except FileExistsError:
+        pass
+
+    move_all_files(
+        "/".join([os.environ["HOMEPATH"], "Downloads"]),
+        "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
+    )
+
+
+def restore_downloads() -> None:
+    """Restores downloads from temp folder"""
+
+    move_all_files(
+        "/".join([os.environ["HOMEPATH"], ".tempdownloads/"]),
+        "/".join([os.environ["HOMEPATH"], "Downloads"]),
+    )
+    shutil.rmtree("/".join([os.environ["HOMEPATH"], ".tempdownloads/"]))
+
+
+def move_all_files(source: str, dest: str) -> None:
+    """Moves all files from a source folder to a destination folder."""
+
+    files = os.listdir(source)
+    for file in files:
+        shutil.move(src=source + f"/{file}", dst=dest + f"/{file}")
+
+
+def get_input_index(col: str) -> int:
+    """Gets the index of the prompt corresponding to the desired column
+    header."""
+
+    with_stub = col + ":"
+    return ApGui.invoice_prompts.index(with_stub)
+
+
+def fix_cc_input(inputs: list[str | int]) -> None:
+    """Standardizes cc response to 'y' or ''."""
+
+    cc_index = get_input_index("Credit card")
+    cc_input = inputs[cc_index]
+    inputs[cc_index] = swap_cc_input(cc_input)
+
+
+def swap_cc_input(cc_val: str) -> str:
+    """Returns 'y' if user response was 'y', else returns ''"""
+
+    new_val = ""
+    if cc_val == "y":
+        new_val = cc_val
+    return new_val
+
+
+def make_nacha_files(
+    value_date: str, con: pyodbc.Connection, debug: bool = False
+) -> None:
+    data = APDatabase.get_pmt_file_data(pmt_type="ACH", con=con)
+    file_constructor = NachaConstructor(data, value_date, debug)
+    files = file_constructor.main()
+    for i in files:
+        write_payment_file(i, value_date)
+
+
+def write_payment_file(company_data: NachaFile, value_date: str) -> None:
+    """Writes NACHA files to Downloads on disk"""
+
+    with open(
+        file="/".join(
+            [
+                os.environ["HOMEPATH"].replace("\\", "/"),
+                "Downloads",
+                f"{value_date}_ACHS_{company_data.company}.txt",
+            ]
+        ),
+        mode="w",
+    ) as file:
+        file.write(company_data.__str__())
+
+
+def make_wire_pmt_files(value_date: datetime, con: pyodbc.Connection) -> None:
+    wire_data = APDatabase.get_pmt_file_data(pmt_type="Wire", con=con)
+    PayablesWires.os_interface_wire_wrapper(wire_data, valuedate=value_date)
