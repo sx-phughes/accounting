@@ -32,14 +32,14 @@ def print_sugg_value(value: str) -> None:
     print(f"\033[{input_len}D", end="", flush=True)
 
 
-def clear_end_of_line_after_input(value: str) -> None:
+def clear_end_of_line_after_input(value: str, pad_len: int) -> None:
     """After inputting a value, clears line to end of screen. Returns cursor
     to beginning of next line."""
 
     data_len = len(value)
     if data_len > 0:
         print("\033[A", end="", flush=True)
-        print(f"\033[{20+data_len}C", end="", flush=True)
+        print(f"\033[{pad_len+data_len}C", end="", flush=True)
         print("\033[0K", end="", flush=True)
         print(f"\033[E", end="", flush=True)
 
