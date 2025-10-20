@@ -2,7 +2,65 @@ from typing import Any
 from datetime import datetime
 import pyodbc
 import pandas as pd
-import asyncio
+import numpy as np
+import re
+import os
+
+
+invoices_cols = (
+    "id",
+    "date_added",
+    "vendor",
+    "inv_num",
+    "amount",
+    "ym",
+    "cc",
+    "cc_user",
+    "approved",
+    "paid",
+    "date_paid",
+)
+
+vendors_cols = (
+    "vendor",
+    "company",
+    "exp_cat",
+    "approver",
+    "pmt_type",
+    "qb_mapping",
+    "acct_mapping",
+    "ach_aba",
+    "ach_acct_no",
+    "ach_vendor",
+    "idb",
+    "contact",
+    "email",
+    "phone",
+    "template",
+    "ben_id",
+    "ben_id_type",
+    "ben_country",
+    "ben_bank_id_type",
+    "ben_bank_id",
+    "ben_bank_name",
+    "ben_bank_address_line_1",
+    "ben_bank_address_line_2",
+    "ben_bank_city_st_prov_zip",
+    "ben_bank_country",
+    "int_bank_id_type",
+    "int_bank_id",
+    "int_bank_name",
+    "int_bank_address_line_1",
+    "int_bank_address_line_2",
+    "int_bank_city_st_prov_zip",
+    "int_bank_country",
+)
+
+col_to_table_map = {}
+for i in vendors_cols:
+    col_to_table_map.update({i: "vendors"})
+for i in invoices_cols:
+    col_to_table_map.update({i: "invoices"})
 
 
 def establish_db_connection(uid, pwd) -> pyodbc.Connection:
@@ -21,6 +79,21 @@ def establish_db_connection(uid, pwd) -> pyodbc.Connection:
     con.setdecoding(pyodbc.SQL_WCHAR, encoding="utf-8")
     con.setencoding(encoding="utf-8")
     return con
+
+
+def get_main_menu_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
+    """Retrieves summary data for unpaid invoices."""
+
+    query = """select 
+        distinct vendors.company, 
+        sum(invoices.amount) as total
+    from invoices
+    left join vendors on invoices.vendor = vendors.vendor
+    where invoices.paid = FALSE
+    and invoices.cc = FALSE;"""
+
+    data = pd.read_sql(query, con)
+    return data
 
 
 def get_unpaid_invoices(connection: pyodbc.Connection) -> pd.DataFrame:
@@ -82,13 +155,13 @@ def search_possible_vendors(
     return results
 
 
-def view_invoices(conn: pyodbc.Connection) -> pd.DataFrame:
+def view_unpaid_invoices(conn: pyodbc.Connection) -> pd.DataFrame:
     sql = "select * from invoices where paid = FALSE;"
     results = pd.read_sql(sql, conn)
     return results
 
 
-def construct_sql_query(table: str, **kwargs) -> str:
+def construct_sql_query(table: str, cols: list[str] = None, **kwargs) -> str:
     """Constructs a sql query that pulls all data from table matching the
     criteria submitted.
 
@@ -99,27 +172,178 @@ def construct_sql_query(table: str, **kwargs) -> str:
     for that column.
     """
 
-    base = "select * from " + table
+    sql_cols = "*"
+    two_tables = False
+    if cols:
+        two_tables = check_for_two_tables(cols)
+        sql_cols = parse_cols_to_sql(cols, two_tables)
+
+    base = f"select {sql_cols} from " + table
+
+    if two_tables:
+        join_clause = "left join vendors on invoices.vendor = vendors.vendor"
+        base = " ".join([base, join_clause])
+
     if kwargs:
         base += " where"
         cols = list(kwargs.keys())
         for col in cols:
-            val = kwargs[col]
-            if isinstance(val, str):
-                clause = " ".join([col, parse_col_param_to_sql(val)])
-            elif isinstance(val, int) or isinstance(val, float):
-                clause = f"{col} = {str(val)}"
-            elif isinstance(val, bool):
-                clause = f"{col} = {"1" if val else "0"}"
+            detailed_col_str = f"{col_to_table_map[col]}.{col}"
+            use_col = col
+            if two_tables:
+                use_col = detailed_col_str
+
+            clause = get_clause_from_param(kwargs[col], use_col)
             base = " ".join([base, clause])
+
+            if len(cols) >= 2 and cols.index(col) != len(cols) - 1:
+                base = "".join([base, " and"])
+
+    base = "".join([base, ";"])
+    return base
+
+
+def parse_cols_to_sql(cols: list[str], two_tables=False) -> str:
+    """Formats a list of cols to be selected from sql table to sql string."""
+    if two_tables:
+        detailed_cols = []
+        for col in cols:
+            col_str = f"{col_to_table_map[col]}.{col}"
+            detailed_cols.append(col_str)
+        sql_cols = ", ".join(detailed_cols)
+    else:
+        sql_cols = ", ".join(cols)
+
+    return sql_cols
+
+
+def get_clause_from_param(val: Any, col: str) -> str:
+    if isinstance(val, str):
+        clause = " ".join([col, parse_col_param_to_sql(val)])
+    elif isinstance(val, int) or isinstance(val, float):
+        clause = f"{col} = {str(val)}"
+    elif isinstance(val, bool):
+        clause = f"{col} = {"1" if val else "0"}"
+    elif isinstance(val, tuple):
+        clause = ""
+        for i in range(len(val)):
+            clause_i = get_clause_from_param(val[i], col)
+            clause = "".join([clause, clause_i])
+
+            if len(val) >= 2 and i != len(val) - 1:
+                clause = " ".join([clause, "and "])
+
+    return clause
 
 
 def parse_col_param_to_sql(param: Any) -> str:
     if "%" in param or "_" in param:
         clause = "like '" + param + "'"
     elif "<" in param or ">" in param:
-        clause = param
+        regex = re.match(r"(?P<op>[<>=]+)(?P<num>\d+)", param)
+        operator = regex.group("op")
+        num = regex.group("num")
+        clause = operator + " " + num
     else:
         clause = "= '" + param + "'"
 
     return clause
+
+
+def check_for_two_tables(cols: list[str]) -> bool:
+    """Returns True if columns span both invoices and vendors tables, false
+    otherwise"""
+
+    count_invoices = 0
+    count_vendors = 0
+    for col in cols:
+        if col == "vendor":
+            continue
+        elif col in invoices_cols:
+            count_invoices += 1
+        else:
+            count_vendors += 1
+
+    if count_vendors > 0 and count_invoices > 0:
+        return True
+    else:
+        return False
+
+
+def parse_user_response(
+    user_response: str,
+    table: str,
+    table_cols: list[str],
+    con: pyodbc.Connection,
+) -> np.int8:
+    """Parses user response and starts relevant routine."""
+
+    regex = re.match(r"(\w+):?\s(\w+)?", user_response)
+    command = regex.group(1)
+    param = regex.group(2)
+
+    if command in table_cols:
+        return filter_table(table=table, cols=table_cols, **{command: param})
+    elif re.match(r"\d+", command):
+        return invoice_details(int(command))
+    elif command == "export":
+        return export_invoice_view()
+    elif command == "IDB":
+        return filter_table(table=table, cols=table_cols, idb=True)
+    elif command == "":
+        return np.int8(1)
+
+    return np.int8(0)
+
+
+def filter_table(
+    table: str, cols: list[str], con: pyodbc.Connection, **kwargs
+):
+    sql = construct_sql_query(table=table, cols=cols, paid=False, **kwargs)
+    new_data = pd.read_sql(sql, con=con)
+    return new_data
+
+
+def check_for_duplicate_entry(
+    vendor: str, inv_num: str, con=pyodbc.Connection
+) -> bool:
+
+    query = f"""select vendor,
+    inv_num
+    from invoices
+    where vendor = {vendor}
+    and inv_num = {inv_num};
+    """
+
+    cursor = con.execute(query)
+    if cursor.fetchone():
+        return True
+    else:
+        return False
+
+
+def invoice_details():
+    pass
+
+
+def export_invoice_view():
+    pass
+
+
+def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
+    cols = [
+        "vendor",
+        "inv_num",
+        "ach_aba",
+        "ach_account",
+        "ach_vendor",
+        "company",
+        "pmt_type",
+        "cc",
+        "paid",
+    ]
+    sql = construct_sql_query(
+        "invoices", cols=cols, pmt_type=pmt_type, cc=False, paid=False
+    )
+    data = pd.read_sql(sql, con)
+    return data
