@@ -63,6 +63,7 @@ class ApGui:
         options = {
             "Add Invoices": self.add_invoices,
             "View/Edit Invoices": self.view_invoices,
+            "Add Vendor": self.add_vendor,
             "Create Payment Files": self.make_all_payment_files,
             "Create Summary Workbook": self.save_summary_workbook,
             "Create Quickbooks Bill Files": self.create_bill_files,
@@ -197,7 +198,7 @@ class ApGui:
             return inputs
         else:
             self.print_possible_vendors(inputs[0])
-            inputs = self.get_inputs(
+            inputs = self.get_invoice_data(
                 prompts=prompts,
                 vendor=0,
                 invoice_num=inputs[1],
@@ -363,6 +364,13 @@ class ApGui:
 
         response = input(">\t")
         status = parse_inv_dets_response(response, id, self.conn)
+
+    def add_vendor(self) -> None:
+        fields = ["vendor", "company", "exp_cat", "approver", "pmt_type"]
+        values = []
+        for i in fields:
+            user_input = input(f"{fields[i]:10}")
+            values.append(user_input)
 
     ########################
     # Create Payment Files #
