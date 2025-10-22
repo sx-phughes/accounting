@@ -12,7 +12,6 @@ sys.path.append(os.environ["HOMEPATH"] + "/accounting")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
 
 import APDatabase
-from SigIntHandler import DelayedKeyboardInterrupt
 from functions import *
 from CursorFunc import *
 from wires import PayablesWires
@@ -72,9 +71,13 @@ class ApGui:
         while True:
             cls()
 
-            print("Payables Main Menu\n")
+            now_date = datetime.now()
+            date_str = now_date.strftime("%m-%d-%Y")
+
+            print_to_ascii_table(f"Simplex Accounts Payable\t{date_str}")
+
+            print("\n\n")
             self.print_main_menu_status()
-            print("\n")
             self.print_main_menu(options)
 
             selected = 0
@@ -104,10 +107,19 @@ class ApGui:
 
     def print_main_menu_status(self) -> None:
         summary_data = APDatabase.get_main_menu_summary_data(self.conn)
-        print("Unpaid Invoices Summary")
-        for i, row in summary_data.iterrows():
-            print(f"\t{row["company"]:15}: ${row["total"]:,.2f}")
-        print(f"{"TOTAL":23}: ${summary_data.total.sum():,.2f}")
+        print("* Unpaid Invoices Summary *")
+        if summary_data.empty:
+            print("\t<no unpaid invoices currently>")
+        else:
+            data_lines = ["Company\tAmount"]
+            for i, row in summary_data.iterrows():
+                company_line = f"{row["company"]}\t${row["total"]:,.2f}"
+                data_lines.append(company_line)
+            total_line = f"TOTAL\t${summary_data.total.sum():,.2f}"
+            data_lines.append(total_line)
+            print_to_ascii_table(*data_lines, total_line=True)
+
+            print("\n\n")
 
     ####
     # Add invoices code
@@ -115,34 +127,33 @@ class ApGui:
     def add_invoices(self):
         """Main loop for adding invoices to the payables table"""
 
-        with DelayedKeyboardInterrupt():
-            self.preserve_downloads_handler()
-            while True:
-                cls()
+        self.preserve_downloads_handler()
+        while True:
+            cls()
 
-                try:
-                    invoice_data = self.get_invoice_data(
-                        prompts=self.invoice_prompts
-                    )
-                except EOFError:
-                    invoice_data = [0]
+            try:
+                invoice_data = self.get_invoice_data(
+                    prompts=self.invoice_prompts
+                )
+            except EOFError:
+                invoice_data = [0]
 
-                if is_blank_list(data=invoice_data):
-                    break
-                elif APDatabase.check_for_duplicate_entry(
-                    invoice_data[0], invoice_data[1]
-                ):
-                    print("Invoice was a duplicate, not submitting entry.")
-                else:
-                    APDatabase.add_invoice(
-                        invoice_data=invoice_data, connection=self.conn
-                    )
+            if is_blank_list(data=invoice_data):
+                break
+            elif APDatabase.check_for_duplicate_entry(
+                invoice_data[0], invoice_data[1]
+            ):
+                print("Invoice was a duplicate, not submitting entry.")
+            else:
+                APDatabase.add_invoice(
+                    invoice_data=invoice_data, connection=self.conn
+                )
 
-                add_more = input("\nAdd another invoice (y/n)\n>\t")
-                if add_more == "n":
-                    break
+            add_more = input("\nAdd another invoice (y/n)\n>\t")
+            if add_more == "n":
+                break
 
-            self.preserve_downloads_handler(end=True)
+        self.preserve_downloads_handler(end=True)
 
     def preserve_downloads_handler(self, end: bool = False) -> int:
         if not end and self.preserved_downloads == np.uint8(0):
@@ -258,7 +269,8 @@ class ApGui:
     def view_invoices(self, data: pd.DataFrame = None):
         """Prints unpaid invoices for user."""
 
-        print_cols = [
+        cols = [
+            "id",
             "vendor",
             "inv_num",
             "company",
@@ -275,11 +287,14 @@ class ApGui:
                 df = data
             else:
                 sql = APDatabase.construct_sql_query(
-                    "invoices", cols=print_cols, paid=False, cc=False
+                    "invoices", cols=cols, paid=False, cc=False
                 )
-                df = pd.read_sql(sql, con=self.conn)
+                df = pd.read_sql(sql, con=self.conn, index_col="id")
 
-            print(df)
+            if df.empty:
+                print("\n<no unpaid invoices currently>\n")
+            else:
+                print(df)
 
             print("\n\nEnter an index to view invoice details,")
             print("type 'Vendor: [vendor]' to filter by vendor,")
@@ -294,13 +309,59 @@ class ApGui:
             parse_result = APDatabase.parse_user_response(
                 user_response=response,
                 table="invoices",
-                table_cols=print_cols,
+                table_cols=cols,
                 con=self.conn,
             )
-            if parse_result == np.int8(1):
+            if isinstance(parse_result, np.int8) and parse_result == np.int8(
+                1
+            ):
                 break
+            elif isinstance(parse_result, tuple):
+                self.response_handler(*parse_result)
             elif isinstance(parse_result, pd.DataFrame):
                 self.view_invoices(data=parse_result)
+
+    def response_handler(self, option: np.int8, data: pd.DataFrame) -> None:
+        if option == np.int8(2):
+            self.print_invoice_details(data=data)
+        else:
+            return
+
+    def print_invoice_details(self, data: pd.DataFrame) -> None:
+        id = data.index[0]
+        date_added = data.iloc[0]["date_added"]
+        vendor = data.iloc[0]["vendor"]
+        inv_num = data.iloc[0]["inv_num"]
+        amount = data.iloc[0]["amount"]
+        approved = data.iloc[0]["approved"]
+        paid = data.iloc[0]["paid"]
+        pay_date = data.iloc[0]["date_paid"]
+
+        cls()
+        print_header("Invoice Details")
+        print("")
+        print(f"{"Vendor:":15}    {vendor}")
+        print(f"{"Invoice:":15}    {inv_num}")
+        print(f"{"Amount:":15}    ${amount:,.2f}")
+        print("\n Status")
+        print(" ", "_" * 20, sep="")
+        if approved:
+            print(f"| {"APPROVED":18} |")
+        else:
+            print(f"| {"Needs approval":18} |")
+        if paid:
+            print(f"| Paid on {pay_date} |")
+        else:
+            print(f"| {"Unpaid":18} |")
+        print(" ", "\u203e" * 20, sep="")
+        print(f"\n\nLast updated: {date_added}")
+
+        print("To remove this invoice, enter 'delete'.")
+        print("To update a value, enter '<field>: <new value>")
+        print("To return, press enter.")
+
+        response = input(">\t")
+        status = parse_inv_dets_response(response, id, self.conn)
 
     ########################
     # Create Payment Files #
