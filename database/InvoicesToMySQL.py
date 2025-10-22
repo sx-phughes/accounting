@@ -62,7 +62,9 @@ def check_good_files(filename: str) -> bool:
         "December Payables Final Accrual.xlsm",
         "December Payables Batch 1 Final Accrual.xlsm",
     ]
-    if ".xlsm" in filename and filename not in bad_names:
+    if (
+        ".xlsm" in filename or ".xlsx" in filename
+    ) and filename not in bad_names:
         return True
     else:
         return False
@@ -122,7 +124,7 @@ def create_payables_master_table(files_list: list[list[str]]):
             continue
 
         sub_table["ym"] = file[2]
-        sub_table["date_paid"] = pay_date.strftime("%Y-%m-%d")
+        # sub_table["date_paid"] = pay_date.strftime("%Y-%m-%d")
         sub_table["date_added"] = get_date_added(pay_date).strftime("%Y-%m-%d")
         empty_rows = sub_table.loc[sub_table["Amount"].isna()].index
         sub_table = sub_table.drop(index=empty_rows).reset_index(drop=True)
@@ -137,13 +139,13 @@ def create_payables_master_table(files_list: list[list[str]]):
             "date_added",
             "Vendor",
             "Invoice #",
-            "Simplex2",
-            "Expense Category",
-            "Approved By",
-            "Payment Type",
+            # "Simplex2",
+            # "Expense Category",
+            # "Approved By",
+            # "Payment Type",
             "Amount",
             "ym",
-            "date_paid",
+            # "date_paid",
         ]
     ].copy(deep=True)
 
@@ -260,8 +262,16 @@ def replace_unmatched_vendors(invoice_table: pd.DataFrame):
 
 
 def save_raw_data_to_disk() -> None:
-    dates = get_ym_list()
-    files = get_ap_files_for_all(months=dates)
+    # dates = get_ym_list()
+    # files = get_ap_files_for_all(months=dates)
+    files = [
+        [
+            "2025-10-31 Payables.xlsx",
+            "C:/gdrive/Shared drives/accounting/Payables/2025/202510/2025-10-31",
+            "202510",
+        ]
+    ]
+    print(files)
     invoices = create_payables_master_table(files)
     while True:
         try:
@@ -331,8 +341,8 @@ def make_fresh_clean_data_file() -> None:
 def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
     clean_data["cc"] = False
     clean_data["cc_user"] = ""
-    clean_data["approved"] = True
-    clean_data["paid"] = True
+    clean_data["approved"] = False
+    clean_data["paid"] = False
 
     cols = [
         "date_added",
@@ -342,9 +352,6 @@ def finalize_table_for_db(clean_data: pd.DataFrame) -> pd.DataFrame:
         "ym",
         "cc",
         "cc_user",
-        "approved",
-        "paid",
-        "date_paid",
     ]
     with_final_cols = clean_data[cols].copy(deep=True)
 
@@ -391,7 +398,11 @@ def construct_insert_statement(
     row_data: pd.Series, col_names: list[str]
 ) -> str:
     vals_string = row_to_string(row_data=row_data, col_names=col_names)
+
     statement = f"INSERT INTO invoices (date_added, vendor, inv_num, amount, ym, cc, cc_user, approved, paid, date_paid) VALUES ({vals_string});"
+
+    statement = f"INSERT INTO invoices (date_added, vendor, inv_num, amount, ym, cc, cc_user) VALUES ({vals_string});"
+
     return statement
 
 
