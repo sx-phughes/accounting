@@ -317,14 +317,14 @@ def filter_table(
 
 
 def check_for_duplicate_entry(
-    vendor: str, inv_num: str, con=pyodbc.Connection
+    vendor: str, inv_num: str, con: pyodbc.Connection
 ) -> bool:
 
     query = f"""select vendor,
     inv_num
     from invoices
-    where vendor = {vendor}
-    and inv_num = {inv_num};
+    where vendor = '{vendor}'
+    and inv_num = '{inv_num}';
     """
 
     cursor = con.execute(query)

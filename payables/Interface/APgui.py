@@ -141,13 +141,14 @@ class ApGui:
             if is_blank_list(data=invoice_data):
                 break
             elif APDatabase.check_for_duplicate_entry(
-                invoice_data[0], invoice_data[1]
+                invoice_data[0], invoice_data[1], self.conn
             ):
                 print("Invoice was a duplicate, not submitting entry.")
             else:
                 APDatabase.add_invoice(
                     invoice_data=invoice_data, connection=self.conn
                 )
+                move_invoice_files(invoice_data[0], invoice_data[1])
 
             add_more = input("\nAdd another invoice (y/n)\n>\t")
             if add_more == "n":

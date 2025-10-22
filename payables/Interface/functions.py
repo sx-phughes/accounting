@@ -321,7 +321,9 @@ def move_invoice_files(vendor: str, invoice_num: str) -> None:
     clean_inv_num = invoice_num.replace("/", "_").replace("\\", "_")
     new_name_base = f"{vendor} - {clean_inv_num}"
 
-    files_to_move = os.listdir(downloads)
+    files_to_move = list(
+        filter(lambda x: x != "desktop.ini", os.listdir(downloads))
+    )
     new_file_names = create_new_inv_file_names(
         old_fnames=files_to_move, new_name=new_name_base
     )
@@ -337,7 +339,7 @@ def get_ap_path() -> str:
     ap_path = "/".join(
         [
             "C:/gdrive/Shared drives/accounting/Payables",
-            f"{now.year:s}",
+            f"{now.year}",
             now.strftime("%Y%m"),
         ]
     )
@@ -353,7 +355,7 @@ def create_new_inv_file_names(
     new_file_names = []
     for i in range(len(old_fnames)):
         i_ext = extensions[i]
-        new_fname = new_name + i_ext
+        new_fname = ".".join([new_name, i_ext])
         if count_of_extensions[i_ext] > 1:
             count = 0
             for name in new_file_names:
@@ -362,6 +364,7 @@ def create_new_inv_file_names(
             if count > 0:
                 new_fname = new_fname + f"_{count:s}"
         new_file_names.append(new_fname)
+    return new_file_names
 
 
 def parse_inv_dets_response(response: str, id: int, con: pyodbc.Connection):
