@@ -4,8 +4,6 @@ import pyodbc
 import pandas as pd
 import numpy as np
 import re
-import os
-
 
 invoices_cols = (
     "id",
@@ -19,6 +17,15 @@ invoices_cols = (
     "approved",
     "paid",
     "date_paid",
+)
+
+invoices_int_cols = (
+    "id",
+    "amount",
+    "ym",
+    "cc",
+    "approved",
+    "paid",
 )
 
 vendors_cols = (
@@ -85,15 +92,19 @@ def get_main_menu_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
     """Retrieves summary data for unpaid invoices."""
 
     query = """select 
-        distinct vendors.company, 
+        vendors.company, 
         sum(invoices.amount) as total
     from invoices
     left join vendors on invoices.vendor = vendors.vendor
     where invoices.paid = FALSE
-    and invoices.cc = FALSE;"""
+    and invoices.cc = FALSE
+    group by vendors.company;"""
 
     data = pd.read_sql(query, con)
-    return data
+    if data.iloc[0]["company"] is None:
+        return pd.DataFrame()
+    else:
+        return data
 
 
 def get_unpaid_invoices(connection: pyodbc.Connection) -> pd.DataFrame:
@@ -278,20 +289,21 @@ def parse_user_response(
 ) -> np.int8:
     """Parses user response and starts relevant routine."""
 
-    regex = re.match(r"(\w+):?\s(\w+)?", user_response)
+    if user_response == "":
+        return np.int8(1)
+
+    regex = re.match(r"(\w+):?\s?(\w+)?", user_response)
     command = regex.group(1)
     param = regex.group(2)
 
     if command in table_cols:
         return filter_table(table=table, cols=table_cols, **{command: param})
     elif re.match(r"\d+", command):
-        return invoice_details(int(command))
+        return invoice_details(int(command), con)
     elif command == "export":
         return export_invoice_view()
     elif command == "IDB":
         return filter_table(table=table, cols=table_cols, idb=True)
-    elif command == "":
-        return np.int8(1)
 
     return np.int8(0)
 
@@ -322,8 +334,10 @@ def check_for_duplicate_entry(
         return False
 
 
-def invoice_details():
-    pass
+def invoice_details(id: int, con: pyodbc.Connection):
+    sql = construct_sql_query("invoices", id=id)
+    invoice_data = pd.read_sql(sql=sql, con=con, index_col="id")
+    return (np.int8(2), invoice_data)
 
 
 def export_invoice_view():
@@ -347,3 +361,24 @@ def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
     )
     data = pd.read_sql(sql, con)
     return data
+
+
+def update_value(
+    id: int, column: str, value: str, connection: pyodbc.Connection
+) -> None:
+    if column in invoices_int_cols:
+        update_statement = f"""update invoices
+        set {column} = {value} where id = {id};"""
+    else:
+        update_statement = f"""update invoices
+        set {column} = '{value}' where id = {id};"""
+
+    connection.execute(update_statement)
+    connection.commit()
+
+
+def remove_item(id: int, connection: pyodbc.Connection) -> None:
+    delete_statement = f"""delete from invoices
+    where id = {id};"""
+    connection.execute(delete_statement)
+    connection.commit()
