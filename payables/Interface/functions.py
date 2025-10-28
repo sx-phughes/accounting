@@ -463,3 +463,8 @@ def remove_invoice(id: int, connection: pyodbc.Connection) -> None:
     answer = input("yes/no: ")
     if answer == "yes":
         APDatabase.remove_item(id=id, connection=connection)
+
+
+def export_table_to_csv(data: pd.DataFrame, fname: str) -> None:
+    path = "/".join([os.environ["HOMEPATH"], "Downloads", fname + ".csv"])
+    data.to_csv(path_or_buf=path)
