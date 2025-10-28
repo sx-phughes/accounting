@@ -266,9 +266,9 @@ def save_raw_data_to_disk() -> None:
     # files = get_ap_files_for_all(months=dates)
     files = [
         [
-            "2025-10-31 Payables.xlsx",
-            "C:/gdrive/Shared drives/accounting/Payables/2025/202510/2025-10-31",
-            "202510",
+            "2025-09-30 Payables.xlsx",
+            "C:/gdrive/Shared drives/accounting/Payables/2025/202509/2025-09-30",
+            "202509",
         ]
     ]
     print(files)
