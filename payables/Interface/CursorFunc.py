@@ -2,13 +2,15 @@ import ctypes
 from ctypes import wintypes
 import re
 import sys
+import os
+from numpy import floor_divide
 
 
-def cursor_up():
+def cursor_up(pad_len: int):
     """Moves the cursor up one row after input."""
     sys.stdout.flush()
     # clear line nav'ed from
-    clear_end_of_line_after_input("")
+    clear_end_of_line_after_input("", pad_len=pad_len)
     # undo \n from entering input
     print("\033[A", end="", flush=True)
     # move up a line and to beginning
@@ -83,3 +85,17 @@ def better_input(prompt: str) -> str:
 
     ret = input(prompt)
     ret_len = len(ret)
+
+
+def move_cursor(row: int, col: int) -> None:
+    print(f"\x1b[{str(row)};{str(col)}H", end="", flush=True)
+
+
+def print_centered(*lines) -> None:
+    """Prints line to center of screen on current line"""
+
+    cols = os.get_terminal_size().columns
+    for line in lines:
+        start_col = floor_divide(cols - len(line), 2)
+        print(f"\x1b[{str(start_col)}G", end="", flush=True)
+        print(line)
