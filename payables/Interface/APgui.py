@@ -2,7 +2,7 @@ import getpass
 import pandas as pd
 import pyodbc
 import os
-import shutil
+import pwinput
 import time
 import sys
 import warnings
@@ -50,13 +50,45 @@ class ApGui:
     def connect_to_db(self) -> pyodbc.Connection:
         while self.conn is None:
             cls()
-            creds = get_uid_pwd()
+            creds = self.login_screen()
             try:
                 self.conn = APDatabase.establish_db_connection(*creds)
-                print("Connection to accounting database successful.")
+                print("\n")
+                print_centered("Connection to accounting database successful.")
                 time.sleep(3)
             except:
                 self.conn = None
+
+    def login_screen(self) -> tuple[str]:
+        cls()
+
+        cols = os.get_terminal_size().columns
+        rows = os.get_terminal_size().lines
+
+        input_box_size = 12
+        labels = ["Username", "Password"]
+
+        lines = []
+        for label in labels:
+            line = label + "\t" + (" " * input_box_size)
+            lines.append(line)
+
+        ascii_lines = get_ascii_table_lines(*lines, total_line=False)
+        start_line = np.floor_divide((rows - len(ascii_lines)), 2)
+        start_col = np.floor_divide((cols - len(ascii_lines[0])), 2)
+
+        for i in range(len(ascii_lines)):
+            move_cursor(row=(start_line + i), col=start_col)
+            print(ascii_lines[i])
+
+        first_input_col = start_col + ascii_lines[1].find("|", 2) + 2
+        first_input_row = start_line + 1
+        move_cursor(first_input_row, first_input_col)
+        un = input()
+
+        move_cursor(row=first_input_row + 2, col=start_col)
+        pw = pwinput.pwinput(prompt="| Password | ")
+        return (un, pw)
 
     def main_menu(self):
         """Main user interface menu function"""
@@ -121,6 +153,24 @@ class ApGui:
             print_to_ascii_table(*data_lines, total_line=True)
 
             print("\n\n")
+
+    def up_arrow(self, index: int, pad_len: int) -> int:
+        """Navigates cursor up one line. Returns resulting value after nav."""
+
+        if index > 0:
+            index -= 1
+            cursor_up(pad_len)
+        return index
+
+    def down_arrow(self, index: int, end_index: int) -> int:
+        """Navigates cursor down one line to a max line end_index. Returns
+        resulting value."""
+
+        if index <= end_index:
+            index += 1
+            cursor_down()
+            # print('', end='\r', flush=True)
+        return index
 
     ####
     # Add invoices code
@@ -242,7 +292,7 @@ class ApGui:
             index += 1
             clear_end_of_line_after_input(value=data, pad_len=pad_len)
         elif data == self.up_key:
-            index = self.up_arrow(index)
+            index = self.up_arrow(index, pad_len)
             print("\r", end="", flush=True)
         elif data == self.down_key:
             index = self.down_arrow(index, end)
@@ -285,7 +335,7 @@ class ApGui:
             cls()
             print_header("UNPAID INVOICES")
 
-            if data:
+            if not (data is None):
                 df = data
             else:
                 sql = APDatabase.construct_sql_query(
@@ -293,14 +343,15 @@ class ApGui:
                 )
                 df = pd.read_sql(sql, con=self.conn, index_col="id")
 
+            self.current_table = df
+
             if df.empty:
                 print("\n<no unpaid invoices currently>\n")
             else:
                 print(df)
 
             print("\n\nEnter an index to view invoice details,")
-            print("type 'Vendor: [vendor]' to filter by vendor,")
-            print("'Approver: [name]' to filter by approver,")
+            print("Type '<column name>: <value> to filter by a value,")
             print("'export: [file_name]' to save file to downloads")
             print("'IDB' to view IDB only invoices,")
             # print("'unapproved' to see all unapproved invoices,")
@@ -323,9 +374,17 @@ class ApGui:
             elif isinstance(parse_result, pd.DataFrame):
                 self.view_invoices(data=parse_result)
 
-    def response_handler(self, option: np.int8, data: pd.DataFrame) -> None:
+    def response_handler(self, option: np.int8, data: Any) -> None:
         if option == np.int8(2):
             self.print_invoice_details(data=data)
+        elif option == np.int8(3):
+            export_table_to_csv(self.current_table, fname=data)
+            print("File saved to Downloads.")
+            input()
+        elif option == np.int8(4):
+            APDatabase.mark_invoices_approved(self.current_table.id, self.conn)
+            print("Invoices marked approved")
+            input()
         else:
             return
 
@@ -366,11 +425,65 @@ class ApGui:
         status = parse_inv_dets_response(response, id, self.conn)
 
     def add_vendor(self) -> None:
-        fields = ["vendor", "company", "exp_cat", "approver", "pmt_type"]
+        cls()
+
+        fields = [
+            "vendor",
+            "company",
+            "exp_cat",
+            "approver",
+            "pmt_type",
+            "qb_mapping",
+            "acct_mapping",
+            "idb",
+        ]
+        pretty_fields = [
+            "Vendor",
+            "Company",
+            "Expense Category",
+            "Approver",
+            "Payment Type",
+            "Quickbooks Mapping",
+            "GL Account",
+            "IDB Broker (y/n)",
+        ]
         values = []
-        for i in fields:
-            user_input = input(f"{fields[i]:10}")
-            values.append(user_input)
+        for i in range(len(fields)):
+            user_input = input(f"{pretty_fields[i] + ":":20}")
+            if fields[i] == "idb" and user_input == "y":
+                values.append(1)
+            elif fields[i] == "idb":
+                values.append(0)
+            else:
+                values.append(user_input)
+
+        val_dict = {field: value for field, value in zip(fields, values)}
+
+        wire_fields = ["template"]
+        pretty_wire_fields = ["Template"]
+        ach_fields = ["ach_aba", "ach_acct_no", "ach_vendor"]
+        pretty_ach_fields = [
+            "ACH ABA",
+            "ACH Account Number",
+            "ACH Vendor Name",
+        ]
+        pmt_info = []
+        if val_dict["pmt_type"].lower() == "Wire":
+            active_fields = wire_fields
+            active_pretty_fields = pretty_wire_fields
+        else:
+            active_fields = ach_fields
+            active_pretty_fields = pretty_ach_fields
+        for i in range(len(active_fields)):
+            user_input = input(f"{active_pretty_fields[i] + ":":20}")
+            pmt_info.append(user_input)
+
+        all_fields = fields + active_fields
+        all_vals = values + pmt_info
+
+        APDatabase.add_vendor(
+            fields=all_fields, values=all_vals, conn=self.conn
+        )
 
     ########################
     # Create Payment Files #

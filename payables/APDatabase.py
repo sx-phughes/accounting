@@ -292,18 +292,25 @@ def parse_user_response(
     if user_response == "":
         return np.int8(1)
 
-    regex = re.match(r"(\w+):?\s?(\w+)?", user_response)
-    command = regex.group(1)
-    param = regex.group(2)
+    try:
+        regex = re.match(r"(\w+):?\s?([\w\.\s\_]+)?", user_response)
+        command = regex.group(1)
+        param = regex.group(2)
+    except:
+        return np.int8(1)
 
     if command in table_cols:
-        return filter_table(table=table, cols=table_cols, **{command: param})
+        return filter_table(
+            table=table, cols=table_cols, **{command: param}, con=con
+        )
     elif re.match(r"\d+", command):
         return invoice_details(int(command), con)
     elif command == "export":
-        return export_invoice_view()
+        return (np.int8(3), param)
     elif command == "IDB":
         return filter_table(table=table, cols=table_cols, idb=True)
+    elif command == "mark":
+        return (np.int8(4), param)
 
     return np.int8(0)
 
@@ -338,10 +345,6 @@ def invoice_details(id: int, con: pyodbc.Connection):
     sql = construct_sql_query("invoices", id=id)
     invoice_data = pd.read_sql(sql=sql, con=con, index_col="id")
     return (np.int8(2), invoice_data)
-
-
-def export_invoice_view():
-    pass
 
 
 def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
@@ -382,3 +385,33 @@ def remove_item(id: int, connection: pyodbc.Connection) -> None:
     where id = {id};"""
     connection.execute(delete_statement)
     connection.commit()
+
+
+def add_vendor(
+    fields: list[str], values: list[str], conn: pyodbc.Connection
+) -> None:
+    fields_query_str = ", ".join(fields)
+    vals_query_str = ""
+    for i in range(len(values)):
+        if i in [6, 7]:
+            vals_query_str = "".join([vals_query_str, str(values[i]), ", "])
+        else:
+            vals_query_str = "".join([vals_query_str, "'", values[i], "', "])
+
+    vals_query_str = vals_query_str[:-2]
+    print(fields_query_str)
+    print(vals_query_str)
+    query = (
+        f"insert into vendors ({fields_query_str}) values ({vals_query_str});"
+    )
+    print(query)
+    conn.execute(query)
+    conn.commit()
+
+
+def mark_invoices_approved(invoices: pd.Index, conn: pyodbc.Connection):
+    index_str = ", ".join([str(i) for i in invoices])
+    print(index_str)
+    sql = f"update invoices set approved = TRUE where id in ({index_str});"
+    conn.execute(sql)
+    conn.commit()
