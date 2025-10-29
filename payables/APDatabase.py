@@ -308,7 +308,7 @@ def parse_user_response(
     elif command == "export":
         return (np.int8(3), param)
     elif command == "IDB":
-        return filter_table(table=table, cols=table_cols, idb=True)
+        return filter_table(table=table, cols=table_cols, idb=True, con=con)
     elif command == "mark":
         return (np.int8(4), param)
 
