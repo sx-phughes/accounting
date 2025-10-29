@@ -293,7 +293,7 @@ def parse_user_response(
         return np.int8(1)
 
     try:
-        regex = re.match(r"(\w+):?\s?([\w\.\s\_]+)?", user_response)
+        regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&]+)?", user_response)
         command = regex.group(1)
         param = regex.group(2)
     except:
@@ -319,7 +319,7 @@ def filter_table(
     table: str, cols: list[str], con: pyodbc.Connection, **kwargs
 ):
     sql = construct_sql_query(table=table, cols=cols, paid=False, **kwargs)
-    new_data = pd.read_sql(sql, con=con)
+    new_data = pd.read_sql(sql, con=con, index_col="id")
     return new_data
 
 
@@ -349,20 +349,27 @@ def invoice_details(id: int, con: pyodbc.Connection):
 
 def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
     cols = [
+        "id",
         "vendor",
         "inv_num",
         "ach_aba",
-        "ach_account",
+        "ach_acct_no",
         "ach_vendor",
+        "approved",
         "company",
         "pmt_type",
         "cc",
         "paid",
     ]
     sql = construct_sql_query(
-        "invoices", cols=cols, pmt_type=pmt_type, cc=False, paid=False
+        "invoices",
+        cols=cols,
+        pmt_type=pmt_type,
+        cc=False,
+        paid=False,
+        approved=True,
     )
-    data = pd.read_sql(sql, con)
+    data = pd.read_sql(sql, con, "id")
     return data
 
 
@@ -415,3 +422,24 @@ def mark_invoices_approved(invoices: pd.Index, conn: pyodbc.Connection):
     sql = f"update invoices set approved = TRUE where id in ({index_str});"
     conn.execute(sql)
     conn.commit()
+
+
+def get_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
+
+    sql = """select invoices.id,
+    invoices.vendor,
+    vendors.qb_mapping,
+    invoices.inv_num,
+    invoices.amount,
+    vendors.company,
+    vendors.approver,
+    vendors.exp_cat,
+    vendors.pmt_type
+    from invoices
+    left join vendors on invoices.vendor = vendors.vendor
+    where invoices.paid = FALSE
+    and invoices.cc = FALSE
+    order by vendor;"""
+
+    data = pd.read_sql(sql, con, index_col="id")
+    return data
