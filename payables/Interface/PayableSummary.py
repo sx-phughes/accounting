@@ -4,8 +4,6 @@ import xlsxwriter
 import numpy as np
 from datetime import datetime
 
-from Interface.payables_wb import PayablesWorkbook
-
 
 def create_summary_path(date: datetime) -> str:
     """Returns the save path for the payables summary book."""
@@ -14,26 +12,19 @@ def create_summary_path(date: datetime) -> str:
         "C:/gdrive/Shared drives/accounting/Payables",
         str(date.year),
         date.strftime("%Y%m"),
-        date.strftime("%Y-%m-%d"),
+        # date.strftime("%Y-%m-%d"),
         f"{date.strftime("%Y-%m-%d")} Payables Summary.xlsx",
     ]
 
     return "/".join(pieces)
 
 
-def make_summary_workbook(
-    payables: PayablesWorkbook, path: str = None
-) -> None:
+def make_summary_workbook(payables: pd.DataFrame, path: str = None) -> None:
     """Write invoice summary workbook to disk"""
 
     write_to = os.environ["HOMEPATH"] + "/Downloads/payables_summary.xlsx"
     if path:
         write_to = path
-
-    all_payables = payables.merge_vendors()
-    no_cc_pmts = all_payables.loc[
-        ~(all_payables["Payment Type"] == "Credit Card")
-    ].copy()
 
     with pd.ExcelWriter(
         write_to,
@@ -52,16 +43,16 @@ def make_summary_workbook(
         normal = workbook.add_format({"bold": False})
 
         write_summary_sheet(
-            payables=no_cc_pmts,
+            payables=payables,
             writer=writer,
             workbook=workbook,
-            date=payables.payables_date,
+            date=datetime.now(),
         )
         # write_wire_setup_sheet(
         #     payables=payables, writer=writer, workbook=workbook
         # )
         write_invoice_sheet(
-            payables=no_cc_pmts, writer=writer, workbook=workbook
+            payables=payables, writer=writer, workbook=workbook
         )
 
 
@@ -109,7 +100,7 @@ def format_table(
 
 
 def write_invoice_sheet(
-    payables: PayablesWorkbook,
+    payables: pd.DataFrame,
     writer: pd.ExcelWriter,
     workbook: xlsxwriter.Workbook,
 ) -> None:
@@ -134,7 +125,7 @@ def write_invoice_sheet(
 
 
 def write_wire_setup_sheet(
-    payables: PayablesWorkbook,
+    payables: pd.DataFrame,
     writer: pd.ExcelWriter,
     workbook: xlsxwriter.Workbook,
 ) -> None:
@@ -150,15 +141,15 @@ def write_wire_setup_sheet(
     )
 
 
-def get_invoice_table(payables: PayablesWorkbook) -> pd.DataFrame:
+def get_invoice_table(payables: pd.DataFrame) -> pd.DataFrame:
     cols = [
-        "Vendor",
-        "Invoice #",
-        "Company",
-        "Expense Category",
-        "Approver",
-        "Payment Type",
-        "Amount",
+        "vendor",
+        "inv_num",
+        "company",
+        "exp_cat",
+        "approver",
+        "pmt_type",
+        "amount",
     ]
     selected_cols = payables[cols].copy(deep=True)
     return selected_cols
@@ -172,66 +163,66 @@ def create_summarypage(
     return summary_sheet
 
 
-def get_summary_tables(payables: PayablesWorkbook) -> tuple[pd.DataFrame]:
+def get_summary_tables(payables: pd.DataFrame) -> tuple[pd.DataFrame]:
     """Get summary tables for the main summary page of the workbook."""
 
     by_vendor = payables.pivot_table(
-        values="Amount",
-        index="QB Mapping",
+        values="amount",
+        index="qb_mapping",
         aggfunc="sum",
-    ).sort_values("Amount", ascending=False)
+    ).sort_values("amount", ascending=False)
     by_approver = payables.pivot_table(
-        values="Amount", index="Approver", aggfunc="sum"
+        values="amount", index="approver", aggfunc="sum"
     )
     by_expense_cat = payables.pivot_table(
-        values="Amount", index="Expense Category", aggfunc="sum"
+        values="amount", index="exp_cat", aggfunc="sum"
     )
     by_company = payables.pivot_table(
-        values="Amount", index="Company", columns="Payment Type", aggfunc="sum"
+        values="amount", index="company", columns="pmt_type", aggfunc="sum"
     )
     by_company["Total"] = by_company[by_company.columns].sum(axis=1)
     summary_tables = (by_vendor, by_approver, by_expense_cat, by_company)
 
     for table in summary_tables:
         try:
-            table.loc["Total", "Amount"] = table["Amount"].sum()
+            table.loc["Total", "amount"] = table["amount"].sum()
         except KeyError:
             continue
 
     return summary_tables
 
 
-def get_wire_table(payables: PayablesWorkbook) -> pd.DataFrame:
+def get_wire_table(payables: pd.DataFrame) -> pd.DataFrame:
     with_deets = payables.merge_vendors()
-    wire_mask = with_deets["Payment Type"] == "Wire"
+    wire_mask = with_deets["pmt_type"] == "Wire"
     wires = with_deets.loc[wire_mask].copy(deep=True)
     by_vendor_wires = wires.pivot_table(
-        values="Amount", index="Vendor", aggfunc="sum"
+        values="amt", index="vendor", aggfunc="sum"
     )
 
     invoices_by_vendor_wires = get_wire_invoices_by_vendor(wires)
     by_vendor_wires_merged = by_vendor_wires.merge(
-        right=invoices_by_vendor_wires, how="left", on="Vendor"
+        right=invoices_by_vendor_wires, how="left", on="vendor"
     )
     return by_vendor_wires_merged
 
 
 def get_wire_invoices_by_vendor(wires: pd.DataFrame) -> pd.DataFrame:
-    unique_vendors = wires["Vendor"].unique()
+    unique_vendors = wires["vendor"].unique()
     unique_vendors.sort()
     wire_invoices_by_vendor = pd.DataFrame(
-        index=unique_vendors, columns=["Invoices"]
+        index=unique_vendors, columns=["invoices"]
     )
-    wire_invoices_by_vendor = wire_invoices_by_vendor.rename_axis("Vendor")
+    wire_invoices_by_vendor = wire_invoices_by_vendor.rename_axis("vendor")
     # print(wire_invoices_by_vendor)
     for vendor in unique_vendors:
-        vendor_invoices = wires.loc[wires.index == vendor, "Invoice #"]
+        vendor_invoices = wires.loc[wires.index == vendor, "inv_num"]
         str_vendor_invoices = ", ".join(vendor_invoices)
         mask = wire_invoices_by_vendor.index == vendor
-        wire_invoices_by_vendor.loc[mask, "Invoices"] = str_vendor_invoices
+        wire_invoices_by_vendor.loc[mask, "invoices"] = str_vendor_invoices
     return wire_invoices_by_vendor
 
 
-if __name__ == "__main__":
-    ap = PayablesWorkbook("2025-09-30")
-    make_summary_workbook(payables=ap)
+# if __name__ == "__main__":
+#     ap = PayablesWorkbook("2025-09-30")
+#     make_summary_workbook(payables=ap)
