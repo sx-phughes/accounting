@@ -8,14 +8,12 @@ from typing import Any, Callable
 
 # Package Imports
 import BaycrestSplitter
-from payables import PayablesJes
-from payables.Interface import os_interface
+from payables.Interface import APgui
 import AbnCash
 from MonthEnd.Bofa import OrganizeBAMLfiles
 from patrick_functions import UnzipFiles
 from MonthEnd.ExchangeFees import ExchangeFeesDownload
 from MonthEnd.Abn import MonthEndModule
-from payables.nacha import NachaMain
 from payables.nacha import BlankBatch
 import UpdateVendors
 from MonthEnd.Transfers import MeTransfers
@@ -261,12 +259,12 @@ class PatEngine:
         options = {
             "AP": [
                 "Manage Payables Workbook: view/input/remove",
-                os_interface.run_interface,
+                APgui,
             ],
-            "Create Paybles JE Files": [
-                "Create Payables JE files for upload to QB",
-                PayablesJes.run_payables,
-            ],
+            # "Create Paybles JE Files": [
+            #     "Create Payables JE files for upload to QB",
+            #     PayablesJes.run_payables,
+            # ],
         }
 
         self.menu("Payables Menu", options, "Main Menu")
@@ -274,4 +272,3 @@ class PatEngine:
 
 if __name__ == "__main__":
     instance = PatEngine()
-    instance.run_f(os_interface.run_interface)
