@@ -1,6 +1,7 @@
 import os
 import sys
-sys.path.append('/'.join([os.environ["HOMEPATH"], 'accounting']))
+
+sys.path.append("/".join([os.environ["HOMEPATH"], "accounting"]))
 from payables.nacha.NachaFile import *
 import pandas as pd
 from datetime import datetime
@@ -43,8 +44,8 @@ class NachaConstructor:
         for i, row in trx_table.iterrows():
             transaction = TransactionEntry(
                 row[self.vendor_col],
-                row["Amount"],
-                row["Invoice #"],
+                row["amount"],
+                row["inv_num"],
                 row[self.aba_col],
                 row[self.account_col],
                 "0" * (7 - len(str(sequence_no))) + str(sequence_no),
@@ -54,15 +55,15 @@ class NachaConstructor:
             sequence_no += 1
 
         return transactions_list
-    
+
     def get_col_names(self) -> None:
         """Gets columns required for construct_transactions, allowing for
         different source tables."""
 
         cols = [
-            ["Vendor Name", "ACH Vendor Name"],
-            ["Vendor ABA", "ACH ABA"],
-            ["Vendor Account", "ACH Account Number"]
+            ["Vendor Name", "ach_vendor"],
+            ["Vendor ABA", "ach_aba"],
+            ["Vendor Account", "ach_acct_no"],
         ]
         name_index = 0
         try:
@@ -106,9 +107,9 @@ class NachaConstructor:
 
     def main(self):
         """Creates and returns NACHA payment files ready to be written to disk.
-        
+
         Returns a string for each operating company with each company's
-        transactions encoded and formatted such that when written to disk in a 
+        transactions encoded and formatted such that when written to disk in a
         text file, the resulting file may be uploaded to JP Morgan for payment.
         """
 
@@ -119,8 +120,8 @@ class NachaConstructor:
             try:
                 trxs = self.trx_table.loc[self.trx_table["Simplex2"] == i]
             except KeyError:
-                trxs = self.trx_table.loc[self.trx_table["Company"] == i]
-                
+                trxs = self.trx_table.loc[self.trx_table["company"] == i]
+
             # company_trxs_grouped = self.get_grouped_trx_table(data=trxs)
 
             transactions = self.construct_transactions(trxs)
@@ -132,7 +133,7 @@ class NachaConstructor:
             files.append(file)
 
         return files
-    
+
     def get_grouped_trx_table(self, data: pd.DataFrame) -> pd.DataFrame:
         """Handler function for grouping transactions by vendor then merging
         the vendors table to the resulting table."""
@@ -145,30 +146,30 @@ class NachaConstructor:
         """Left-join vendors table to another table on the given column."""
 
         vendors = self.get_vendor_table()
-        short_vendors = vendors[[
-            "ACH Vendor Name",
-            "ACH ABA",
-            "ACH Account Number"
-        ]].copy(deep=True)
+        short_vendors = vendors[
+            ["ACH Vendor Name", "ACH ABA", "ACH Account Number"]
+        ].copy(deep=True)
         merged = left.merge(right=short_vendors, how="left", on=col)
         return merged
-    
+
     def get_vendor_table(self) -> pd.DataFrame:
         """Read vendors table into memory and return the table."""
 
-        path = '/'.join([
-            "C:/gdrive/Shared drives/accounting/patrick_data_files",
-            "ap/Vendors.xlsx"
-        ])
+        path = "/".join(
+            [
+                "C:/gdrive/Shared drives/accounting/patrick_data_files",
+                "ap/Vendors.xlsx",
+            ]
+        )
         vendors = pd.read_excel(io=path, sheet_name="Vendors")
         return vendors
-    
+
     def group_trx_by_vendor(self, data: pd.DataFrame) -> pd.DataFrame:
         """Group payments by company for one payment per vendor."""
 
-        # Need to think about edge cases when current addendum algorithm won't 
+        # Need to think about edge cases when current addendum algorithm won't
         # work
-        pre_sort_vendors = data[self.vendor_col].unique().tolist() 
+        pre_sort_vendors = data[self.vendor_col].unique().tolist()
         vendors = sorted(pre_sort_vendors)
         table = self.create_unique_payment_table(vendors)
         for i, row in table.iterrows():
@@ -180,7 +181,7 @@ class NachaConstructor:
             table.loc[i, "Invoice #"] = addendum
 
         return table
-    
+
     def create_unique_payment_table(self, vendors: list[str]) -> pd.DataFrame:
         """Returns a dataframe with columns for vendor, total invoiced amount
         and the addendum string"""
@@ -190,24 +191,25 @@ class NachaConstructor:
         data = {
             "ACH Vendor Name": vendors,
             "Amount": zeroes,
-            "Invoice #": empty_strs
+            "Invoice #": empty_strs,
         }
         df = pd.DataFrame(data=data)
         return df
 
-    def group_vendor_data(self, 
-                          vendor_data: pd.DataFrame) -> tuple[np.float64 | str]:
+    def group_vendor_data(
+        self, vendor_data: pd.DataFrame
+    ) -> tuple[np.float64 | str]:
         """Returns the vendor data as a tuple of sum and joined invoice nums."""
 
         total_amount = np.float64(vendor_data["Amount"].sum(skipna=True))
         invoice_str = self.get_invoice_str(vendor_data["Invoice #"])
         return (total_amount, invoice_str)
-    
+
     def get_invoice_str(self, invoice_nums: pd.Series) -> str:
         """Creates the invoice string for the vendor row.
-        
-        The addenda to the ACH is limited to 80 chars. This function takes a 
-        series of strings and joins the whole strings or equal-length 
+
+        The addenda to the ACH is limited to 80 chars. This function takes a
+        series of strings and joins the whole strings or equal-length
         parts of each string."""
 
         invoice_data = pd.DataFrame(invoice_nums)
@@ -219,8 +221,8 @@ class NachaConstructor:
         invoice_data["str_len"] = invoice_data["Invoice #"].apply(len)
         num_invoices = len(invoice_data.index)
         len_per_num = np.floor_divide(80, num_invoices) - 1
-        invoice_data["sliced"] = invoice_data["Invoice #"].str. \
-            slice(-len_per_num)
+        invoice_data["sliced"] = invoice_data["Invoice #"].str.slice(
+            -len_per_num
+        )
         sliced_joined = " ".join(invoice_data["sliced"].tolist())
         return sliced_joined
-

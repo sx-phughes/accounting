@@ -70,7 +70,7 @@ def create_payment_objects(
     invoices in the dataframe must be invoices intended to be paid via wire,
     and one company."""
 
-    company = invoices["Company"].values[0]
+    company = invoices["company"].values[0]
     global wire_value_date
 
     for i, row in invoices.iterrows():
@@ -79,7 +79,8 @@ def create_payment_objects(
             orig_account=company_ids[company],
             amount=row["amount"],
             value_date=wire_value_date,
-            vendor=Vendor(row["vendor"]),
+            vendor=row["vendor"],
+            template_name=row["template"],
             details=row["inv_num"],
             template=True,
         )

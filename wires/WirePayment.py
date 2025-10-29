@@ -161,7 +161,8 @@ class WirePayment:
         orig_account,
         amount,
         value_date: datetime,
-        vendor: Vendor,
+        vendor: str,
+        template_name: str,
         details: str,
         template: bool = False,
     ):
@@ -170,6 +171,7 @@ class WirePayment:
         self.amount = amount
         self.value_date = value_date
         self.vendor = vendor
+        self.template_name = template_name
         self.details = details
         self.template = template
 
@@ -247,6 +249,7 @@ class WirePayment:
         return fields
 
     def set_record(self):
+        # template function
         if self.template:
             self.record_fields[0].value = "PT"
         else:
@@ -255,11 +258,12 @@ class WirePayment:
         return self.record_fields
 
     def set_trx(self):
+        # template function
         if self.template:
             values = [
                 self.orig_bank_id,
                 self.orig_account,
-                self.vendor.template,
+                self.template_name,
                 "",
                 self.amount,
                 "",
@@ -286,6 +290,7 @@ class WirePayment:
         return self.trx_fields
 
     def set_vd(self):
+        # template function
         self.vd_fields[0].value = self.value_date
 
         return self.vd_fields
@@ -346,6 +351,7 @@ class WirePayment:
         return self.int_bank_fields
 
     def set_details(self):
+        # template function
         if self.template:
             values = (
                 [
@@ -369,6 +375,7 @@ class WirePayment:
         return self.trx_det_fields
 
     def set_b2b_dets(self):
+        # template function
         if self.template:
             for i in range(len(self.b2b_fields)):
                 self.b2b_fields[i].value = ""
@@ -384,17 +391,20 @@ class WirePayment:
         return self.other_fields
 
     def set_reg(self):
+        # template function
         for i in range(len(self.reg_fields)):
             self.reg_fields[i].value = ""
 
         return self.reg_fields
 
     def set_note(self):
+        # template function
         self.note_fields[0].value = ""
 
         return self.note_fields
 
     def set_email(self):
+        # template function
         for i in range(len(self.email_fields)):
             self.email_fields[i].value = ""
 
