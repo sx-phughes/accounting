@@ -16,6 +16,7 @@ import APDatabase
 from functions import *
 from CursorFunc import *
 from wires import PayablesWires
+import PayableSummary
 
 
 def get_uid_pwd() -> tuple[str]:
@@ -334,6 +335,7 @@ class ApGui:
             "approver",
         ]
         show_cols = [
+            "id",
             "vendor",
             "inv_num",
             "company",
@@ -358,11 +360,11 @@ class ApGui:
             if df.empty:
                 print("\n<no unpaid invoices currently>\n")
             else:
-                print(
-                    df[[col for col in cols if col in show_cols]].sort_values(
-                        "vendor"
-                    )
-                )
+                print_cols = []
+                for col in show_cols:
+                    if col in df.columns:
+                        print_cols.append(col)
+                print(df[print_cols].sort_values("vendor"))
 
             print("\n\nEnter an index to view invoice details,")
             print("Type '<column name>: <value> to filter by a value,")
@@ -396,7 +398,9 @@ class ApGui:
             print("File saved to Downloads.")
             input()
         elif option == np.int8(4):
-            APDatabase.mark_invoices_approved(self.current_table.id, self.conn)
+            APDatabase.mark_invoices_approved(
+                self.current_table.index, self.conn
+            )
             print("Invoices marked approved")
             input()
         else:
@@ -525,7 +529,11 @@ class ApGui:
         self.generate_wire_files()
 
     def save_summary_workbook(self):
-        pass
+        data = APDatabase.get_summary_data(con=self.conn)
+        # print(data)
+        # input()
+        path = PayableSummary.create_summary_path(datetime.now())
+        PayableSummary.make_summary_workbook(payables=data, path=path)
 
     def create_bill_files(self):
         pass
