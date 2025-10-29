@@ -10,6 +10,7 @@ import warnings
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
+sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables/Interface")
 
 import APDatabase
 from functions import *
@@ -41,6 +42,7 @@ class ApGui:
 
     def __init__(self):
         pd.set_option("display.max_rows", None)
+        pd.set_option("display.float_format", lambda x: "{:,.2f}".format(x))
         warnings.simplefilter(action="ignore", category=UserWarning)
         self.conn = None
         self.preserved_downloads = np.uint8(0)
@@ -327,8 +329,16 @@ class ApGui:
             "inv_num",
             "company",
             "amount",
+            "exp_cat",
             "approved",
             "approver",
+        ]
+        show_cols = [
+            "vendor",
+            "inv_num",
+            "company",
+            "amount",
+            "approved",
         ]
 
         while True:
@@ -348,7 +358,11 @@ class ApGui:
             if df.empty:
                 print("\n<no unpaid invoices currently>\n")
             else:
-                print(df)
+                print(
+                    df[[col for col in cols if col in show_cols]].sort_values(
+                        "vendor"
+                    )
+                )
 
             print("\n\nEnter an index to view invoice details,")
             print("Type '<column name>: <value> to filter by a value,")
@@ -468,7 +482,7 @@ class ApGui:
             "ACH Vendor Name",
         ]
         pmt_info = []
-        if val_dict["pmt_type"].lower() == "Wire":
+        if val_dict["pmt_type"].lower() == "wire":
             active_fields = wire_fields
             active_pretty_fields = pretty_wire_fields
         else:
