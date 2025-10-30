@@ -82,7 +82,11 @@ def establish_db_connection(uid, pwd) -> pyodbc.Connection:
         "charset=utf8mb4"
     )
 
-    con = pyodbc.connect(conn_string)
+    try:
+        con = pyodbc.connect(conn_string)
+    except pyodbc.InterfaceError:
+        con = pyodbc.connect(conn_string.replace("9.1", "9.4"))
+
     con.setdecoding(pyodbc.SQL_WCHAR, encoding="utf-8")
     con.setencoding(encoding="utf-8")
     return con
