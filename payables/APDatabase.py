@@ -424,8 +424,14 @@ def add_vendor(
 
 def mark_invoices_approved(invoices: pd.Index, conn: pyodbc.Connection):
     index_str = ", ".join([str(i) for i in invoices])
-    print(index_str)
     sql = f"update invoices set approved = TRUE where id in ({index_str});"
+    conn.execute(sql)
+    conn.commit()
+
+
+def unapprove_invoices(invoices: pd.Index, conn: pyodbc.Connection):
+    index_str = ", ".join([str(i) for i in invoices])
+    sql = f"update invoices set approved = FALSE where id in ({index_str});"
     conn.execute(sql)
     conn.commit()
 
@@ -444,6 +450,7 @@ def get_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
     from invoices
     left join vendors on invoices.vendor = vendors.vendor
     where invoices.paid = FALSE
+    and invoices.approved = TRUE
     and invoices.cc = FALSE
     order by vendor;"""
 

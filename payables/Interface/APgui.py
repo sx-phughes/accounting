@@ -398,11 +398,20 @@ class ApGui:
             print("File saved to Downloads.")
             input()
         elif option == np.int8(4):
-            APDatabase.mark_invoices_approved(
-                self.current_table.index, self.conn
-            )
-            print("Invoices marked approved")
-            input()
+            function_map = {
+                "approved": [
+                    APDatabase.mark_invoices_approved,
+                    "Invoices approved",
+                ],
+                "unapproved": [
+                    APDatabase.unapprove_invoices,
+                    "Invoices unapproved",
+                ],
+            }
+            # runs function based on the parameter passed with mark
+            function_map[data][0](self.current_table.index, self.conn)
+            # prints remark based on the function run
+            print(function_map[data][1])
         else:
             return
 
