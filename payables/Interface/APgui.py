@@ -519,7 +519,7 @@ class ApGui:
         """Create NACHA payment files for invoiced payable via ACH and save
         to disk."""
 
-        vd = ui_get_date(dt=True).strftime("%Y-%m-%d")
+        vd = ui_get_date(dt=True).strftime("%y%m%d")
         debug = True if input("Debug (y/n): ") == "y" else False
         make_nacha_files(value_date=vd, con=self.conn, debug=debug)
         print("NACHA file generation complete. Files saved to downloads.")
