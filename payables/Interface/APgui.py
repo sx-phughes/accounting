@@ -371,7 +371,8 @@ class ApGui:
             print("'export: [file_name]' to save file to downloads")
             print("'IDB' to view IDB only invoices,")
             # print("'unapproved' to see all unapproved invoices,")
-            # print("'mark approved' to mark all showing invoices as approved")
+            print("'mark approved' to mark all showing invoices as approved")
+            print("'mark paid' to mark invoices as paid,")
             print("or just hit enter to return to the main menu.")
 
             response = input(">\t")
@@ -406,6 +407,10 @@ class ApGui:
                 "unapproved": [
                     APDatabase.unapprove_invoices,
                     "Invoices unapproved",
+                ],
+                "paid": [
+                    self.pay_invoices,
+                    "Invoices marked paid",
                 ],
             }
             # runs function based on the parameter passed with mark
@@ -510,6 +515,15 @@ class ApGui:
 
         APDatabase.add_vendor(
             fields=all_fields, values=all_vals, conn=self.conn
+        )
+
+    def pay_invoices(self, index: pd.Index, *args) -> None:
+        date_str = get_valid_input(
+            "Input payment date (yyyy-mm-dd): ", r"\d{4}-\d{2}-\d{2}"
+        )
+        date_paid = datetime.strptime(date_str, "%Y-%m-%d")
+        APDatabase.mark_paid(
+            invoices=index, date_paid=date_paid, con=self.conn
         )
 
     ########################

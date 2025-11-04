@@ -92,6 +92,20 @@ def establish_db_connection(uid, pwd) -> pyodbc.Connection:
     return con
 
 
+def execute_commit(
+    query: str, commit: bool, con: pyodbc.Connection
+) -> None | pyodbc.Cursor:
+    try:
+        cursor = con.execute(query)
+        if commit:
+            con.commit()
+        else:
+            return cursor
+    except:
+        print("Query execute and commit failed")
+        input()
+
+
 def get_main_menu_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
     """Retrieves summary data for unpaid invoices."""
 
@@ -149,13 +163,12 @@ def add_invoice(
         {cc_user}
     );"""
 
-    connection.execute(statement)
-    connection.commit()
+    execute_commit(statement, True, connection)
 
 
 def check_vendor(vendor: str, conn: pyodbc.Connection) -> bool:
     sql = f"SELECT * FROM vendors WHERE vendor = '{vendor}';"
-    curs = conn.execute(sql)
+    curs = execute_commit(query=sql, commit=False, con=conn)
     if curs.fetchone():
         return True
     else:
@@ -338,7 +351,7 @@ def check_for_duplicate_entry(
     and inv_num = '{inv_num}';
     """
 
-    cursor = con.execute(query)
+    cursor = execute_commit(query=query, commit=False, con=con)
     if cursor.fetchone():
         return True
     else:
@@ -382,6 +395,8 @@ def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
 def update_value(
     id: int, column: str, value: str, connection: pyodbc.Connection
 ) -> None:
+    """Updates a value for a given invoice."""
+
     if column in invoices_int_cols:
         update_statement = f"""update invoices
         set {column} = {value} where id = {id};"""
@@ -389,20 +404,22 @@ def update_value(
         update_statement = f"""update invoices
         set {column} = '{value}' where id = {id};"""
 
-    connection.execute(update_statement)
-    connection.commit()
+    execute_commit(query=update_statement, commit=True, con=connection)
 
 
 def remove_item(id: int, connection: pyodbc.Connection) -> None:
+    """Removes invoice from database."""
+
     delete_statement = f"""delete from invoices
     where id = {id};"""
-    connection.execute(delete_statement)
-    connection.commit()
+    execute_commit(query=delete_statement, commit=True, con=connection)
 
 
 def add_vendor(
     fields: list[str], values: list[str], conn: pyodbc.Connection
 ) -> None:
+    """Adds a vendor to the database."""
+
     fields_query_str = ", ".join(fields)
     vals_query_str = ""
     for i in range(len(values)):
@@ -417,23 +434,24 @@ def add_vendor(
     query = (
         f"insert into vendors ({fields_query_str}) values ({vals_query_str});"
     )
-    print(query)
-    conn.execute(query)
-    conn.commit()
+    # print(query)
+    execute_commit(query=query, commit=True, con=conn)
 
 
 def mark_invoices_approved(invoices: pd.Index, conn: pyodbc.Connection):
+    """Marks invoices (denoted by a dataframe index) as approved"""
+
     index_str = ", ".join([str(i) for i in invoices])
     sql = f"update invoices set approved = TRUE where id in ({index_str});"
-    conn.execute(sql)
-    conn.commit()
+    execute_commit(query=sql, commit=True, con=conn)
 
 
 def unapprove_invoices(invoices: pd.Index, conn: pyodbc.Connection):
+    """Unapproves invoices based on a DataFrame index."""
+
     index_str = ", ".join([str(i) for i in invoices])
     sql = f"update invoices set approved = FALSE where id in ({index_str});"
-    conn.execute(sql)
-    conn.commit()
+    execute_commit(query=sql, commit=True, con=conn)
 
 
 def get_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
@@ -456,3 +474,16 @@ def get_summary_data(con: pyodbc.Connection) -> pd.DataFrame:
 
     data = pd.read_sql(sql, con, index_col="id")
     return data
+
+
+def mark_paid(
+    invoices: pd.Index, date_paid: datetime, con: pyodbc.Connection
+) -> None:
+
+    str_date_paid = date_paid.strftime("%Y-%m-%d")
+    index_str = ", ".join([str(i) for i in invoices])
+
+    sql = f"""update invoices set paid = TRUE, date_paid = '{str_date_paid}' 
+    where id in ({index_str});"""
+
+    execute_commit(query=sql, commit=True, con=con)
