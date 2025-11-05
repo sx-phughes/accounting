@@ -213,12 +213,6 @@ class PatEngine:
                 "Unzip Files in a Folder",
                 UnzipFiles.script_wrapper,
             ],
-            "AP": self.payables,
-            "Update Vendor Value": [
-                "Update a value in the vendor database",
-                UpdateVendors.update_vendor,
-            ],
-            "Add a Vendor": ["Add a New Vendor", UpdateVendors.add_vendor],
             "Create custom NACHA batch": [
                 "Process custom NACHA batch",
                 BlankBatch.process_file,
@@ -252,22 +246,6 @@ class PatEngine:
         }
 
         self.menu("Month-End Functions", options, "Main Menu")
-
-    def payables(self):
-        """Sub-menu options for running payables-related scripts"""
-
-        options = {
-            "AP": [
-                "Manage Payables Workbook: view/input/remove",
-                APgui,
-            ],
-            # "Create Paybles JE Files": [
-            #     "Create Payables JE files for upload to QB",
-            #     PayablesJes.run_payables,
-            # ],
-        }
-
-        self.menu("Payables Menu", options, "Main Menu")
 
 
 if __name__ == "__main__":
