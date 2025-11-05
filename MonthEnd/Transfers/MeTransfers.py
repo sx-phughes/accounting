@@ -1,5 +1,6 @@
 from MonthEnd.Transfers.DataGathering import *
 from MonthEnd.Transfers.TransferTableSetup import *
+from MonthEnd.Transfers.Accounts import *
 from datetime import datetime, timedelta
 import os
 
@@ -31,16 +32,10 @@ def run_baml_table(date: datetime, save_path="."):
 
     # Get BAML Month-end Data
     df = BamlReader2(path)
+    # print(df)
+    # input()
 
     row_data = []
-
-    baml_accounts = [
-        "644-40300-D4",
-        "644-40846-D6",
-        "644-40865-D6",
-        "644-41315-D1",
-        "644-99865-D6",
-    ]
 
     for i, row in df.iterrows():
         if row["Account No."] in baml_accounts:
@@ -65,30 +60,6 @@ def run_baml_table(date: datetime, save_path="."):
 
 def run_abn_tables(date: datetime, save_path="."):
     date_str = abn_date(date)
-
-    abn_eqt_accounts = (
-        "008MMXV",  # MM    VIX Options
-        "695M526",  # MM    NXM SPY Stock and ETFs
-        "695M622",  # MM    Main MM Account
-        "695M679",  # MM    NXM IWM, QQQ stock and ETFs
-        "695M904",  # Desk  Tom O'Donnell
-        "695MMXZ",  # MM    NXM SPX Boxes
-        "813M473",  # MM    XM IWM, QQQ Options
-        "813M758",  # XM    SPY and SPX Options
-    )
-
-    abn_fut_accounts = (
-        "6901SIMP3",  # Prop  Futures (Elliot)
-        "6901SIMP4",  # Prop  Euro/SOFR
-        "6901SIMP8",  # Desk  Tom O'Donnell
-        #       '6901SIMP9',    # Prop  JJ Futures
-        "6901SIM10",
-        "6901SIM11",
-        "6901SIM12",
-        "8131SIMP1",  # MM    XM VIX Futures
-        "8131SIMP2",  # MM    XM EMini Futures
-        "8131SIMP7",  # MM    XM NQ, RTY Futures
-    )
 
     sixnine_tfr_table = AbnOptTransferTable("695")
     eightone_tfr_table = AbnOptTransferTable("813")
