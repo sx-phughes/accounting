@@ -192,24 +192,17 @@ class AbnFutTransferTable(TransferTable):
         "Blank",
     ]
 
-    offsets = {
-        "SIMP1": "SICSH",
-        "SIMP2": "SICSH",
-        "SIMP7": "SICSH",
-        "SIMP4": "SIMP6",
-        "SIMP3": "SIMP6",
-        "SIMP9": "SIMP6",
-        "SIM10": "SIMP6",
-        "SIM11": "SIMP6",
-        "SIM12": "SIMP6",
-    }
-
     def __init__(self):
         super().__init__(col_names=AbnFutTransferTable.headers)
 
     def add_data_row(self, account: str, amount: float):
 
         short_account = account[4:]
+
+        if account[0:4] == "8131":
+            offset = "SICSH"  # 8131 (XM) accounts offset to SICSH
+        else:
+            offset = "SIMP6"  # 6901 accounts offset to SIMP6
 
         row = [
             "",
@@ -221,7 +214,7 @@ class AbnFutTransferTable(TransferTable):
             "",
             "Journal Transfer",
             "",
-            self.offsets[short_account],
+            offset,
             "RU",
             "",
         ]
