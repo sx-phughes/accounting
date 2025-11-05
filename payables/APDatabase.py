@@ -487,3 +487,29 @@ def mark_paid(
     where id in ({index_str});"""
 
     execute_commit(query=sql, commit=True, con=con)
+
+
+def get_bill_file_data(
+    date_paid: datetime, con: pyodbc.Connection
+) -> pd.DataFrame:
+
+    str_date_paid = date_paid.strftime("%Y-%m-%d")
+    sql = construct_sql_query(
+        "invoices",
+        [
+            "id",
+            "vendor",
+            "inv_num",
+            "amount",
+            "company",
+            "date_paid",
+            "qb_mapping",
+            "acct_mapping",
+            "pmt_type",
+        ],
+        paid=True,
+        cc=False,
+        date_paid=str_date_paid,
+    )
+    data = pd.read_sql(sql=sql, con=con, index_col="id")
+    return data

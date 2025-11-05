@@ -559,7 +559,15 @@ class ApGui:
         PayableSummary.make_summary_workbook(payables=data, path=path)
 
     def create_bill_files(self):
-        pass
+        date_str = get_valid_input(
+            "Input the date that invoices were paid on (yyyy-mm-dd): ",
+            r"\d{4}-\d{2}-\d{2}",
+        )
+        date_dt = datetime.strptime(date_str, "%Y-%m-%d")
+        data = APDatabase.get_bill_file_data(date_paid=date_dt, con=self.conn)
+        PayablesJes.create_save_bill_files(date=date_dt, invoice_data=data)
+        print("Bill files created!")
+        input()
 
 
 if __name__ == "__main__":

@@ -9,9 +9,9 @@ from Interface.functions import ui_get_date
 
 
 class JECreator:
-    companies = ["Holdings", "Technologies", "Investments", "Trading"]
+    companies = ["Holdco", "Technologies", "Investments", "Trading"]
 
-    def __init__(self, date: datetime):
+    def __init__(self, date: datetime, invoice_data: pd.DataFrame):
         self.date = date
         self.standard_wb = True
         self.je_headers = [
@@ -32,37 +32,9 @@ class JECreator:
                 self.je_headers, [[] for i in range(len(self.je_headers))]
             )
         }
-        self.vendors = self.get_vendor_map()
+        # self.vendors = self.get_vendor_map()
         self.coas = self.get_coas()
-        self.invoices = self.get_invoice_data()
-
-    @property
-    def ap_path(self) -> str:
-        """Path to the payables workbook with invoice data."""
-
-        path = "/".join(
-            [
-                "C:/gdrive/Shared drives/accounting/Payables",
-                str(self.date.year),
-                self.date.strftime("%Y%m"),
-                self.date.strftime("%Y-%m-%d"),
-                f"{self.date.strftime('%Y-%m-%d')} Payables.xlsm",
-            ]
-        )
-        return path
-
-    def get_vendor_map(self) -> pd.DataFrame:
-        """Returns the vendor details table."""
-
-        vendor_path = (
-            "C:/gdrive/Shared drives/accounting"
-            + "/patrick_data_files/ap/Vendors.xlsx"
-        )
-        vendor_mapping = pd.read_excel(vendor_path, "Vendors")
-        vendor_mapping = vendor_mapping[
-            ["Vendor", "QB Mapping", "Account Mapping"]
-        ]
-        return vendor_mapping
+        self.invoices = invoice_data
 
     def get_coas(self) -> dict[str, pd.DataFrame]:
         """Get chart of accounts for each company"""
@@ -79,21 +51,6 @@ class JECreator:
             cleaned_coa = self.clean_account_mapping(no_total_line)
             coas[co] = cleaned_coa
         return coas
-
-    def get_invoice_data(self):
-        """Gets the table with all the invoice data for the current batch."""
-
-        try:
-            invoices_df = pd.read_excel(self.ap_path, "Invoices")
-        except FileNotFoundError:
-            invoices_df = PayablesWorkbook(self.date).merge_vendors()
-            self.standard_wb = False
-
-        no_cc = invoices_df.loc[
-            ~(invoices_df["Payment Type"].isin(["CC", "Credit Card"]))
-        ]
-
-        return no_cc
 
     def generate_all_bills(self) -> dict[str, pd.DataFrame]:
         """Create bills for all companies, separated into dataframes for every
@@ -114,7 +71,7 @@ class JECreator:
         invoices_copy = invoices.copy(deep=True)
         bill_dfs = []
         num_invoices = len(invoices_copy.index)
-        print("initial num invoices = %d" % num_invoices)
+        # print("initial num invoices = %d" % num_invoices)
         while num_invoices > 0:
             start = max(0, np.floor_divide(num_invoices, 140) - 1) * 140
             end = start + 140
@@ -141,7 +98,7 @@ class JECreator:
     def get_company_invoices(self, company: str):
         """Get dataframe of invoices filtered for a specific company"""
 
-        col = "Company"
+        col = "company"
         if "Simplex2" in self.invoices.columns:
             col = "Simplex2"
 
@@ -154,20 +111,15 @@ class JECreator:
     ) -> pd.DataFrame:
         """Merge vendors and account mappings to company invoice table"""
 
-        if self.standard_wb:
-            invoices = raw_invoices.copy(deep=True).merge(
-                right=self.vendors, how="left", on="Vendor"
-            )
-        else:
-            invoices = raw_invoices.copy(deep=True)
+        invoices = raw_invoices.copy(deep=True)
 
-        invoices["Account Mapping"] = invoices["Account Mapping"].fillna(0)
+        invoices["acct_mapping"] = invoices["acct_mapping"].fillna(0)
         invoices_w_coas = invoices.merge(
             right=self.coas[company][
                 ["Account #", "Full name", "JE Account Name"]
             ],
             how="left",
-            left_on="Account Mapping",
+            left_on="acct_mapping",
             right_on="Account #",
         )
         invoices_renamed = invoices_w_coas.rename(
@@ -242,19 +194,19 @@ class JECreator:
         bill = pd.DataFrame(columns=self.je_headers)
 
         # 21 character limit on bill numbers in quickbooks
-        if len(str(df_row["Invoice #"])) > 21:
-            bill.loc[0, "Bill No."] = str(df_row["Invoice #"])[-21:]
+        if len(str(df_row["inv_num"])) > 21:
+            bill.loc[0, "Bill No."] = str(df_row["inv_num"])[-21:]
         else:
-            bill.loc[0, "Bill No."] = str(df_row["Invoice #"])
+            bill.loc[0, "Bill No."] = str(df_row["inv_num"])
 
-        bill.loc[0, "Vendor"] = df_row["QB Mapping"]
+        bill.loc[0, "Vendor"] = df_row["qb_mapping"]
         bill.loc[0, "Bill Date"] = self.date.strftime("%m/%d/%Y")
-        bill.loc[0, "Memo"] = df_row["Invoice #"]
+        bill.loc[0, "Memo"] = df_row["inv_num"]
         bill.loc[0, "Type"] = "Category Details"
         bill.loc[0, "Category/Account"] = df_row["Expense Account JE"]
-        bill.loc[0, "Description"] = df_row["Invoice #"]
-        bill.loc[0, "Amount"] = df_row["Amount"]
-        bill.loc[0, "Payment Type"] = df_row["Payment Type"]
+        bill.loc[0, "Description"] = df_row["inv_num"]
+        bill.loc[0, "Amount"] = df_row["amount"]
+        bill.loc[0, "Payment Type"] = df_row["pmt_type"]
         return bill
 
 
@@ -276,11 +228,11 @@ def run_payables():
     create_save_bill_files(date=batch_date)
 
 
-def create_save_bill_files(date: datetime) -> None:
+def create_save_bill_files(date: datetime, invoice_data: pd.DataFrame) -> None:
     """Creates and saves the bill files for the payables batch on the given
     date."""
 
-    payables = JECreator(date)
+    payables = JECreator(date, invoice_data)
     bill_dfs = payables.generate_all_bills()
 
     for i in bill_dfs.keys():
