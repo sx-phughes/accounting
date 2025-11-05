@@ -13,9 +13,9 @@ sys.path.append(os.environ["HOMEPATH"] + "/accounting/Wires")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables/Interface")
 
 import APDatabase
+import PayablesJes
 from functions import *
 from CursorFunc import *
-from wires import PayablesWires
 import PayableSummary
 
 
