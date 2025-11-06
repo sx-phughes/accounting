@@ -4,7 +4,6 @@ from datetime import datetime
 import os, sys
 
 sys.path.append("/".join([os.environ["HOMEPATH"], "accounting/payables"]))
-from Interface.payables_wb import PayablesWorkbook
 from Interface.functions import ui_get_date
 
 
