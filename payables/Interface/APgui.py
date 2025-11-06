@@ -31,12 +31,6 @@ def cls():
 
 class ApGui:
 
-    invoice_prompts = [
-        "Vendor:",
-        "Invoice Number:",
-        "Invoice Amount:",
-        "Credit card:",
-    ]
     prompt_types = ["str", "str", "float64", "bool"]
     up_key = "k"
     down_key = "j"
@@ -186,9 +180,7 @@ class ApGui:
             cls()
 
             try:
-                invoice_data = self.get_invoice_data(
-                    prompts=self.invoice_prompts
-                )
+                invoice_data = self.get_invoice_data(prompts=invoice_prompts)
             except EOFError:
                 invoice_data = [0]
 
@@ -306,7 +298,7 @@ class ApGui:
     def add_cc_user(self, invoice_data) -> None:
         """Add credit card user to invoice data for credit card invoices"""
 
-        cc_user_index = len(self.invoice_prompts)
+        cc_user_index = len(invoice_prompts)
         padded = pad_string("Enter initials of CC User:", 30)
         print(padded, end="")
         cc_user = input()

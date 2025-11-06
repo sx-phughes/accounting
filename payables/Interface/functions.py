@@ -8,13 +8,18 @@ import shutil
 import pyodbc
 import pandas as pd
 from collections import Counter
-from copy import deepcopy
 
-from APgui import ApGui
 import APDatabase
 from payables.nacha.NachaConstructor import NachaConstructor
 from payables.nacha.NachaFile import NachaFile
 from wires import PayablesWires
+
+invoice_prompts = [
+    "Vendor:",
+    "Invoice Number:",
+    "Invoice Amount:",
+    "Credit card:",
+]
 
 
 def cls():
@@ -260,7 +265,7 @@ def get_input_index(col: str) -> int:
     header."""
 
     with_stub = col + ":"
-    return ApGui.invoice_prompts.index(with_stub)
+    return invoice_prompts.index(with_stub)
 
 
 def fix_cc_input(inputs: list[str | int]) -> None:
