@@ -6,6 +6,7 @@ import pwinput
 import time
 import sys
 import warnings
+import logging
 
 sys.path.append(os.environ["HOMEPATH"] + "/accounting/payables")
 sys.path.append(os.environ["HOMEPATH"] + "/accounting")
@@ -41,7 +42,10 @@ class ApGui:
         warnings.simplefilter(action="ignore", category=UserWarning)
         self.conn = None
         self.preserved_downloads = np.uint8(0)
+        logging.basicConfig(filename="ap.log", level=logging.DEBUG)
+        logging.debug("Debugger on")
         self.connect_to_db()
+        logging.debug("Connected to DB")
         self.main_menu()
 
     def connect_to_db(self) -> pyodbc.Connection:
@@ -89,6 +93,7 @@ class ApGui:
 
     def main_menu(self):
         """Main user interface menu function"""
+
         options = {
             "Add Invoices": self.add_invoices,
             "View/Edit Invoices": self.view_invoices,
@@ -236,6 +241,9 @@ class ApGui:
         fix_cc_input(inputs)
         if inputs[3]:
             self.add_cc_user(inputs)
+
+        clean_vendor = inputs[0].replace("'", "''")
+        inputs[0] = clean_vendor
 
         if APDatabase.check_vendor(inputs[0], self.conn) or is_blank_list(
             inputs
