@@ -4,6 +4,9 @@ import pyodbc
 import pandas as pd
 import numpy as np
 import re
+import logging
+
+logging.basicConfig(filename="ap.log", level=logging.DEBUG)
 
 invoices_cols = (
     "id",
@@ -96,13 +99,14 @@ def execute_commit(
     query: str, commit: bool, con: pyodbc.Connection
 ) -> None | pyodbc.Cursor:
     try:
+        logging.debug(query)
         cursor = con.execute(query)
         if commit:
             con.commit()
         else:
             return cursor
     except:
-        print("Query execute and commit failed")
+        print("Query execute and commit failed...")
         input()
 
 
@@ -142,6 +146,7 @@ def add_invoice(
 
     invoice_data: [vendor, inv_num, amount, cc, cc_user]
     """
+
     date_added = datetime.now()
     str_date_added = date_added.strftime("%Y-%m-%d")
     ym = date_added.strftime("%Y%m")
@@ -167,6 +172,7 @@ def add_invoice(
 
 
 def check_vendor(vendor: str, conn: pyodbc.Connection) -> bool:
+
     sql = f"SELECT * FROM vendors WHERE vendor = '{vendor}';"
     curs = execute_commit(query=sql, commit=False, con=conn)
     if curs.fetchone():
@@ -352,9 +358,12 @@ def check_for_duplicate_entry(
     """
 
     cursor = execute_commit(query=query, commit=False, con=con)
-    if cursor.fetchone():
-        return True
-    else:
+    try:
+        if cursor.fetchone():
+            return True
+        else:
+            return False
+    except AttributeError:
         return False
 
 
