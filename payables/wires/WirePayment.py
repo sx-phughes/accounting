@@ -1,8 +1,8 @@
 import re, math
 from datetime import datetime
 import pandas as pd
-from Fields import fields
-from TemplateFields import template_fields
+from payables.wires.Fields import fields
+from payables.wires.TemplateFields import template_fields
 
 company_ids = {
     "Holdings": "000000424542988",

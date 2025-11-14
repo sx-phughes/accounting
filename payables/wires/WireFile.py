@@ -1,4 +1,4 @@
-from WirePayment import WirePayment
+from payables.wires.WirePayment import WirePayment
 from datetime import datetime
 import csv
 
