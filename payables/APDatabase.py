@@ -172,6 +172,8 @@ def add_invoice(
 
 
 def check_vendor(vendor: str, conn: pyodbc.Connection) -> bool:
+    """Checks to see if the vendor is a valid vendor, i.e. present in the
+    database."""
 
     sql = f"SELECT * FROM vendors WHERE vendor = '{vendor}';"
     curs = execute_commit(query=sql, commit=False, con=conn)
@@ -184,7 +186,10 @@ def check_vendor(vendor: str, conn: pyodbc.Connection) -> bool:
 def search_possible_vendors(
     vendor: str, conn: pyodbc.Connection
 ) -> pd.DataFrame:
-    sql = f"SELECT * FROM vendors WHERE vendor LIKE '%{vendor}%';"
+    """Returns possible vendors based on an invalid vendor name."""
+
+    vendor_words = vendor.split(" ")
+    sql = f"SELECT * FROM vendors WHERE vendor LIKE '%{vendor_words[0]}%';"
     results = pd.read_sql(sql, conn)
     return results
 
@@ -374,6 +379,12 @@ def invoice_details(id: int, con: pyodbc.Connection):
 
 
 def get_pmt_file_data(pmt_type: str, con: pyodbc.Connection) -> pd.DataFrame:
+    """Retrieves data required to contruct the NACHA and wire payment files
+    from the database.
+
+    pmt_type (str): 'wire' | 'ach'
+    """
+
     cols = [
         "id",
         "vendor",
