@@ -12,7 +12,7 @@ from collections import Counter
 import APDatabase
 from payables.nacha.NachaConstructor import NachaConstructor
 from payables.nacha.NachaFile import NachaFile
-from wires import PayablesWires
+from payables.wires import PayablesWires
 
 invoice_prompts = [
     "Vendor:",
