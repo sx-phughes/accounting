@@ -320,21 +320,29 @@ def move_invoice_files(vendor: str, invoice_num: str) -> None:
     """Moves files related to current invoice to appropriate folder in AP
     directory."""
 
-    ap_path = get_ap_path()
-    downloads = os.environ["HOMEPATH"] + "/Downloads"
+    while True:
+        try:
+            ap_path = get_ap_path()
+            downloads = os.environ["HOMEPATH"] + "/Downloads"
 
-    clean_inv_num = invoice_num.replace("/", "_").replace("\\", "_")
-    new_name_base = f"{vendor} - {clean_inv_num}"
+            clean_inv_num = invoice_num.replace("/", "_").replace("\\", "_")
+            new_name_base = f"{vendor} - {clean_inv_num}"
 
-    files_to_move = list(
-        filter(lambda x: x != "desktop.ini", os.listdir(downloads))
-    )
-    new_file_names = create_new_inv_file_names(
-        old_fnames=files_to_move, new_name=new_name_base
-    )
+            files_to_move = list(
+                filter(lambda x: x != "desktop.ini", os.listdir(downloads))
+            )
+            new_file_names = create_new_inv_file_names(
+                old_fnames=files_to_move, new_name=new_name_base
+            )
 
-    for old, new in zip(files_to_move, new_file_names):
-        shutil.move(src=(downloads + "/" + old), dst=(ap_path + "/" + new))
+            for old, new in zip(files_to_move, new_file_names):
+                shutil.move(
+                    src=(downloads + "/" + old), dst=(ap_path + "/" + new)
+                )
+            break
+        except PermissionError:
+            print("Please close the file...")
+            input()
 
 
 def get_ap_path() -> str:
@@ -367,7 +375,7 @@ def create_new_inv_file_names(
                 if i_ext in name:
                     count += 1
             if count > 0:
-                new_fname = new_fname + f"_{count:s}"
+                new_fname = new_fname + f"_{count}"
         new_file_names.append(new_fname)
     return new_file_names
 
