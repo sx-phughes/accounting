@@ -40,13 +40,22 @@ class ApGui:
         pd.set_option("display.max_rows", None)
         pd.set_option("display.float_format", lambda x: "{:,.2f}".format(x))
         warnings.simplefilter(action="ignore", category=UserWarning)
-        self.conn = None
-        self.preserved_downloads = np.uint8(0)
         logging.basicConfig(filename="ap.log", level=logging.DEBUG)
         logging.debug("Debugger on")
-        self.connect_to_db()
-        logging.debug("Connected to DB")
-        self.main_menu()
+        self.conn = None
+        self.preserved_downloads = np.uint8(0)
+        while True:
+            try:
+                self.connect_to_db()
+                logging.debug("Connected to DB")
+                self.main_menu()
+                break
+            except pyodbc.Error as e:
+                if e[0] == "HY000":
+                    cls()
+                    print("Lost connection to the database.")
+                    print("Returning to login screen")
+                    time.sleep(5)
 
     def connect_to_db(self) -> pyodbc.Connection:
         while self.conn is None:
