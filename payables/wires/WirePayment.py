@@ -353,6 +353,7 @@ class WirePayment:
     def set_details(self):
         # template function
         if self.template:
+            addl_details = self.get_addl_details(self.vendor)
             values = (
                 [
                     "",
@@ -362,6 +363,9 @@ class WirePayment:
                 + self.details
                 + [""] * 8
             )
+            if addl_details:
+                values[3] = addl_details
+                values[4] = self.details
         else:
             values = [
                 "",
@@ -455,3 +459,13 @@ class WirePayment:
     @value_date.setter
     def value_date(self, value_date: datetime):
         self._value_date = value_date.strftime("%Y%m%d")
+
+    def get_addl_details(self, vendor: str) -> str | None:
+        addl_details = {
+            "Barclays": "FBO Acct 0120287610",
+        }
+
+        try:
+            return addl_details[vendor]
+        except KeyError:
+            return None
