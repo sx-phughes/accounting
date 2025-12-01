@@ -320,16 +320,24 @@ def parse_user_response(
     if user_response == "":
         return np.int8(1)
 
+    command_param_dict = {}
+
     try:
-        regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&%]+)?", user_response)
-        command = regex.group(1)
-        param = regex.group(2)
-    except:
+        split_response = [piece.strip() for piece in user_response.split(",")]
+        for piece in split_response:
+            regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&%']+)?", piece)
+            command = regex.group(1)
+            param = regex.group(2)
+            command_param_dict[command] = param
+    except Exception as e:
+        print(e)
+        input()
         return np.int8(1)
 
-    if command in table_cols:
+    test_command = list(command_param_dict.keys())[0]
+    if test_command in table_cols:
         return filter_table(
-            table=table, cols=table_cols, **{command: param}, con=con
+            table=table, cols=table_cols, **command_param_dict, con=con
         )
     elif re.match(r"\d+", command):
         return invoice_details(int(command), con)
