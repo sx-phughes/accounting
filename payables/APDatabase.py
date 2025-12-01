@@ -321,7 +321,7 @@ def parse_user_response(
         return np.int8(1)
 
     try:
-        regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&]+)?", user_response)
+        regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&%]+)?", user_response)
         command = regex.group(1)
         param = regex.group(2)
     except:
