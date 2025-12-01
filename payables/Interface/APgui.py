@@ -340,6 +340,7 @@ class ApGui:
             "company",
             "amount",
             "exp_cat",
+            "pmt_type",
             "approved",
             "approver",
         ]
