@@ -538,27 +538,40 @@ class ApGui:
     ########################
     # Create Payment Files #
     ########################
-    def generate_nacha_files(self) -> None:
+    def generate_nacha_files(self) -> datetime:
         """Create NACHA payment files for invoiced payable via ACH and save
         to disk."""
 
-        vd = ui_get_date(dt=True).strftime("%y%m%d")
+        print("\nInput value date for ACH transactions:")
+        vd = ui_get_date(dt=True)
+        formatted_vd = vd.strftime("%y%m%d")
         debug = True if input("Debug (y/n): ") == "y" else False
-        make_nacha_files(value_date=vd, con=self.conn, debug=debug)
+        make_nacha_files(value_date=formatted_vd, con=self.conn, debug=debug)
         print("NACHA file generation complete. Files saved to downloads.")
         input("Enter to continue.")
+        erase_n_prev_lines(n=8)
+        return vd
 
-    def generate_wire_files(self) -> None:
+    def generate_wire_files(self, value_date) -> None:
         """Method for creating a simple batch of wire payments for a given
         payables run. One invoice = one wire.
         """
 
-        vd = ui_get_date(dt=True)
+        if value_date:
+            vd = value_date
+        else:
+            print("Input value date for wire transactions:")
+            vd = ui_get_date(dt=True)
+
         make_wire_pmt_files(value_date=vd, con=self.conn)
 
     def make_all_payment_files(self) -> None:
-        self.generate_nacha_files()
-        self.generate_wire_files()
+        vd = self.generate_nacha_files()
+        print("Use same value date for wires?")
+        resp = input("(y/n): ")
+        if resp != "y":
+            vd = None
+        self.generate_wire_files(value_date=vd)
 
     def save_summary_workbook(self):
         data = APDatabase.get_summary_data(con=self.conn)

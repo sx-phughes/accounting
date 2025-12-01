@@ -99,3 +99,14 @@ def print_centered(*lines) -> None:
         start_col = floor_divide(cols - len(line), 2)
         print(f"\x1b[{str(start_col)}G", end="", flush=True)
         print(line)
+
+
+def erase_n_prev_lines(n: int) -> None:
+    """Erases n lines upwards, including current line"""
+
+    print("\x1b[2K", end="", flush=True)
+    for i in range(n - 1):
+        print("\x1b[A", end="", flush=True)
+        print("\x1b[2K", end="", flush=True)
+
+    print("\x1b[0G", end="", flush=True)
