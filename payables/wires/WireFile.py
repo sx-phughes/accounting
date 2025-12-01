@@ -16,7 +16,7 @@ class WireFile:
         self.company = company
         self.hash_sum = 0
         print("transactions len: ", len(transactions))
-        if len(transactions) > 1:
+        if len(transactions) >= 1:
             for i in transactions:
                 self.hash_sum += i.amount
         elif len(transactions) == 1:
@@ -31,7 +31,7 @@ class WireFile:
             writer = csv.writer(f)
             writer.writerow(self.header)
 
-            if len(self.transactions) > 1:
+            if len(self.transactions) >= 1:
                 for i in self.transactions:
                     writer.writerow(i.create_payment())
             else:
