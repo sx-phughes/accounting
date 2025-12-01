@@ -10,20 +10,20 @@ import numpy as np
 
 class NachaConstructor:
     company_ids = {
-        "Holdings": "9542988001",
+        "Holdco": "9542988001",
         "Investments": "9684771001",
         "Technologies": "9711101001",
         "Trading": "9007310001",
     }
     company_names = {
-        "Holdings": "SIMPLEX HOLDCO",
+        "Holdco": "SIMPLEX HOLDCO",
         "Investments": "SIMPLEX INVESTMENTS LLC",
         "Technologies": "SIMPLEX TECHNOLOGIES",
         "Trading": "SIMPLEX TRADING, LLC",
     }
 
     company_abas = {
-        "Holdings": "071000013",
+        "Holdco": "071000013",
         "Investments": "071000013",
         "Technologies": "071000013",
         "Trading": "071000013",
