@@ -5,20 +5,20 @@ from payables.wires.Fields import fields
 from payables.wires.TemplateFields import template_fields
 
 company_ids = {
-    "Holdings": "000000424542988",
+    "Holdco": "000000424542988",
     "Investments": "000000644684771",
     "Technologies": "000000559711101",
     "Trading": "000000885007310",
 }
 company_names = {
-    "Holdings": "SIMPLEX HOLDCO, LLC",
+    "Holdco": "SIMPLEX HOLDCO, LLC",
     "Investments": "SIMPLEX INVESTMENTS LLC",
     "Technologies": "SIMPLEX TECHNOLOGIES",
     "Trading": "SIMPLEX TRADING, LLC",
 }
 
 company_abas = {
-    "Holdings": "071000013",
+    "Holdco": "071000013",
     "Investments": "071000013",
     "Technologies": "071000013",
     "Trading": "071000013",
