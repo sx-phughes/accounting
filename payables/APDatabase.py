@@ -541,3 +541,11 @@ def get_bill_file_data(
     )
     data = pd.read_sql(sql=sql, con=con, index_col="id")
     return data
+
+
+def get_vendor_info(vendor: str, con: pyodbc.Connection) -> pd.DataFrame:
+    """Returns info about a specific vendor for viewing in the GUI."""
+
+    sql = construct_sql_query("vendors", cols=None, vendor=vendor)
+    data = pd.read_sql(sql, con=con)
+    return data

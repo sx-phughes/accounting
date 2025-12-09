@@ -536,6 +536,10 @@ class ApGui:
             invoices=index, date_paid=date_paid, con=self.conn
         )
 
+    def show_vendor_info(self, vendor: str) -> None:
+        data = APDatabase.get_vendor_info(vendor=vendor, con=self.conn)
+        # TODO
+
     ########################
     # Create Payment Files #
     ########################
