@@ -87,6 +87,9 @@ def BamlReader2(f_path: str):
 
 
 def AbnMonthEndStatements(date: str):
+    """Returns the month-end EQTBAL and MICS_Bal files as a list of
+    dataframes"""
+
     abn_root = f"C:/gdrive/Shared drives/Clearing Archive/ABN_Archive/{date}"
     eqt_account_path = f"/EQTBAL_{date}.csv"
     fut_file_path = f"/MICS_Bal_{date}.csv"
