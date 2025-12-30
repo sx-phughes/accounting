@@ -343,6 +343,7 @@ class ApGui:
             "pmt_type",
             "approved",
             "approver",
+            "ym",
         ]
         show_cols = [
             "id",
