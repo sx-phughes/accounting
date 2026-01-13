@@ -86,7 +86,7 @@ def BamlReader2(f_path: str):
     return df
 
 
-def AbnMonthEndStatements(date: str):
+def AbnMonthEndStatements(date: str) -> tuple[pd.DataFrame]:
     """Returns the month-end EQTBAL and MICS_Bal files as a list of
     dataframes"""
 
@@ -94,10 +94,10 @@ def AbnMonthEndStatements(date: str):
     eqt_account_path = f"/EQTBAL_{date}.csv"
     fut_file_path = f"/MICS_Bal_{date}.csv"
 
-    files = [
+    files = (
         pd.read_csv(abn_root + eqt_account_path),
         pd.read_csv(abn_root + fut_file_path),
-    ]
+    )
 
     # print("Equities")
     # print(files[0])
