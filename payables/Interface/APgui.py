@@ -18,6 +18,7 @@ import PayablesJes
 from functions import *
 from CursorFunc import *
 import PayableSummary
+import SigIntStop
 
 
 def get_uid_pwd() -> tuple[str]:
@@ -125,12 +126,16 @@ class ApGui:
             self.print_main_menu(options)
 
             selected = 0
+            option_len = len(list(options.keys()))
+
             while not selected:
                 selected = self.main_menu_input()
+                if selected > option_len:
+                    selected = 0
 
             key = list(options.keys())[selected - 1]
 
-            if selected == len(list(options.keys())):
+            if selected == option_len:
                 cls()
                 break
             else:
@@ -189,30 +194,34 @@ class ApGui:
     def add_invoices(self):
         """Main loop for adding invoices to the payables table"""
 
-        self.preserve_downloads_handler()
-        while True:
-            cls()
+        with SigIntStop.DelayedKeyboardInterrupt():
+            self.preserve_downloads_handler()
+            while True:
+                cls()
 
-            try:
-                invoice_data = self.get_invoice_data(prompts=invoice_prompts)
-            except EOFError:
-                invoice_data = [0]
+                try:
+                    with SigIntStop.DelayedKeyboardInterrupt():
+                        invoice_data = self.get_invoice_data(
+                            prompts=invoice_prompts
+                        )
+                except EOFError:
+                    invoice_data = [0]
 
-            if is_blank_list(data=invoice_data):
-                break
-            elif APDatabase.check_for_duplicate_entry(
-                invoice_data[0], invoice_data[1], self.conn
-            ):
-                print("Invoice was a duplicate, not submitting entry.")
-            else:
-                APDatabase.add_invoice(
-                    invoice_data=invoice_data, connection=self.conn
-                )
-                move_invoice_files(invoice_data[0], invoice_data[1])
+                if is_blank_list(data=invoice_data):
+                    break
+                elif APDatabase.check_for_duplicate_entry(
+                    invoice_data[0], invoice_data[1], self.conn
+                ):
+                    print("Invoice was a duplicate, not submitting entry.")
+                else:
+                    APDatabase.add_invoice(
+                        invoice_data=invoice_data, connection=self.conn
+                    )
+                    move_invoice_files(invoice_data[0], invoice_data[1])
 
-            add_more = input("\nAdd another invoice (y/n)\n>\t")
-            if add_more == "n":
-                break
+                add_more = input("\nAdd another invoice (y/n)\n>\t")
+                if add_more == "n":
+                    break
 
         self.preserve_downloads_handler(end=True)
 
@@ -293,7 +302,12 @@ class ApGui:
         if response:
             print_sugg_value(value=response)
 
-        data = input()
+        try:
+            data = input()
+        except EOFError:
+            print("\n")
+            data = ""
+            return index
 
         # Overwrite input_list[i] only if it's 0 or you're putting in a new val
         if data != self.up_key and data != self.down_key:
