@@ -153,6 +153,7 @@ class ApGui:
             return int(selection)
         else:
             print("Bad option!")
+            return 0
 
     def print_main_menu_status(self) -> None:
         summary_data = APDatabase.get_main_menu_summary_data(self.conn)
