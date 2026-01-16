@@ -14,10 +14,8 @@ dest2 = "2025 Year End Fieldwork/33 - BOA Broker Statement Recon"
 dest = "/".join([dest1, dest2])
 
 for folder in os.listdir(src):
-    print(folder)
     month_folder = "/".join([src, folder])
     files = os.listdir(month_folder)
     for file in files:
-        print("\t%s" % file)
         if re.match(file_pattern, file):
             shutil.copy(src="/".join([month_folder, file]), dst=dest)
