@@ -1,3 +1,6 @@
+"""Script for grabbing tables from a single directory and smushing them
+together into one big table."""
+
 import os
 import pandas as pd
 
