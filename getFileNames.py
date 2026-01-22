@@ -1,3 +1,7 @@
+"""Script for processing a folder of invoice files. Parses the vendor name and
+the invoice number from each file, puts the results in a flat file in the same
+directory."""
+
 import pandas as pd
 import os
 import re
