@@ -106,24 +106,49 @@ def format_path(pattern: str, folder: str) -> str:
 
 
 def concat_tables(pattern: str, folders: list[str]) -> pd.DataFrame:
-    all_data = pd.DataFrame()
-    for i in folders:
+    headers = [
+        "DateEntered",
+        "Account",
+        "Subaccount",
+        "Tag",
+        "LedgerNumber",
+        "Amount",
+        "Description",
+        "Product",
+        "Currency",
+    ]
+    all_data = pd.DataFrame(columns=headers)
+
+    for i in sorted(folders):
+        unique_dates = all_data.DateEntered.unique().tolist()
+
+        print(i)
         full_file_path = format_path(pattern, i)
+        print(f"\t{full_file_path}")
         try:
             curr_file = pd.read_csv(full_file_path)
         except FileNotFoundError:
-            continue
+            curr_file = pd.DataFrame()
+            print("File not found")
 
         if curr_file.empty:
+            print("curr_file empty; continuing\n")
             continue
         elif all_data.empty:
+            print(curr_file.head())
             all_data = curr_file.copy()
+        elif curr_file.iloc[0, 0] in unique_dates:
+            print("Dupe date found, continuing\n")
+            continue
         else:
+            print("Concatting below data to big df:")
+            print(curr_file.head())
             all_data = pd.concat([all_data, curr_file])
 
+        print("\n")
     if not all_data.empty:
-        sorted = all_data.sort_values(by="DateEntered", axis=0)
-        return sorted
+        sorted_data = all_data.sort_values(by="DateEntered", axis=0)
+        return sorted_data
     else:
         return all_data
 
