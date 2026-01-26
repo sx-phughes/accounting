@@ -183,11 +183,13 @@ class CreditCardData(ABC):
             try:
                 curr_data = curr_data[
                     [
+                        "Card",
                         "Transaction Date",
                         "Description",
                         "Category",
                         "Amount",
                         "Memo",
+                        "CC User Name",
                     ]
                 ]
             except KeyError:
