@@ -164,7 +164,7 @@ class PatEngine:
 
     def type_val(self, val: str) -> int | str:
         """Convert user input to an integer"""
-        if re.match(r"\d+", val):
+        if re.match(r"^\d+$", val):
             return int(val)
         else:
             return val
