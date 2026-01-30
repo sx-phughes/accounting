@@ -325,7 +325,7 @@ def parse_user_response(
     try:
         split_response = [piece.strip() for piece in user_response.split(",")]
         for piece in split_response:
-            regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&%']+)?", piece)
+            regex = re.match(r"(\w+):?\s?([\w\.\s\_\(\)&%'\/]+)?", piece)
             command = regex.group(1)
             param = regex.group(2)
             command_param_dict[command] = param
