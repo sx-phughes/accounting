@@ -5,11 +5,11 @@ import re
 import pypdf
 
 try:
-    from MonthEnd.Abn.Base import get_archive_date_path, set_globals
+    from MonthEnd.Abn.Base import get_archive_date_path, get_t_minus
     from MonthEnd.Abn.EoyExtractPageText import *
     from MonthEnd.Abn import FileGrabber
 except ModuleNotFoundError:
-    from Base import get_archive_date_path, set_globals
+    from Base import get_archive_date_path
     from EoyExtractPageText import *
     import FileGrabber
 
@@ -36,15 +36,13 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
     SAME
       THIS NEEDS TO BE RENAMED FOR VALUES TO COME THROUGH
     """
-
-    set_globals(year, 12, "C:/gdrive")
-
-    dir = get_archive_date_path(day=31)
+    t_minus = get_t_minus()
+    dir = get_archive_date_path(year, 12, day=t_minus.day)
     downloads = os.getenv("HOMEPATH") + "/Downloads"
 
     f_pattern = r"[\w_\d]*DPR_SU_EOY.pdf"
 
-    proper_files = get_ABN_pdfs(f_pattern)
+    proper_files = get_ABN_pdfs(f_pattern, year, 12, t_minus.day)
 
     os.chdir(dir)
 
@@ -60,7 +58,6 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         for num in page_nums:
             page_obj = pages[num]
             df = get_data_table(f, page_obj)
-            print(df.iloc[0, 0])
             if count == 1:
                 master = df.copy(deep=True)
             else:
@@ -119,7 +116,7 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         csv_cash["Cash Title"].isin(line_items_to_keep)
     ].copy()
     basic_mark_to_market = orig_mark_to_market[
-        ["Account", "Cash Title", "Opening Balance"]
+        ["Account Name", "Cash Title", "Opening Balance"]
     ].copy(deep=True)
     mark_to_market = basic_mark_to_market.rename(
         columns={"Opening Balance": "New"}
@@ -172,8 +169,8 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
     return new_summary_final
 
 
-def get_ABN_pdfs(f_pattern):
-    dir_path = get_archive_date_path()
+def get_ABN_pdfs(f_pattern: str, year: int, month: int, day: int):
+    dir_path = get_archive_date_path(year, month, day)
 
     files = os.listdir(dir_path)
 

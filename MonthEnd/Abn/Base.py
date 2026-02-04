@@ -14,6 +14,7 @@ def set_globals(data_year: int, data_month: int, gdrive: str) -> None:
 
     global cm_moyr, pm_moyr
     cm_moyr = get_moyr()
+    print(f"cm_moyr at time of set: {cm_moyr}")
     pm_moyr = t_minus.strftime("%Y%m")
 
     get_mapping_files()
@@ -71,7 +72,7 @@ def get_mapping_files(google_drive_root="C:/gdrive") -> None:
     account_mapping = pd.read_csv(abn_files_path + "/ABN_account_mapping.csv")
 
 
-def get_archive_date_path(day=0):
+def get_archive_date_path(year, month, day=0):
     if day == 0:
         date_str = last_biz_day(year, month).strftime("%Y%m%d")
     else:

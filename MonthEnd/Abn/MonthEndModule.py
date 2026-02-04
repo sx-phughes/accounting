@@ -49,5 +49,8 @@ def run_month_end_files(year: int, month: int, debug=False) -> None:
 
     for table, name in paired_data_and_names:
         save_path = "/".join([Base.get_trading_path(), Base.cm_moyr, name])
+        print(Base.cm_moyr)
         if not table is None:
             table.to_csv(save_path, index=False)
+
+    input()

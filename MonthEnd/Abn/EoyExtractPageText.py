@@ -93,11 +93,11 @@ def get_data_table(f: str, page: pypdf.PageObject) -> pd.DataFrame:
         table_dict[num_col] = nums_list
 
     df = pd.DataFrame(table_dict)
-    df["Account"] = account_name
+    df["Account Name"] = account_name
     cols = list(df.columns)
-    cols.remove("Account")
-    cols.insert(0, "Account")
-    reordered_df = df[cols]
+    cols.remove("Account Name")
+    cols.insert(0, "Account Name")
+    reordered_df = df[cols].copy()
     reordered_df["f_name"] = f
 
     reordered_df["Cash Title"] = reordered_df["Cash Title"].str.strip()

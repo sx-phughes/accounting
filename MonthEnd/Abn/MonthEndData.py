@@ -86,9 +86,9 @@ def modfiy_cash(cash: pd.DataFrame) -> pd.DataFrame:
     needed_data.to_csv(
         os.getenv("HOMEPATH") + "/Downloads/modify_cash_partial.csv"
     )
-    needed_data["Concat"] = (
-        needed_data["Account Name"].str + needed_data["Cash Title"]
-    )
+    needed_data["Concat"] = needed_data["Account Name"].astype(
+        str
+    ) + needed_data["Cash Title"].astype(str)
     pivoted = needed_data.pivot_table(
         values="Opening Balance",
         index=["Account Name", "Cash Title", "Concat"],
