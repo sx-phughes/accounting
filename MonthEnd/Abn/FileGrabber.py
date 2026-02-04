@@ -57,4 +57,4 @@ def get_global_files():
     )
 
     if Base.t_minus.month == 12:
-        pm_cash = EoyCashFile.convert_to_eoy_cash(Base.year - 1, pm_cash)
+        pm_cash = EoyCashFile.convert_to_eoy_cash(Base.year - 1)

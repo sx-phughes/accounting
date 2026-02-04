@@ -25,7 +25,7 @@ def get_account_name(page: pypdf.PageObject) -> str:
     return account_name
 
 
-def get_data_table(f: str, page: pypdf.PageObject):
+def get_data_table(f: str, page: pypdf.PageObject) -> pd.DataFrame:
     text = page.extract_text()
     start_pos = text.find("DAILY POSITION REVIEW PER SUBACCOUNT")
     end_pos = text.find("END-OF-LIST")
@@ -97,12 +97,12 @@ def get_data_table(f: str, page: pypdf.PageObject):
     cols = list(df.columns)
     cols.remove("Account")
     cols.insert(0, "Account")
-    df = df[cols]
-    df["f_name"] = f
+    reordered_df = df[cols]
+    reordered_df["f_name"] = f
 
-    df["Cash Title"] = df["Cash Title"].str.strip()
+    reordered_df["Cash Title"] = reordered_df["Cash Title"].str.strip()
 
     # if account_name == "695C10S":
     #     pd.set_option("display.max_rows", None)
     #     print(df)
-    return df
+    return reordered_df

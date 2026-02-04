@@ -60,6 +60,7 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         for num in page_nums:
             page_obj = pages[num]
             df = get_data_table(f, page_obj)
+            print(df.iloc[0, 0])
             if count == 1:
                 master = df.copy(deep=True)
             else:
@@ -147,7 +148,10 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         "OPEN TRADE EQUITY",
     )
 
-    new_summary_final = new_summary.rename(columns={"New": "Opening Balance"})
+    summary_renamed = new_summary.rename(
+        columns={"New": "Opening Balance", "Account": "Account Name"}
+    )
+    new_summary_final = summary_renamed.drop(columns="f_name")
     final_checksum = new_summary_final["Opening Balance"].sum()
     new_summary_final.to_csv(downloads + "/final_df.csv")
 
