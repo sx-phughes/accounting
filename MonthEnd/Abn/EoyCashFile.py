@@ -110,6 +110,8 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         "MARK TO MARKET UNSETTLED SHORT STOCK",
         "MARK TO MARKET UNSETTLED LONG PREFSTOCK",
         "MARK TO MARKET UNSETTLED SHORT PREFSTOCK",
+        "MARK TO MARKET UNSETTLED LONG WARRANT",
+        "MARK TO MARKET UNSETTLED SHORT WARRANT",
     ]
 
     orig_mark_to_market = csv_cash.loc[
@@ -130,6 +132,7 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         "MARK TO MARKET OPTIONS",
         "MARK TO MARKET UNSETTLED STOCK",
         "MARK TO MARKET UNSETTLED PREFSTOCK",
+        "MARK TO MARKET UNSETTLED WARRANT",
     ]
 
     rows_to_drop = no_bad_lines.loc[
@@ -140,8 +143,9 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         [summary_without_net_mtm, mark_to_market]
     )
 
-    new_summary = summary_with_split_mtm.mask(
-        summary_with_split_mtm["Cash Title"] == "OPEN TRADE EQUITY FUTURES",
+    new_summary = summary_with_split_mtm.copy()
+    new_summary["Cash Title"] = summary_with_split_mtm["Cash Title"].mask(
+        summary_with_split_mtm["Cash Title"] == "OPEN TRADE EQUITY FUTURE",
         "OPEN TRADE EQUITY",
     )
 
@@ -149,8 +153,8 @@ def convert_to_eoy_cash(year: int) -> pd.DataFrame:
         columns={"New": "Opening Balance", "Account": "Account Name"}
     )
     new_summary_final = summary_renamed.drop(columns="f_name")
-    final_checksum = new_summary_final["Opening Balance"].sum()
     new_summary_final.to_csv(downloads + "/final_df.csv")
+    final_checksum = new_summary_final["Opening Balance"].sum()
 
     ## Check 2 ##
     if round(csv_cash_total, 0) != round(final_checksum, 0):
