@@ -390,7 +390,14 @@ class ApGui:
                 for col in show_cols:
                     if col in df.columns:
                         print_cols.append(col)
-                print(df[print_cols].sort_values("vendor"))
+
+                total_row_data = {col: [""] for col in print_cols}
+                total_row_data["amount"][0] = df["amount"].sum()
+                total_row = pd.DataFrame(total_row_data, index=["total"])
+
+                sorted_df = df[print_cols].sort_values("vendor").copy()
+                sorted_df_with_total = pd.concat([sorted_df, total_row])
+                print(sorted_df_with_total)
 
             print("\n\nEnter an index to view invoice details,")
             print("Type '<column name>: <value> to filter by a value,")
