@@ -47,6 +47,7 @@ class ApGui:
         "approved",
         "approver",
         "ym",
+        "date_paid",
     ]
 
     def __init__(self):
@@ -410,6 +411,9 @@ class ApGui:
                 for col in show_cols:
                     if col in df.columns:
                         print_cols.append(col)
+
+                if sql_args["paid"]:
+                    print_cols.append("date_paid")
 
                 total_row_data = {col: [""] for col in print_cols}
                 total_row_data["amount"][0] = df["amount"].sum()
