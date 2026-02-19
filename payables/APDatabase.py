@@ -314,6 +314,7 @@ def parse_user_response(
     table: str,
     table_cols: list[str],
     con: pyodbc.Connection,
+    sql_args: dict,
 ) -> np.int8:
     """Parses user response and starts relevant routine."""
 
@@ -336,15 +337,21 @@ def parse_user_response(
 
     test_command = list(command_param_dict.keys())[0]
     if test_command in table_cols:
+        for key in command_param_dict.keys():
+            sql_args[key] = command_param_dict[key]
+
         return filter_table(
-            table=table, cols=table_cols, **command_param_dict, con=con
+            table=table, cols=table_cols, con=con, sql_args=sql_args
         )
     elif re.match(r"\d+", command):
         return invoice_details(int(command), con)
     elif command == "export":
         return (np.int8(3), param)
     elif command == "IDB":
-        return filter_table(table=table, cols=table_cols, idb=True, con=con)
+        sql_args["idb"] = True
+        return filter_table(
+            table=table, cols=table_cols, con=con, sql_args=sql_args
+        )
     elif command == "mark":
         return (np.int8(4), param)
 
@@ -352,9 +359,9 @@ def parse_user_response(
 
 
 def filter_table(
-    table: str, cols: list[str], con: pyodbc.Connection, **kwargs
+    table: str, cols: list[str], con: pyodbc.Connection, sql_args: dict
 ):
-    sql = construct_sql_query(table=table, cols=cols, paid=False, **kwargs)
+    sql = construct_sql_query(**sql_args)
     new_data = pd.read_sql(sql, con=con, index_col="id")
     return new_data
 
