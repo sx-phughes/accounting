@@ -36,6 +36,18 @@ class ApGui:
     prompt_types = ["str", "str", "float64", "bool"]
     up_key = "k"
     down_key = "j"
+    show_inv_cols = [
+        "id",
+        "vendor",
+        "inv_num",
+        "company",
+        "amount",
+        "exp_cat",
+        "pmt_type",
+        "approved",
+        "approver",
+        "ym",
+    ]
 
     def __init__(self):
         pd.set_option("display.max_rows", None)
@@ -106,7 +118,8 @@ class ApGui:
 
         options = {
             "Add Invoices": self.add_invoices,
-            "View/Edit Invoices": self.view_invoices,
+            "View/Edit Unpaid Invoices": self.show_unpaid_invoices,
+            "View/Edit Paid Invoices": self.show_paid_invoices,
             "Add Vendor": self.add_vendor,
             "Create Payment Files": self.make_all_payment_files,
             "Create Summary Workbook": self.save_summary_workbook,
@@ -345,21 +358,35 @@ class ApGui:
         for i in val_list:
             print(f"\t{i}")
 
-    def view_invoices(self, data: pd.DataFrame = None):
+    def show_unpaid_invoices(self) -> None:
+        header = "UNPAID INVOICES"
+        sql_args = {
+            "table": "invoices",
+            "cols": self.show_inv_cols,
+            "paid": False,
+            "cc": False,
+        }
+        sql = APDatabase.construct_sql_query(**sql_args)
+        df = pd.read_sql(sql, con=self.conn, index_col="id")
+        self.view_invoices(df, header, sql_args)
+
+    def show_paid_invoices(self) -> None:
+        header = "HISTORICAL INVOICES"
+        year = get_valid_input("\nInput year:\n>\t", r"\d{4}")
+        sql_args = {
+            "table": "invoices",
+            "cols": self.show_inv_cols,
+            "paid": True,
+            "cc": False,
+            "ym": (f">{int(year) * 100}", f"<{(int(year) + 1) * 100}"),
+        }
+        sql = APDatabase.construct_sql_query(**sql_args)
+        df = pd.read_sql(sql, con=self.conn, index_col="id")
+        self.view_invoices(df, header, sql_args)
+
+    def view_invoices(self, data: pd.DataFrame, header: str, sql_args: dict):
         """Prints unpaid invoices for user."""
 
-        cols = [
-            "id",
-            "vendor",
-            "inv_num",
-            "company",
-            "amount",
-            "exp_cat",
-            "pmt_type",
-            "approved",
-            "approver",
-            "ym",
-        ]
         show_cols = [
             "id",
             "vendor",
@@ -371,16 +398,9 @@ class ApGui:
 
         while True:
             cls()
-            print_header("UNPAID INVOICES")
+            print_header(header)
 
-            if not (data is None):
-                df = data
-            else:
-                sql = APDatabase.construct_sql_query(
-                    "invoices", cols=cols, paid=False, cc=False
-                )
-                df = pd.read_sql(sql, con=self.conn, index_col="id")
-
+            df = data
             self.current_table = df
 
             if df.empty:
@@ -412,8 +432,9 @@ class ApGui:
             parse_result = APDatabase.parse_user_response(
                 user_response=response,
                 table="invoices",
-                table_cols=cols,
+                table_cols=self.show_inv_cols,
                 con=self.conn,
+                sql_args=sql_args,
             )
             if isinstance(parse_result, np.int8) and parse_result == np.int8(
                 1
@@ -422,7 +443,9 @@ class ApGui:
             elif isinstance(parse_result, tuple):
                 self.response_handler(*parse_result)
             elif isinstance(parse_result, pd.DataFrame):
-                self.view_invoices(data=parse_result)
+                self.view_invoices(
+                    data=parse_result, header=header, sql_args=sql_args
+                )
 
     def response_handler(self, option: np.int8, data: Any) -> None:
         if option == np.int8(2):
