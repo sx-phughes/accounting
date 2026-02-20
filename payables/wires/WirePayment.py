@@ -50,64 +50,64 @@ class WireField:
         self._val = field_value
 
 
-class Vendor:
-    """Object for containing information about a specific vendor."""
+# class Vendor:
+#     """Object for containing information about a specific vendor."""
 
-    vendor_info = pd.read_excel(
-        "C:/gdrive/Shared Drives/accounting/patrick_data_files/ap/Vendors.xlsx",
-        "Vendors",
-    ).fillna("")
+#     vendor_info = pd.read_excel(
+#         "C:/gdrive/Shared Drives/accounting/patrick_data_files/ap/Vendors.xlsx",
+#         "Vendors",
+#     ).fillna("")
 
-    def __init__(self, vendor: str):
-        self.vendor = vendor
-        self.get_vendor_info(vendor)
+#     def __init__(self, vendor: str):
+#         self.vendor = vendor
+#         self.get_vendor_info(vendor)
 
-    def __repr__(self):
-        return f"Vendor object for '{self.vendor}'"
+#     def __repr__(self):
+#         return f"Vendor object for '{self.vendor}'"
 
-    def get_vendor_info(self, vendor):
-        """Pulls vendor information about the passed parameter (vendor) and
-        stores it in object attributes."""
+#     def get_vendor_info(self, vendor):
+#         """Pulls vendor information about the passed parameter (vendor) and
+#         stores it in object attributes."""
 
-        vendor_row = Vendor.vendor_info.loc[
-            Vendor.vendor_info["Vendor"] == vendor
-        ]
-        self.template = vendor_row["Wire Template"].values[0]
-        self.id = vendor_row["Beneficiary ID"].values[0]
-        self.id_type = vendor_row["Beneficiary ID Type"].values[0]
-        self.beneficiary_country = vendor_row["Beneficiary Country"].values[0]
-        self.bank_id_type = vendor_row["Beneficiary Bank ID Type"].values[0]
-        self.bank_id = vendor_row["Beneficiary Bank ID"].values[0]
-        self.bank_name = vendor_row["Beneficiary Bank Name"].values[0]
-        self.bank_address1 = vendor_row[
-            "Beneficiary Bank Address Line 1"
-        ].values[0]
-        self.bank_address2 = vendor_row[
-            "Beneficiary Bank Address Line 2"
-        ].values[0]
-        self.bank_address3 = vendor_row[
-            "Beneficiary Bank City, State/Province, Zip/Postal Code"
-        ].values[0]
-        self.bank_country = vendor_row["Beneficiary Bank Country"].values[0]
-        self.intermediary_id_type = vendor_row[
-            "Intermediary Bank ID Type"
-        ].values[0]
-        self.intermediary_id_value = vendor_row["Intermediary Bank ID"].values[
-            0
-        ]
-        self.intermediary_name = vendor_row["Intermediary Bank Name"].values[0]
-        self.intermediary_address1 = vendor_row[
-            "Intermediary Bank Address Line 1"
-        ].values[0]
-        self.intermediary_address2 = vendor_row[
-            "Intermediary Bank Address Line 2"
-        ].values[0]
-        self.intermediary_address3 = vendor_row[
-            "Intermediary Bank City, State/Province, Zip/Postal Code"
-        ].values[0]
-        self.intermediary_country = vendor_row[
-            "Intermediary Bank Country"
-        ].values[0]
+#         vendor_row = Vendor.vendor_info.loc[
+#             Vendor.vendor_info["Vendor"] == vendor
+#         ]
+#         self.template = vendor_row["Wire Template"].values[0]
+#         self.id = vendor_row["Beneficiary ID"].values[0]
+#         self.id_type = vendor_row["Beneficiary ID Type"].values[0]
+#         self.beneficiary_country = vendor_row["Beneficiary Country"].values[0]
+#         self.bank_id_type = vendor_row["Beneficiary Bank ID Type"].values[0]
+#         self.bank_id = vendor_row["Beneficiary Bank ID"].values[0]
+#         self.bank_name = vendor_row["Beneficiary Bank Name"].values[0]
+#         self.bank_address1 = vendor_row[
+#             "Beneficiary Bank Address Line 1"
+#         ].values[0]
+#         self.bank_address2 = vendor_row[
+#             "Beneficiary Bank Address Line 2"
+#         ].values[0]
+#         self.bank_address3 = vendor_row[
+#             "Beneficiary Bank City, State/Province, Zip/Postal Code"
+#         ].values[0]
+#         self.bank_country = vendor_row["Beneficiary Bank Country"].values[0]
+#         self.intermediary_id_type = vendor_row[
+#             "Intermediary Bank ID Type"
+#         ].values[0]
+#         self.intermediary_id_value = vendor_row["Intermediary Bank ID"].values[
+#             0
+#         ]
+#         self.intermediary_name = vendor_row["Intermediary Bank Name"].values[0]
+#         self.intermediary_address1 = vendor_row[
+#             "Intermediary Bank Address Line 1"
+#         ].values[0]
+#         self.intermediary_address2 = vendor_row[
+#             "Intermediary Bank Address Line 2"
+#         ].values[0]
+#         self.intermediary_address3 = vendor_row[
+#             "Intermediary Bank City, State/Province, Zip/Postal Code"
+#         ].values[0]
+#         self.intermediary_country = vendor_row[
+#             "Intermediary Bank Country"
+#         ].values[0]
 
 
 class Field:

@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-from wires.WirePayment import company_ids, company_names, WirePayment, Vendor
+from wires.WirePayment import company_ids, company_names, WirePayment
 from wires.WireFile import WireFile
 
 
