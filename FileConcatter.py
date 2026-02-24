@@ -21,7 +21,7 @@ def get_abn_file_with_pattern(pattern: str, date: str) -> pd.DataFrame:
         ]
     )
     ext = get_extension(formatted)
-    if ext == "csv":
+    if ext == "csv" or ext == "CSV":
         data = pd.read_csv(path, low_memory=False)
     elif ext == "zip":
         extract_path = downloads
@@ -32,7 +32,6 @@ def get_abn_file_with_pattern(pattern: str, date: str) -> pd.DataFrame:
         data = pd.read_csv(path, low_memory=False)
     else:
         return None
-
     return data
 
 
@@ -71,7 +70,6 @@ def get_monthly_files(
     Year, month: int
     filter_function: a function that takes a dataframe and returns a dataframe
     """
-
     dates = []
     generate_dates(date_list=dates, year=year, month=month)
     files = []
@@ -81,12 +79,11 @@ def get_monthly_files(
             data = get_abn_file_with_pattern(pattern=pattern, date=date_str)
             data = filter_function(data)
             if data.empty:
-                print(f"File for date {date_str} has no SEC fee data.")
+                print(f"File for date {date_str} has no data.")
                 continue
             files.append(data)
         except:
             continue
-
     return files
 
 
@@ -117,6 +114,15 @@ def filter_cash_movement(df: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def get_rbh_rows(df: pd.DataFrame) -> pd.DataFrame:
+    only_rbh_col = df[["TRADEDATE", "ACCOUNT", "RBH"]].copy()
+    non_zero_rows = only_rbh_col.loc[only_rbh_col["RBH"] != 0].copy()
+    non_zero_rows["PERCENT"] = (
+        non_zero_rows["RBH"] / non_zero_rows["RBH"].sum()
+    )
+    return non_zero_rows
+
+
 def concat_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
     """Concatenates a list of DataFrames into one DataFrame"""
 
@@ -130,11 +136,11 @@ def concat_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    pattern = "{date}-2518-C2518-Cash_Movement.csv.zip"
-    year = 2025
-    month = 6
-    list_of_dfs = get_monthly_files(pattern, year, month, filter_cash_movement)
+    pattern = "EQTBAL_{date}.CSV"
+    year = 2026
+    month = 1
+    list_of_dfs = get_monthly_files(pattern, year, month, get_rbh_rows)
     data = concat_df_list(df_list=list_of_dfs)
 
-    save_name = "june_cash_movement_sec_fees.csv"
+    save_name = "jan_2026_rbh_data.csv"
     data.to_csv("/".join([downloads, save_name]), index=False)
