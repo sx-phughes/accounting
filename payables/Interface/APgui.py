@@ -473,10 +473,14 @@ class ApGui:
                     "Invoices marked paid",
                 ],
             }
-            # runs function based on the parameter passed with mark
-            function_map[data][0](self.current_table.index, self.conn)
-            # prints remark based on the function run
-            print(function_map[data][1])
+            try:
+                # runs function based on the parameter passed with mark
+                function_map[data][0](self.current_table.index, self.conn)
+                # prints remark based on the function run
+                print(function_map[data][1])
+            except KeyError:
+                print("Invalid operand")
+                return
         else:
             return
 
