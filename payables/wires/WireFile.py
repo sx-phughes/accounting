@@ -22,7 +22,7 @@ class WireFile:
         elif len(transactions) == 1:
             self.hash_sum = transactions.amount
 
-        self.trailer = ["TRAILER", len(transactions), self.hash_sum]
+        self.trailer = ["TRAILER", len(transactions), round(self.hash_sum, 2)]
 
     def write_file(self, path: str, file_name: str):
         """Writes file to disk."""
