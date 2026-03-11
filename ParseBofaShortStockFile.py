@@ -17,7 +17,8 @@ def parse_file() -> None:
         text = f.read()
 
     text1 = text.replace("-", ",-")
-    text2 = re.sub(r" +(?![A-Z]{1} )", ",", text1)
+    text2 = text1.replace("+", ",")
+    text2 = re.sub(r" +(?![A-Z]{1,3} )", ",", text2)
 
     if "/" in path:
         f_name = path.split("/")[-1]
