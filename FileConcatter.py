@@ -3,6 +3,7 @@ from collections.abc import Callable
 import os
 import pandas as pd
 from zipfile import ZipFile
+import shutil
 
 
 downloads = "/".join([os.environ["HOMEPATH"], "Downloads"])
@@ -30,6 +31,7 @@ def get_abn_file_with_pattern(pattern: str, date: str) -> pd.DataFrame:
         csv_name = formatted.replace(".zip", "")
         path = "/".join([extract_path, csv_name])
         data = pd.read_csv(path, low_memory=False)
+        os.remove(path)
     else:
         return None
     return data
@@ -57,11 +59,15 @@ def generate_dates(date_list: list, year: int, month: int) -> None:
         date += one_day
 
 
+def blank_filter(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 def get_monthly_files(
     pattern: str,
     year: int,
     month: int,
-    filter_function: Callable[[pd.DataFrame], pd.DataFrame],
+    filter_function: Callable[[pd.DataFrame], pd.DataFrame] = blank_filter,
 ) -> list[pd.DataFrame]:
     """Returns a monthly concatted file of data from daily files fitting
     the given pattern and filtered using the filter function.
@@ -135,12 +141,17 @@ def concat_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
     return combined
 
 
+def filter_symbol_on_A(df: pd.DataFrame) -> pd.DataFrame:
+    new_df = df.loc[df["Symbol"] == "A"].copy()
+    return new_df
+
+
 if __name__ == "__main__":
-    pattern = "EQTBAL_{date}.CSV"
-    year = 2026
-    month = 1
-    list_of_dfs = get_monthly_files(pattern, year, month, get_rbh_rows)
+    pattern = "{date}-2518-C2518-FEETRXDETAIL.csv.zip"
+    year = 2025
+    month = 12
+    list_of_dfs = get_monthly_files(pattern, year, month, filter_symbol_on_A)
     data = concat_df_list(df_list=list_of_dfs)
 
-    save_name = "jan_2026_rbh_data.csv"
+    save_name = "202512_fee_trx.csv"
     data.to_csv("/".join([downloads, save_name]), index=False)
