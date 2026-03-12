@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 import sys
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    filename="PosFile.log", encoding="utf-8", level=logging.DEBUG
+    filename="PosFile.log", filemode="w", encoding="utf-8", level=logging.DEBUG
 )
 
 
@@ -46,7 +47,7 @@ field_spec = [
     ["vega_sign", 303, 304],
     ["at_the_money_volatility", 304, 311],
     ["risk_free_rate", 311, 318],
-    ["volatility", 317, 322],
+    ["volatility_type", 317, 322],
 ]
 
 
@@ -76,11 +77,11 @@ def convert_text_to_df(text: str) -> pd.DataFrame:
     for line in lines:
         line_data = line_to_fields(line)
         for i in range(len(line_data)):
-
+            logging.info(f"adding {line_data[i]} to field {field_names[i]}")
             parsed[field_names[i]].append(line_data[i])
 
     for key in parsed.keys():
-        print(key, len(parsed[key]))
+        logging.info(f"{key}: {len(parsed[key])} items")
 
     df = pd.DataFrame(parsed)
     return df
@@ -104,12 +105,49 @@ def get_text_file(date: str) -> str:
 def get_pos_file_from_date(date: str) -> pd.DataFrame:
     text = get_text_file(date)
     raw = convert_text_to_df(text)
-    # clean = clean_pnl_data(raw)
+    clean = clean_pos_file(raw)
 
-    return raw
+    return clean
 
 
-def save_pnl_to_downloads():
+def map_long_short_to_int(x):
+    if x == "L":
+        return 1
+    elif x == "S":
+        return -1
+    else:
+        return 1
+
+
+def clean_pos_file(raw_data: pd.DataFrame) -> pd.DataFrame:
+    """Cleaning the position file data.
+
+    Converts unformatted number to flaots and signs quantity.
+    """
+
+    raw_data[["close_price", "underlying_price", "td_pos"]] = raw_data[
+        ["close_price", "underlying_price", "td_pos"]
+    ].astype(np.float64)
+
+    masked_long_short = raw_data.copy()
+    masked_long_short["long_short"] = masked_long_short["long_short"].apply(
+        map_long_short_to_int
+    )
+
+    signed_position = masked_long_short.copy()
+    signed_position["td_pos"] = (
+        signed_position["td_pos"] * signed_position["long_short"]
+    )
+
+    decimal_prices = signed_position.copy()
+    decimal_prices[["close_price", "underlying_price"]] = (
+        decimal_prices[["close_price", "underlying_price"]] / 1000000
+    )
+
+    return decimal_prices
+
+
+def save_pos_to_downloads():
     date = sys.argv[1]
     df = get_pos_file_from_date(date)
 
@@ -118,4 +156,4 @@ def save_pnl_to_downloads():
 
 
 if __name__ == "__main__":
-    save_pnl_to_downloads()
+    save_pos_to_downloads()
