@@ -276,6 +276,15 @@ def fix_cc_input(inputs: list[str | int]) -> None:
     inputs[cc_index] = swap_cc_input(cc_input)
 
 
+def fix_amount_input(inputs: list[str | int]) -> None:
+    """Cleans amount value to be parseable into float."""
+
+    amount_index = get_input_index("Invoice Amount")
+    amount_input = inputs[amount_index]
+    clean_amount = amount_input.replace(",", "").replace("$", "")
+    inputs[amount_index] = clean_amount
+
+
 def swap_cc_input(cc_val: str) -> str:
     """Returns 'y' if user response was 'y', else returns ''"""
 

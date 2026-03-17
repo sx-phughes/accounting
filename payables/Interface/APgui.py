@@ -272,6 +272,8 @@ class ApGui:
             i = self.get_single_user_input(prompts, inputs, i)
 
         fix_cc_input(inputs)
+        fix_amount_input(inputs)
+
         if inputs[3]:
             self.add_cc_user(inputs)
 
