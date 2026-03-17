@@ -384,7 +384,8 @@ def create_new_inv_file_names(
                 if i_ext in name:
                     count += 1
             if count > 0:
-                new_fname = new_fname + f"_{count}"
+                i_new_name = "".join([new_name, f"_{count}"])
+                new_fname = ".".join([i_new_name, i_ext])
         new_file_names.append(new_fname)
     return new_file_names
 
