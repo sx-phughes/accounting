@@ -20,6 +20,9 @@ from CursorFunc import *
 import PayableSummary
 import SigIntStop
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="ap.log", filemode="w", level=logging.DEBUG)
+
 
 def get_uid_pwd() -> tuple[str]:
     uid = input("Username: ")
@@ -54,14 +57,13 @@ class ApGui:
         pd.set_option("display.max_rows", None)
         pd.set_option("display.float_format", lambda x: "{:,.2f}".format(x))
         warnings.simplefilter(action="ignore", category=UserWarning)
-        logging.basicConfig(filename="ap.log", level=logging.DEBUG)
-        logging.debug("Debugger on")
+        logger.debug("Debugger on")
         self.conn = None
         self.preserved_downloads = np.uint8(0)
         while True:
             try:
                 self.connect_to_db()
-                logging.debug("Connected to DB")
+                logger.debug("Connected to DB")
                 self.main_menu()
                 break
             except pyodbc.Error as e:

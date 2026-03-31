@@ -1,5 +1,8 @@
 from payables.nacha.NachaLine import *
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionEntry:
@@ -37,6 +40,11 @@ class TransactionEntry:
             ):
                 print(f"{var_name} = {var_val}, type '{type(var_val)}'")
             print("------------End Transaction Entry----------------\n\n")
+        logger.info("++++++ Begin Transaction ++++++")
+        logger.info(vendor)
+        logger.info(amount)
+        logger.info(invoice_number)
+        logger.info("++++++ End Transaction ++++++")
 
         self.transaction_line = TransactionLine(
             trx_code=22,

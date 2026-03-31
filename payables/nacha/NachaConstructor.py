@@ -1,11 +1,14 @@
 import os
 import sys
+import logging
 
 sys.path.append("/".join([os.environ["HOMEPATH"], "accounting"]))
 from payables.nacha.NachaFile import *
 import pandas as pd
 from datetime import datetime
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class NachaConstructor:
